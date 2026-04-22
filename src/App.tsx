@@ -27,7 +27,9 @@ import {
   Loader2,
   Sparkles,
   SearchIcon,
-  Volume2
+  Volume2,
+  Trophy,
+  Check
 } from "lucide-react";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./components/ui/card";
@@ -75,6 +77,7 @@ export default function App() {
   const [topics, setTopics] = useState<Topic[]>([]);
   const [vocabularies, setVocabularies] = useState<Vocabulary[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [topicSearchQuery, setTopicSearchQuery] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState<string>("all");
   const [isAddingVocab, setIsAddingVocab] = useState(false);
   const [isAddingTopic, setIsAddingTopic] = useState(false);
@@ -286,9 +289,21 @@ export default function App() {
             )}
           </TabsContent>
 
-          <TabsContent value="topics" className="focus-visible:outline-none">
+          <TabsContent value="topics" className="focus-visible:outline-none space-y-6">
+            <div className="relative max-w-md">
+              <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Input 
+                placeholder="Tìm kiếm chủ đề..." 
+                className="pl-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+                value={topicSearchQuery}
+                onChange={(e) => setTopicSearchQuery(e.target.value)}
+              />
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-              {topics.map(topic => (
+              {topics
+                .filter(t => t.name.toLowerCase().includes(topicSearchQuery.toLowerCase()))
+                .map(topic => (
                 <Card key={topic.id} className="rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md transition-all group overflow-hidden relative">
                   <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-8 -mt-8 opacity-50 group-hover:bg-emerald-100 transition-colors"></div>
                   <CardHeader className="pb-2 relative">
@@ -668,24 +683,48 @@ function EditVocabDialog({ vocabulary, topics, onClose }: { vocabulary: Vocabula
 
 function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: Topic[] }) {
   const [selectedTopic, setSelectedTopic] = useState<string>("all");
+  const [view, setView] = useState<"topics" | "study" | "summary">("topics");
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
   const [studyMode, setStudyMode] = useState<"flashcard" | "quiz">("flashcard");
   const [userAnswer, setUserAnswer] = useState("");
   const [feedback, setFeedback] = useState<"correct" | "incorrect" | null>(null);
+  const [quizVocab, setQuizVocab] = useState<Vocabulary[]>([]);
+  const [score, setScore] = useState(0);
 
-  const filtered = vocabulary.filter(v => selectedTopic === "all" || v.topicId === selectedTopic);
+  const filtered = quizVocab.length > 0 ? quizVocab : vocabulary.filter(v => selectedTopic === "all" || v.topicId === selectedTopic);
 
   const reset = () => {
     setCurrentIndex(0);
     setIsFlipped(false);
     setUserAnswer("");
     setFeedback(null);
+    if (view === "topics") {
+      setQuizVocab([]);
+      setScore(0);
+    }
   };
 
   useEffect(() => {
     reset();
-  }, [selectedTopic, studyMode]);
+  }, [selectedTopic, studyMode, view]);
+
+  const startQuickQuiz = () => {
+    const shuffled = [...vocabulary].sort(() => 0.5 - Math.random());
+    const selected = shuffled.slice(0, 10);
+    setQuizVocab(selected);
+    setSelectedTopic("quick_quiz");
+    setStudyMode("quiz");
+    setView("study");
+    setScore(0);
+  };
+
+  const selectTopic = (topicId: string) => {
+    setSelectedTopic(topicId);
+    setQuizVocab([]);
+    setView("study");
+  };
 
   const next = () => {
     if (currentIndex < filtered.length - 1) {
@@ -693,6 +732,8 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
       setIsFlipped(false);
       setUserAnswer("");
       setFeedback(null);
+    } else {
+      setView("summary");
     }
   };
 
@@ -710,6 +751,11 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
     if (!userAnswer.trim()) return;
 
     const isCorrect = userAnswer.trim().toLowerCase() === filtered[currentIndex].word.trim().toLowerCase();
+    
+    if (!feedback) { // Only count score on first attempt
+      if (isCorrect) setScore(prev => prev + 1);
+    }
+
     setFeedback(isCorrect ? "correct" : "incorrect");
     
     if (isCorrect) {
@@ -719,27 +765,194 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
     }
   };
 
+  if (view === "summary") {
+    const accuracy = filtered.length > 0 ? Math.round((score / filtered.length) * 100) : 0;
+    const isPerfect = accuracy === 100;
+
+    return (
+      <div className="max-w-2xl mx-auto py-12 text-center space-y-8">
+        <motion.div 
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="bg-white rounded-[40px] p-10 shadow-xl border border-emerald-50 space-y-8"
+        >
+          <div className="relative">
+            <div className="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-lg shadow-emerald-100 relative z-10">
+               <Trophy className="w-12 h-12 text-white" />
+            </div>
+            {isPerfect && (
+              <motion.div 
+                animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="absolute inset-0 bg-emerald-400 rounded-full blur-2xl opacity-20"
+              />
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="text-4xl font-black text-slate-800 tracking-tight">
+              {isPerfect ? "Tuyệt vời! ✨" : accuracy >= 80 ? "Rất tốt! 👏" : accuracy >= 50 ? "Khá lắm! 👍" : "Cố gắng lên! 💪"}
+            </h2>
+            <p className="text-slate-500 font-medium">Bạn đã hoàn thành bài học {selectedTopic === "quick_quiz" ? "thử thách 10 từ vựng" : "chủ đề này"}.</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="py-6 px-4 bg-emerald-50 rounded-3xl space-y-1">
+               <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Độ chính xác</p>
+               <div className="text-3xl font-black text-emerald-700">{accuracy}%</div>
+            </div>
+            <div className="py-6 px-4 bg-slate-50 rounded-3xl space-y-1">
+               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Số câu đúng</p>
+               <div className="text-3xl font-black text-slate-700">{score}/{filtered.length}</div>
+            </div>
+            <div className="py-6 px-4 bg-rose-50 rounded-3xl space-y-1">
+               <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Cần cải thiện</p>
+               <div className="text-3xl font-black text-rose-700">{filtered.length - score}</div>
+            </div>
+          </div>
+
+          {studyMode === "flashcard" && (
+            <div className="py-4 px-6 bg-emerald-900 rounded-2xl text-white">
+              <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-1">Thống kê Flashcard</p>
+              <div className="text-xl font-bold">{filtered.length} từ vựng đã được ôn tập qua thẻ</div>
+            </div>
+          )}
+
+          <div className="pt-4 space-y-3">
+            <Button 
+              onClick={() => setView("topics")}
+              className="w-full h-14 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-lg shadow-lg border-none"
+            >
+              Quay lại trang chủ học tập
+            </Button>
+            <Button 
+              variant="ghost" 
+              onClick={() => {
+                reset();
+                setView("study");
+              }}
+              className="w-full h-12 text-emerald-600 font-bold hover:bg-emerald-50"
+            >
+              Học lại ngay
+            </Button>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  if (view === "topics") {
+    const filteredTopics = topics.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+    return (
+      <div className="max-w-4xl mx-auto space-y-8 pb-12">
+        <div className="text-center space-y-2">
+          <h2 className="text-3xl font-black text-slate-800 tracking-tight">Chọn chủ đề ôn tập</h2>
+          <p className="text-slate-500 font-medium">Bắt đầu bài học Flashcard của bạn ngay hôm nay</p>
+        </div>
+
+        <div className="relative max-w-md mx-auto">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input 
+            placeholder="Tìm kiếm chủ đề ôn tập..." 
+            className="pl-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="cursor-pointer group"
+            onClick={startQuickQuiz}
+          >
+            <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-400/50 transition-all overflow-hidden rounded-[32px] bg-gradient-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
+              <CardHeader className="pt-8 pb-4 text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white group-hover:scale-110 transition-transform">
+                   <Trophy className="w-8 h-8" />
+                </div>
+                <CardTitle className="text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
+                <CardDescription className="text-amber-100/60 font-medium tracking-wide uppercase text-[10px]">10 từ ngẫu nhiên</CardDescription>
+              </CardHeader>
+            </Card>
+          </motion.div>
+
+          {(!searchQuery || "tất cả bài học".includes(searchQuery.toLowerCase())) && (
+            <motion.div 
+              whileHover={{ y: -5 }}
+              className="cursor-pointer group"
+              onClick={() => selectTopic("all")}
+            >
+              <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-200/50 transition-all overflow-hidden rounded-[32px] bg-emerald-900 border-b-8 border-emerald-700">
+                <CardHeader className="pt-8 pb-4 text-center">
+                  <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-400 group-hover:scale-110 transition-transform">
+                     <BookOpen className="w-8 h-8" />
+                  </div>
+                  <CardTitle className="text-xl font-bold text-white">Tất cả bài học</CardTitle>
+                  <CardDescription className="text-emerald-300/60">{vocabulary.length} từ vựng</CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.div>
+          )}
+
+          {filteredTopics.map(topic => {
+            const topicVocabCount = vocabulary.filter(v => v.topicId === topic.id).length;
+            return (
+              <motion.div 
+                key={topic.id}
+                whileHover={{ y: -5 }}
+                className="cursor-pointer group"
+                onClick={() => selectTopic(topic.id)}
+              >
+                <Card className="h-full border-2 border-transparent bg-white shadow-lg shadow-slate-200/50 hover:shadow-emerald-100 transition-all overflow-hidden rounded-[32px] border-b-8 border-emerald-50 relative group-hover:border-emerald-500/20">
+                  <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                    <Brain className="w-24 h-24 text-emerald-900" />
+                  </div>
+                  <CardHeader className="pt-8 pb-4">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 text-emerald-600">
+                      <Layers className="w-6 h-6" />
+                    </div>
+                    <CardTitle className="text-lg font-bold text-slate-800 line-clamp-1">{topic.name}</CardTitle>
+                    <CardDescription className="text-slate-400 font-medium">{topicVocabCount} từ vựng</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex -space-x-2">
+                       {[1,2,3].map(i => (
+                         <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-400">
+                           {i}
+                         </div>
+                       ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   if (filtered.length === 0) {
     return (
       <div className="py-20 text-center space-y-6">
         <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-emerald-500">
           <Brain className="w-10 h-10" />
         </div>
-        <div className="space-y-2">
-          <p className="text-xl font-bold text-slate-900">Chưa có từ vựng để ôn tập</p>
-          <p className="text-slate-400 text-sm italic">Hãy thêm từ vựng vào chủ đề để bắt đầu học với Flashcard.</p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <p className="text-xl font-bold text-slate-900">Chủ đề này chưa có từ vựng</p>
+            <p className="text-slate-400 text-sm italic">Hãy thêm từ vựng vào chủ đề để bắt đầu học với Flashcard.</p>
+          </div>
+          <Button 
+            variant="ghost" 
+            onClick={() => setView("topics")}
+            className="text-emerald-600 hover:text-emerald-700 font-bold"
+          >
+            <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại chọn chủ đề
+          </Button>
         </div>
-        <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-          <SelectTrigger className="w-[200px] mx-auto rounded-xl bg-white">
-            <SelectValue placeholder="Chọn chủ đề" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tất cả bài học</SelectItem>
-            {topics.map(t => (
-              <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
       </div>
     );
   }
@@ -749,37 +962,48 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
   return (
     <div className="max-w-2xl mx-auto space-y-8 pb-12">
       <div className="space-y-4">
-        <div className="flex items-center justify-center p-1 bg-white rounded-xl border border-emerald-100 shadow-sm w-fit mx-auto">
+        <div className="flex items-center justify-between gap-4">
           <Button 
             variant="ghost" 
             size="sm" 
-            className={`rounded-lg px-4 h-9 ${studyMode === "flashcard" ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white" : "text-slate-500"}`}
-            onClick={() => setStudyMode("flashcard")}
+            onClick={() => setView("topics")}
+            className="text-slate-400 hover:text-emerald-600 p-0 h-auto"
           >
-            Flashcard
+            <ChevronLeft className="w-4 h-4 mr-1" /> Danh sách chủ đề
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`rounded-lg px-4 h-9 ${studyMode === "quiz" ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white" : "text-slate-500"}`}
-            onClick={() => setStudyMode("quiz")}
-          >
-            Điền từ
-          </Button>
+          
+          <div className="flex items-center p-1 bg-white rounded-xl border border-emerald-100 shadow-sm">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`rounded-lg px-4 h-9 ${studyMode === "flashcard" ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white" : "text-slate-500"}`}
+              onClick={() => setStudyMode("flashcard")}
+            >
+              Flashcard
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className={`rounded-lg px-4 h-9 ${studyMode === "quiz" ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white" : "text-slate-500"}`}
+              onClick={() => setStudyMode("quiz")}
+            >
+              Điền từ
+            </Button>
+          </div>
+          <div className="w-[100px]" /> {/* Spacer */}
         </div>
 
         <div className="flex items-center justify-between">
-          <Select value={selectedTopic} onValueChange={setSelectedTopic}>
-            <SelectTrigger className="w-[180px] rounded-full border-emerald-100 bg-white">
-              <SelectValue placeholder="Chủ đề học" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Tất cả bài học</SelectItem>
-              {topics.map(t => (
-                <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex flex-col">
+            <h3 className="text-lg font-bold text-slate-800 tracking-tight">
+              {selectedTopic === "all" ? "Tất cả bài học" : 
+               selectedTopic === "quick_quiz" ? "Kiểm tra nhanh" :
+               topics.find(t => t.id === selectedTopic)?.name}
+            </h3>
+            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+              {selectedTopic === "quick_quiz" ? "Thử thách 10 từ vựng" : "Đang ôn tập"}
+            </p>
+          </div>
           <span className="text-[10px] font-bold text-emerald-700 tracking-widest uppercase bg-emerald-100 px-3 py-1 rounded-full">
             {currentIndex + 1} / {filtered.length} {studyMode === "flashcard" ? "THẺ" : "CÂU"}
           </span>
@@ -962,9 +1186,12 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
           size="icon" 
           className="hidden sm:flex w-14 h-14 rounded-full bg-white border-none shadow-lg shadow-emerald-100 ring-1 ring-emerald-50 hover:translate-y-[-2px] transition-all disabled:opacity-30 shrink-0" 
           onClick={(e) => { e.stopPropagation(); next(); }}
-          disabled={currentIndex === filtered.length - 1}
         >
-          <ChevronRight className="w-6 h-6 text-emerald-600" />
+          {currentIndex === filtered.length - 1 ? (
+            <Check className="w-6 h-6 text-emerald-600" />
+          ) : (
+            <ChevronRight className="w-6 h-6 text-emerald-600" />
+          )}
         </Button>
       </div>
 
@@ -983,9 +1210,12 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
           size="icon" 
           className="w-14 h-14 rounded-full bg-white border-none shadow-lg shadow-emerald-100 ring-1 ring-emerald-50 hover:translate-y-[-2px] transition-all disabled:opacity-30" 
           onClick={(e) => { e.stopPropagation(); next(); }}
-          disabled={currentIndex === filtered.length - 1}
         >
-          <ChevronRight className="w-6 h-6 text-emerald-600" />
+          {currentIndex === filtered.length - 1 ? (
+            <Check className="w-6 h-6 text-emerald-600" />
+          ) : (
+            <ChevronRight className="w-6 h-6 text-emerald-600" />
+          )}
         </Button>
       </div>
     </div>
