@@ -1,0 +1,41 @@
+{
+  "entities": {
+    "Topic": {
+      "title": "Topic",
+      "description": "A vocabulary category or theme",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "The name of the topic" },
+        "userId": { "type": "string", "description": "The UID of the owner" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" }
+      },
+      "required": ["name", "userId", "createdAt"]
+    },
+    "Vocabulary": {
+      "title": "Vocabulary",
+      "description": "An English word with its details",
+      "type": "object",
+      "properties": {
+        "word": { "type": "string", "description": "The English word" },
+        "definition": { "type": "string", "description": "The Vietnamese definition" },
+        "partOfSpeech": { "type": "string", "description": "Noun, verb, etc." },
+        "phonetic": { "type": "string", "description": "Phonetic transcription" },
+        "topicId": { "type": "string", "description": "Reference to the topic ID" },
+        "userId": { "type": "string", "description": "The UID of the owner" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+      },
+      "required": ["word", "definition", "userId", "createdAt", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/topics/{topicId}": {
+      "schema": "Topic",
+      "description": "Collection of vocabulary topics"
+    },
+    "/vocabularies/{vocabId}": {
+      "schema": "Vocabulary",
+      "description": "Collection of individual vocabulary entries"
+    }
+  }
+}

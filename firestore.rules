@@ -1,0 +1,83 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Connectivity Test Path ---
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // --- Helpers ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // --- Validation Blueprints ---
+
+    function isValidTopic(data) {
+      return data.keys().hasAll(['name', 'userId', 'createdAt'])
+        && data.keys().size() == 3
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.userId == request.auth.uid
+        && data.createdAt == request.time;
+    }
+
+    function isValidVocabulary(data) {
+      return data.keys().hasAll(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'userId', 'createdAt', 'updatedAt'])
+        && data.keys().size() == 8
+        && data.word is string && data.word.size() > 0 && data.word.size() <= 100
+        && data.definition is string && data.definition.size() > 0 && data.definition.size() <= 500
+        && data.partOfSpeech is string && data.partOfSpeech.size() <= 50
+        && data.phonetic is string && data.phonetic.size() <= 100
+        && (data.topicId == null || data.topicId is string)
+        && data.userId == request.auth.uid
+        && data.createdAt is timestamp
+        && data.updatedAt == request.time;
+    }
+
+    // --- Rules ---
+
+    match /topics/{topicId} {
+      allow get, delete: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() && isValidTopic(incoming());
+      
+      allow update: if isOwner(existing().userId) && isValidTopic(incoming())
+        && incoming().diff(existing()).affectedKeys().hasOnly(['name']);
+    }
+
+    match /vocabularies/{vocabId} {
+      allow get, delete: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() && isValidVocabulary(incoming())
+        && incoming().createdAt == request.time; // Strict check for create
+
+      allow update: if isOwner(existing().userId) && isValidVocabulary(incoming())
+        && incoming().createdAt == existing().createdAt
+        && incoming().diff(existing()).affectedKeys().hasOnly(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'updatedAt']);
+    }
+  }
+}
