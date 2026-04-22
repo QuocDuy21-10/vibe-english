@@ -29,8 +29,19 @@ import {
   SearchIcon,
   Volume2,
   Trophy,
-  Check
+  Check,
+  LayoutDashboard,
+  Target,
+  Award,
+  Zap
 } from "lucide-react";
+import { 
+  PieChart, 
+  Pie, 
+  Cell, 
+  ResponsiveContainer,
+  Tooltip as RechartsTooltip
+} from "recharts";
 import { Button } from "./components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "./components/ui/card";
 import { Input } from "./components/ui/input";
@@ -215,9 +226,12 @@ export default function App() {
       </header>
 
       <main className="container max-w-5xl mx-auto py-8 px-4">
-        <Tabs defaultValue="dictionary" className="space-y-8">
+        <Tabs defaultValue="dashboard" className="space-y-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <TabsList className="bg-white p-1 rounded-xl w-fit border border-emerald-100 shadow-sm">
+              <TabsTrigger value="dashboard" className="rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-medium">
+                <LayoutDashboard className="w-4 h-4 mr-2" /> Bảng tin
+              </TabsTrigger>
               <TabsTrigger value="dictionary" className="rounded-lg data-[state=active]:bg-emerald-500 data-[state=active]:text-white font-medium">
                 <BookOpen className="w-4 h-4 mr-2" /> Từ điển
               </TabsTrigger>
@@ -249,6 +263,122 @@ export default function App() {
               </Dialog>
             </div>
           </div>
+
+          <TabsContent value="dashboard" className="focus-visible:outline-none">
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                {/* Mastered Card */}
+                <Card className="md:col-span-2 rounded-[40px] border-none shadow-xl shadow-emerald-100 bg-gradient-to-br from-white to-emerald-50/30 overflow-hidden p-8 flex flex-col md:flex-row items-center gap-8">
+                  <div className="flex-1 space-y-4 text-center md:text-left">
+                    <div className="flex items-center justify-center md:justify-start gap-2 text-emerald-600 font-bold uppercase tracking-widest text-[10px]">
+                      <Award className="w-4 h-4" />
+                      Trạng thái thành thạo
+                    </div>
+                    <h1 className="text-4xl font-black text-slate-800 tracking-tight leading-tight">
+                      Bạn đã chinh phục được <span className="text-emerald-500 underline decoration-emerald-200 decoration-8 underline-offset-4">{vocabularies.filter(v => (v.level || 0) === 4).length}</span> từ vựng!
+                    </h1>
+                    <p className="text-slate-500 font-medium">
+                      Hãy tiếp tục duy trì đà học tập để mở khóa các cột mốc mới. Mỗi ngày một ít, tích tiểu thành đại.
+                    </p>
+                  </div>
+                  <div className="w-48 h-48 shrink-0 relative flex items-center justify-center">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Mastered', value: vocabularies.filter(v => (v.level || 0) === 4).length, color: '#10b981' },
+                            { name: 'Learning', value: vocabularies.filter(v => (v.level || 0) < 4).length, color: '#e2e8f0' }
+                          ]}
+                          innerRadius={60}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                        >
+                          <Cell key="cell-0" fill="#10b981" />
+                          <Cell key="cell-1" fill="#e2e8f0" />
+                        </Pie>
+                        <RechartsTooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                      <span className="text-3xl font-black text-slate-800">
+                        {Math.round((vocabularies.filter(v => (v.level || 0) === 4).length / (vocabularies.length || 1)) * 100)}%
+                      </span>
+                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Tiến độ</span>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Next Milestone */}
+                <Card className="rounded-[40px] border-none shadow-xl shadow-amber-100 bg-amber-500 p-8 text-white flex flex-col justify-between overflow-hidden relative">
+                  <div className="absolute top-0 right-0 p-4 opacity-20 rotate-12">
+                     <Target className="w-32 h-32" />
+                  </div>
+                  <div className="relative z-10 space-y-2">
+                    <p className="text-amber-100/60 font-bold uppercase tracking-widest text-[10px]">Cột mốc tiếp theo</p>
+                    <h2 className="text-2xl font-black">
+                      {vocabularies.filter(v => (v.level || 0) === 4).length < 200 ? "Chiến binh 200" :
+                       vocabularies.filter(v => (v.level || 0) === 4).length < 500 ? "Chuyên gia 500" : "Hồng sư 1000"}
+                    </h2>
+                  </div>
+                  <div className="relative z-10 space-y-4">
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-xs font-bold font-mono">
+                         <span>{vocabularies.filter(v => (v.level || 0) === 4).length}</span>
+                         <span>{vocabularies.filter(v => (v.level || 0) === 4).length < 200 ? 200 :
+                                vocabularies.filter(v => (v.level || 0) === 4).length < 500 ? 500 : 1000}</span>
+                      </div>
+                      <div className="h-3 bg-white/20 rounded-full overflow-hidden border border-white/10">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${Math.min(100, (vocabularies.filter(v => (v.level || 0) === 4).length / (vocabularies.filter(v => (v.level || 0) === 4).length < 200 ? 200 : vocabularies.filter(v => (v.level || 0) === 4).length < 500 ? 500 : 1000)) * 100)}%` }}
+                          className="h-full bg-white shadow-lg"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-xs font-medium text-amber-50 italic">
+                      "Kiến thức là chìa khóa mở cánh cửa tương lai."
+                    </p>
+                  </div>
+                </Card>
+
+                {/* Level Breakdown */}
+                <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-5 gap-4">
+                  {[0, 1, 2, 3, 4].map(lvl => (
+                    <Card key={lvl} className="rounded-3xl border-none shadow-sm bg-white p-4 text-center space-y-1 group hover:bg-emerald-50 hover:shadow-emerald-50 transition-all cursor-default text-inherit">
+                       <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest group-hover:text-emerald-500">Level {lvl}</p>
+                       <div className="text-2xl font-black text-slate-800">
+                         {vocabularies.filter(v => (v.level || 0) === lvl).length}
+                       </div>
+                       <p className="text-[9px] font-medium text-slate-300 italic">
+                         {lvl === 0 ? "Mới học" : lvl === 1 ? "Ghi nhớ" : lvl === 2 ? "Vững vàng" : lvl === 3 ? "Thành thạo" : "Bậc thầy"}
+                       </p>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Quick Stats */}
+                <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-8 text-inherit">
+                   <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-50 flex items-center gap-6">
+                      <div className="w-14 h-14 bg-emerald-100 rounded-2xl flex items-center justify-center text-emerald-600">
+                         <Zap className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-3xl font-black text-slate-800 tracking-tight">{vocabularies.length}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Tổng vốn từ vựng</p>
+                      </div>
+                   </div>
+                   <div className="bg-white rounded-[32px] p-6 shadow-sm border border-slate-50 flex items-center gap-6">
+                      <div className="w-14 h-14 bg-amber-100 rounded-2xl flex items-center justify-center text-amber-600">
+                         <Trophy className="w-7 h-7" />
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-3xl font-black text-slate-800 tracking-tight">{topics.length}</p>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Chủ đề đã tạo</p>
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </TabsContent>
 
           <TabsContent value="dictionary" className="space-y-6 focus-visible:outline-none">
             <div className="flex flex-col sm:flex-row gap-4">
