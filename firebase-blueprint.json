@@ -23,7 +23,9 @@
         "topicId": { "type": "string", "description": "Reference to the topic ID" },
         "userId": { "type": "string", "description": "The UID of the owner" },
         "createdAt": { "type": "string", "format": "date-time", "description": "Creation timestamp" },
-        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" }
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Last update timestamp" },
+        "level": { "type": "integer", "description": "SRS mastery level (0-5)" },
+        "nextReview": { "type": "string", "format": "date-time", "description": "Next scheduled review time" }
       },
       "required": ["word", "definition", "userId", "createdAt", "updatedAt"]
     }

@@ -62,7 +62,11 @@ interface Vocabulary {
   userId: string;
   createdAt: any;
   updatedAt: any;
+  level: number;
+  nextReview: any;
 }
+
+const SRS_INTERVALS = [1, 3, 7, 14, 30];
 
 // Helper
 const playAudio = (text: string) => {
@@ -378,9 +382,16 @@ function VocabCard({ vocabulary, topics }: { vocabulary: Vocabulary; topics: Top
       <Card className="rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:bg-emerald-50/30 transition-all overflow-hidden relative group">
         <CardHeader className="pb-3 pr-10">
           <div className="flex items-center justify-between mb-1">
-            <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border-none">
-              {vocabulary.partOfSpeech || "n/a"}
-            </Badge>
+            <div className="flex items-center gap-1.5">
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border-none">
+                {vocabulary.partOfSpeech || "n/a"}
+              </Badge>
+              {vocabulary.level > 0 && (
+                <Badge variant="outline" className="border-emerald-200 text-emerald-600 text-[9px] font-bold px-1.5 py-0 rounded-md">
+                  Lvl {vocabulary.level}
+                </Badge>
+              )}
+            </div>
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{topicName}</span>
           </div>
           <div className="flex items-center gap-2 mb-1">
@@ -507,7 +518,9 @@ function AddVocabDialog({ onClose, userId, topics }: { onClose: () => void, user
         topicId: topicId || null,
         userId,
         createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
+        updatedAt: serverTimestamp(),
+        level: 0,
+        nextReview: serverTimestamp()
       });
       toast.success("Đã thêm từ vựng!");
       onClose();
@@ -720,6 +733,26 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
     setScore(0);
   };
 
+  const startReviewSRS = () => {
+    const now = new Date();
+    const due = vocabulary.filter(v => {
+      if (!v.nextReview) return true;
+      const nextDate = v.nextReview.toDate ? v.nextReview.toDate() : new Date(v.nextReview);
+      return nextDate <= now;
+    });
+    
+    if (due.length === 0) {
+      toast.info("Bạn đã hoàn thành hết các mục cần ôn tập! ✨");
+      return;
+    }
+    
+    setQuizVocab(due);
+    setSelectedTopic("srs_review");
+    setStudyMode("quiz");
+    setView("study");
+    setScore(0);
+  };
+
   const selectTopic = (topicId: string) => {
     setSelectedTopic(topicId);
     setQuizVocab([]);
@@ -746,14 +779,37 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
     }
   };
 
-  const checkAnswer = (e?: React.FormEvent) => {
+  const checkAnswer = async (e?: React.FormEvent) => {
     e?.preventDefault();
     if (!userAnswer.trim()) return;
 
-    const isCorrect = userAnswer.trim().toLowerCase() === filtered[currentIndex].word.trim().toLowerCase();
+    const currentVocab = filtered[currentIndex];
+    const isCorrect = userAnswer.trim().toLowerCase() === currentVocab.word.trim().toLowerCase();
     
-    if (!feedback) { // Only count score on first attempt
+    if (!feedback) { // Only update SRS and count score on first attempt
       if (isCorrect) setScore(prev => prev + 1);
+      
+      // SRS Calculation
+      let newLevel = 0;
+      if (isCorrect) {
+        newLevel = Math.min(SRS_INTERVALS.length - 1, (currentVocab.level || 0) + 1);
+      } else {
+        newLevel = 0; 
+      }
+      
+      const daysToAdd = SRS_INTERVALS[newLevel];
+      const nextReview = new Date();
+      nextReview.setDate(nextReview.getDate() + daysToAdd);
+      
+      try {
+        await updateDoc(doc(db, "vocabularies", currentVocab.id), {
+          level: newLevel,
+          nextReview: nextReview,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        console.error("SRS Update Error:", err);
+      }
     }
 
     setFeedback(isCorrect ? "correct" : "incorrect");
@@ -861,7 +917,28 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <motion.div 
+            whileHover={{ y: -5 }}
+            className="cursor-pointer group"
+            onClick={startReviewSRS}
+          >
+            <Card className="h-full border-none shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400/50 transition-all overflow-hidden rounded-[32px] bg-emerald-600 border-b-8 border-emerald-800">
+              <CardHeader className="pt-8 pb-4 text-center">
+                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white group-hover:scale-110 transition-transform">
+                   <Brain className="w-8 h-8" />
+                </div>
+                <CardTitle className="text-xl font-bold text-white">Cần ôn tập</CardTitle>
+                <CardDescription className="text-emerald-100/60 font-medium tracking-wide uppercase text-[10px]">
+                  {vocabulary.filter(v => {
+                    const nextDate = v.nextReview?.toDate ? v.nextReview.toDate() : (v.nextReview ? new Date(v.nextReview) : new Date());
+                    return nextDate <= new Date();
+                  }).length} từ đến hạn
+                </CardDescription>
+              </CardHeader>
+            </Card>
+          </motion.div>
+
           <motion.div 
             whileHover={{ y: -5 }}
             className="cursor-pointer group"
@@ -998,10 +1075,12 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
             <h3 className="text-lg font-bold text-slate-800 tracking-tight">
               {selectedTopic === "all" ? "Tất cả bài học" : 
                selectedTopic === "quick_quiz" ? "Kiểm tra nhanh" :
+               selectedTopic === "srs_review" ? "Ôn tập đến hạn" :
                topics.find(t => t.id === selectedTopic)?.name}
             </h3>
             <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
-              {selectedTopic === "quick_quiz" ? "Thử thách 10 từ vựng" : "Đang ôn tập"}
+              {selectedTopic === "srs_review" ? "Thuật toán SRS Spaced Repetition" : 
+               selectedTopic === "quick_quiz" ? "Thử thách 10 từ vựng" : "Đang ôn tập"}
             </p>
           </div>
           <span className="text-[10px] font-bold text-emerald-700 tracking-widest uppercase bg-emerald-100 px-3 py-1 rounded-full">
