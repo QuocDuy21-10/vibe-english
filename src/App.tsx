@@ -79,6 +79,43 @@ interface Vocabulary {
 
 const SRS_INTERVALS = [1, 3, 7, 14, 30];
 
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  };
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
+
 // Helper
 const playAudio = (text: string) => {
   const utterance = new SpeechSynthesisUtterance(text);
@@ -459,8 +496,13 @@ export default function App() {
                       className="text-slate-400 h-8 px-2 hover:text-destructive hover:bg-rose-50"
                       onClick={async () => {
                         if (confirm("Xóa chủ đề này sẽ không xóa từ vựng, chúng sẽ được chuyển sang 'Chưa phân loại'. Bạn có chắc chắn?")) {
-                          await deleteDoc(doc(db, "topics", topic.id));
-                          toast.success("Đã xóa chủ đề.");
+                          try {
+                            await deleteDoc(doc(db, "topics", topic.id));
+                            toast.success("Đã xóa chủ đề.");
+                          } catch (e) {
+                            handleFirestoreError(e, OperationType.DELETE, `topics/${topic.id}`);
+                            toast.error("Lỗi khi xóa chủ đề.");
+                          }
                         }
                       }}
                     >
@@ -495,8 +537,13 @@ function VocabCard({ vocabulary, topics }: { vocabulary: Vocabulary; topics: Top
 
   const handleDelete = async () => {
     if (confirm(`Xóa từ "${vocabulary.word}"?`)) {
-      await deleteDoc(doc(db, "vocabularies", vocabulary.id));
-      toast.info("Đã xóa từ vựng.");
+      try {
+        await deleteDoc(doc(db, "vocabularies", vocabulary.id));
+        toast.info("Đã xóa từ vựng.");
+      } catch (e) {
+        handleFirestoreError(e, OperationType.DELETE, `vocabularies/${vocabulary.id}`);
+        toast.error("Lỗi khi xóa từ vựng.");
+      }
     }
   };
 
@@ -580,6 +627,11 @@ function TopicDialog({ onClose, userId, topic }: { onClose?: () => void, userId:
       }
       onClose?.();
     } catch (e) {
+      if (e instanceof Error && e.message.includes('{"error"')) {
+         // Already handled
+      } else {
+         handleFirestoreError(e, topic ? OperationType.UPDATE : OperationType.CREATE, "topics");
+      }
       toast.error("Lỗi khi xử lý chủ đề.");
     } finally {
       setLoading(false);
@@ -655,6 +707,7 @@ function AddVocabDialog({ onClose, userId, topics }: { onClose: () => void, user
       toast.success("Đã thêm từ vựng!");
       onClose();
     } catch (e) {
+      handleFirestoreError(e, OperationType.CREATE, "vocabularies");
       toast.error("Lỗi khi thêm từ vựng.");
     } finally {
       setLoading(false);
@@ -770,6 +823,7 @@ function EditVocabDialog({ vocabulary, topics, onClose }: { vocabulary: Vocabula
       toast.success("Đã cập nhật!");
       onClose();
     } catch (e) {
+      handleFirestoreError(e, OperationType.UPDATE, `vocabularies/${vocabulary.id}`);
       toast.error("Lỗi khi cập nhật.");
     } finally {
       setLoading(false);
@@ -938,6 +992,7 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
           updatedAt: serverTimestamp()
         });
       } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `vocabularies/${currentVocab.id}`);
         console.error("SRS Update Error:", err);
       }
     }
