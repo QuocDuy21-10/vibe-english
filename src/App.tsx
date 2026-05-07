@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { auth, db } from "./lib/firebase";
+import { Topic, Vocabulary, SRS_INTERVALS, OperationType, FirestoreErrorInfo } from "./types";
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from "firebase/auth";
 import { 
   collection, 
@@ -25,6 +26,7 @@ import {
   ChevronLeft, 
   ChevronRight,
   Loader2,
+  X,
   Sparkles,
   SearchIcon,
   Volume2,
@@ -55,50 +57,6 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "motion/react";
 import { getWordDetails } from "./services/geminiService";
 
-// Types
-interface Topic {
-  id: string;
-  name: string;
-  userId: string;
-  createdAt: any;
-}
-
-interface Vocabulary {
-  id: string;
-  word: string;
-  definition: string;
-  partOfSpeech: string;
-  phonetic: string;
-  topicId: string;
-  userId: string;
-  createdAt: any;
-  updatedAt: any;
-  level: number;
-  nextReview: any;
-}
-
-const SRS_INTERVALS = [1, 3, 7, 14, 30];
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-  }
-}
 
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
@@ -197,6 +155,19 @@ export default function App() {
     
     return matchesSearch && matchesTopic;
   });
+
+  // Stats
+  const stats = React.useMemo(() => {
+    const totalVocab = vocabularies.length;
+    const learnedVocab = vocabularies.filter(v => (v.level || 0) === 4).length;
+    const progress = totalVocab > 0 ? Math.round((learnedVocab / totalVocab) * 100) : 0;
+    
+    const milestone = learnedVocab < 200 ? { name: "Chiến binh 200", target: 200 } :
+                      learnedVocab < 500 ? { name: "Chuyên gia 500", target: 500 } :
+                      { name: "Hồng sư 1000", target: 1000 };
+    
+    return { totalVocab, learnedVocab, progress, milestone };
+  }, [vocabularies]);
 
   if (loading) {
     return (
@@ -311,7 +282,7 @@ export default function App() {
                       Trạng thái thành thạo
                     </div>
                     <h1 className="text-4xl font-black text-slate-800 tracking-tight leading-tight">
-                      Bạn đã chinh phục được <span className="text-emerald-500 underline decoration-emerald-200 decoration-8 underline-offset-4">{vocabularies.filter(v => (v.level || 0) === 4).length}</span> từ vựng!
+                      Bạn đã chinh phục được <span className="text-emerald-500 underline decoration-emerald-200 decoration-8 underline-offset-4">{stats.learnedVocab}</span> từ vựng!
                     </h1>
                     <p className="text-slate-500 font-medium">
                       Hãy tiếp tục duy trì đà học tập để mở khóa các cột mốc mới. Mỗi ngày một ít, tích tiểu thành đại.
@@ -322,8 +293,8 @@ export default function App() {
                       <PieChart>
                         <Pie
                           data={[
-                            { name: 'Mastered', value: vocabularies.filter(v => (v.level || 0) === 4).length, color: '#10b981' },
-                            { name: 'Learning', value: vocabularies.filter(v => (v.level || 0) < 4).length, color: '#e2e8f0' }
+                            { name: 'Mastered', value: stats.learnedVocab, color: '#10b981' },
+                            { name: 'Learning', value: stats.totalVocab - stats.learnedVocab, color: '#e2e8f0' }
                           ]}
                           innerRadius={60}
                           outerRadius={80}
@@ -338,7 +309,7 @@ export default function App() {
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                       <span className="text-3xl font-black text-slate-800">
-                        {Math.round((vocabularies.filter(v => (v.level || 0) === 4).length / (vocabularies.length || 1)) * 100)}%
+                        {stats.progress}%
                       </span>
                       <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Tiến độ</span>
                     </div>
@@ -353,21 +324,20 @@ export default function App() {
                   <div className="relative z-10 space-y-2">
                     <p className="text-amber-100/60 font-bold uppercase tracking-widest text-[10px]">Cột mốc tiếp theo</p>
                     <h2 className="text-2xl font-black">
-                      {vocabularies.filter(v => (v.level || 0) === 4).length < 200 ? "Chiến binh 200" :
-                       vocabularies.filter(v => (v.level || 0) === 4).length < 500 ? "Chuyên gia 500" : "Hồng sư 1000"}
+                      {stats.milestone.name}
                     </h2>
                   </div>
                   <div className="relative z-10 space-y-4">
                     <div className="space-y-1">
                       <div className="flex justify-between text-xs font-bold font-mono">
-                         <span>{vocabularies.filter(v => (v.level || 0) === 4).length}</span>
+                          <span>{stats.learnedVocab}</span>
                          <span>{vocabularies.filter(v => (v.level || 0) === 4).length < 200 ? 200 :
                                 vocabularies.filter(v => (v.level || 0) === 4).length < 500 ? 500 : 1000}</span>
                       </div>
                       <div className="h-3 bg-white/20 rounded-full overflow-hidden border border-white/10">
                         <motion.div 
                           initial={{ width: 0 }}
-                          animate={{ width: `${Math.min(100, (vocabularies.filter(v => (v.level || 0) === 4).length / (vocabularies.filter(v => (v.level || 0) === 4).length < 200 ? 200 : vocabularies.filter(v => (v.level || 0) === 4).length < 500 ? 500 : 1000)) * 100)}%` }}
+                          animate={{ width: `${Math.min(100, (stats.learnedVocab / stats.milestone.target) * 100)}%` }}
                           className="h-full bg-white shadow-lg"
                         />
                       </div>
@@ -423,10 +393,15 @@ export default function App() {
                 <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <Input 
                   placeholder="Tìm kiếm từ vựng hoặc nghĩa..." 
-                  className="pl-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+                  className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
+                {searchQuery && (
+                  <button className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setSearchQuery("")}>
+                    <X className="w-4 h-4 text-slate-400" />
+                  </button>
+                )}
               </div>
               <Select value={selectedTopicId} onValueChange={setSelectedTopicId}>
                 <SelectTrigger className="w-full sm:w-[220px] rounded-full border-slate-200 bg-white h-11 shadow-sm">
@@ -465,10 +440,15 @@ export default function App() {
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <Input 
                 placeholder="Tìm kiếm chủ đề..." 
-                className="pl-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+                className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
                 value={topicSearchQuery}
                 onChange={(e) => setTopicSearchQuery(e.target.value)}
               />
+              {topicSearchQuery && (
+                <button className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer" onClick={() => setTopicSearchQuery("")}>
+                  <X className="w-4 h-4 text-slate-400" />
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -755,12 +735,20 @@ function AddVocabDialog({ onClose, userId, topics }: { onClose: () => void, user
             </div>
             <div className="space-y-1.5">
               <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Loại từ</label>
-              <Input 
-                placeholder="n, v, adj..." 
-                value={partOfSpeech}
-                onChange={e => setPartOfSpeech(e.target.value)}
-                className="rounded-xl h-11 border-slate-100"
-              />
+              <Select value={partOfSpeech} onValueChange={setPartOfSpeech}>
+                <SelectTrigger className="rounded-xl h-11 border-slate-100">
+                  <SelectValue placeholder="Chọn loại từ" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="noun">Noun</SelectItem>
+                  <SelectItem value="verb">Verb</SelectItem>
+                  <SelectItem value="adjective">Adjective</SelectItem>
+                  <SelectItem value="adverb">Adverb</SelectItem>
+                  <SelectItem value="prep">Prep</SelectItem>
+                  <SelectItem value="conj">Conj</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -1311,9 +1299,27 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
                  }}
                  className="w-full h-full cursor-pointer relative shadow-xl rounded-[40px]"
                  style={{ transformStyle: "preserve-3d" }}
-                 onClick={() => setIsFlipped(!isFlipped)}
+                 onClick={async () => {
+                   if (!isFlipped) {
+                     const newLevel = Math.min(SRS_INTERVALS.length - 1, (current.level || 0) + 1);
+                     const daysToAdd = SRS_INTERVALS[newLevel] || 1;
+                     const nextReviewDate = new Date();
+                     nextReviewDate.setDate(nextReviewDate.getDate() + daysToAdd);
+
+                     try {
+                       await updateDoc(doc(db, "vocabularies", current.id), {
+                         level: newLevel,
+                         updatedAt: serverTimestamp(),
+                         nextReview: nextReviewDate
+                       });
+                     } catch (e) {
+                       console.error("Error updating vocab", e);
+                     }
+                   }
+                   setIsFlipped(!isFlipped);
+                 }}
               >
-                {/* Front: Tiếng Anh */}
+                {/* Front: Tiếng Anh - Updated */}
                 <div className="absolute inset-0 backface-hidden w-full h-full rounded-[40px] bg-white flex flex-col items-center justify-center p-8 text-center border-b-8 border-emerald-400 overflow-hidden shadow-lg">
                    <motion.div 
                      animate={{ opacity: isFlipped ? 0 : 1, y: isFlipped ? 10 : 0 }}
@@ -1387,7 +1393,14 @@ function StudyArea({ vocabulary, topics }: { vocabulary: Vocabulary[], topics: T
 
               <form onSubmit={checkAnswer} className="w-full space-y-6">
                  <div className="space-y-2">
-                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-4">Từ tiếng Anh của bạn</label>
+                    <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-4">
+                      Từ tiếng Anh của bạn ({current.word.length} chữ)
+                    </label>
+                    <div className="flex justify-center gap-1 mb-2">
+                      {current.word.split('').map((_, i) => (
+                        <div key={i} className="w-6 h-1 bg-slate-200 rounded-full" />
+                      ))}
+                    </div>
                     <div className="relative">
                       <input 
                         autoFocus
