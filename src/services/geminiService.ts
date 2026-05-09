@@ -1,6 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiClient: GoogleGenAI | null = null;
+
+function getClient(): GoogleGenAI {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error("Missing Gemini API key");
+  }
+  if (!aiClient) {
+    // Lazy init to avoid crashing the app when the key is missing.
+    aiClient = new GoogleGenAI({ apiKey });
+  }
+  return aiClient;
+}
 
 export interface WordDetails {
   word: string;
@@ -10,7 +22,7 @@ export interface WordDetails {
 }
 
 export async function getWordDetails(word: string): Promise<WordDetails> {
-  const response = await ai.models.generateContent({
+  const response = await getClient().models.generateContent({
     model: "gemini-3-flash-preview",
     contents: `Translate the English word "${word}" to Vietnamese and provide its phonetic transcription and part of speech. Return the result in the specified JSON format.`,
     config: {
