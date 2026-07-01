@@ -3,3 +3,5 @@ export const DEFAULT_TOPIC_FILTER = "all";
 export const UNASSIGNED_TOPIC_FILTER = "none";
 export const QUICK_QUIZ_TOPIC = "quick_quiz";
 export const SRS_REVIEW_TOPIC = "srs_review";
+export const SMART_LEVEL_CUTOFF = 3;
+export const SMART_PROMOTION_THRESHOLD = 2;

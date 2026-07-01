@@ -9,4 +9,7 @@ coverage/
 .env*
 firebase-applet-config.json
 !.env.example
-    
+.agents
+GEMINI.md
+AGENTS.md
+DESIGN.md
