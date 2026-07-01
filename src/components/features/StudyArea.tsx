@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { doc, serverTimestamp, updateDoc, writeBatch } from "firebase/firestore";
 import {
+  ArrowLeft,
   BookOpen,
   Brain,
   Check,
@@ -23,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { db } from "@/lib/firebase";
 import { playAudio } from "@/lib/audio";
+import { cn } from "@/lib/utils";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
 import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC } from "@/constants/vocab";
 import { OperationType, SRS_INTERVALS, Topic, Vocabulary } from "@/types/types";
@@ -57,8 +59,10 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const [quizVocab, setQuizVocab] = useState<Vocabulary[]>([]);
   const [score, setScore] = useState(0);
   const [flashcardAssessments, setFlashcardAssessments] = useState<Record<string, FlashcardAssessment>>({});
-  const [isSavingAssessments, setIsSavingAssessments] = useState(false);
-  const [hasCommittedAssessments, setHasCommittedAssessments] = useState(false);
+  const [attemptedWords, setAttemptedWords] = useState<Set<string>>(new Set());
+  const [isRating, setIsRating] = useState(false);
+  const [isComposing, setIsComposing] = useState(false);
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
   const {
     register,
     handleSubmit,
@@ -70,6 +74,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     resolver: zodResolver(answerSchema),
     defaultValues: {
       userAnswer: ""
+    }
+  });
+
+  const { ref: userAnswerRef, ...userAnswerRest } = register("userAnswer", {
+    onChange: () => {
+      if (feedback) setFeedback(null);
     }
   });
 
@@ -165,8 +175,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     }
     if (view !== "summary") {
       setFlashcardAssessments({});
-      setIsSavingAssessments(false);
-      setHasCommittedAssessments(false);
+      setAttemptedWords(new Set());
     }
   };
 
@@ -239,21 +248,27 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     const isCorrect = trimmedAnswer.toLowerCase() === currentVocab.word.trim().toLowerCase();
 
     if (!feedback) {
-      if (isCorrect) setScore((prev) => prev + 1);
+      const isFirstAttempt = !attemptedWords.has(currentVocab.id);
+      
+      if (isFirstAttempt) {
+        setAttemptedWords((prev) => new Set(prev).add(currentVocab.id));
+        
+        if (isCorrect) setScore((prev) => prev + 1);
 
-      const baseLevel = currentVocab.level ?? 0;
-      const newLevel = isCorrect ? clampLevel(baseLevel + 1) : 0;
-      const nextReview = getNextReviewDate(newLevel);
+        const baseLevel = currentVocab.level ?? 0;
+        const newLevel = isCorrect ? clampLevel(baseLevel + 1) : 0;
+        const nextReview = getNextReviewDate(newLevel);
 
-      try {
-        await updateDoc(doc(db, "vocabularies", currentVocab.id), {
-          level: newLevel,
-          nextReview: nextReview ?? null,
-          updatedAt: serverTimestamp()
-        });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `vocabularies/${currentVocab.id}`);
-        console.error("SRS Update Error:", err);
+        try {
+          await updateDoc(doc(db, "vocabularies", currentVocab.id), {
+            level: newLevel,
+            nextReview: nextReview ?? null,
+            updatedAt: serverTimestamp()
+          });
+        } catch (err) {
+          handleFirestoreError(err, OperationType.UPDATE, `vocabularies/${currentVocab.id}`);
+          console.error("SRS Update Error:", err);
+        }
       }
     }
 
@@ -266,43 +281,6 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     }
   };
 
-  useEffect(() => {
-    if (view !== "summary" || studyMode !== "flashcard") return;
-    if (hasCommittedAssessments) return;
-
-    const entries = Object.entries(flashcardAssessments);
-    if (entries.length === 0) {
-      setHasCommittedAssessments(true);
-      return;
-    }
-
-    const commitAssessments = async () => {
-      setIsSavingAssessments(true);
-      try {
-        const batch = writeBatch(db);
-        entries.forEach(([id, assessment]) => {
-          batch.update(doc(db, "vocabularies", id), {
-            level: assessment.newLevel,
-            nextReview: assessment.nextReview ?? null,
-            updatedAt: serverTimestamp()
-          });
-        });
-        await batch.commit();
-        toast.success("Đã lưu kết quả ôn tập.");
-        setHasCommittedAssessments(true);
-      } catch (err) {
-        try {
-          handleFirestoreError(err, OperationType.UPDATE, "vocabularies");
-        } catch {
-        }
-        toast.error("Lỗi khi lưu kết quả ôn tập.");
-      } finally {
-        setIsSavingAssessments(false);
-      }
-    };
-
-    commitAssessments();
-  }, [flashcardAssessments, hasCommittedAssessments, studyMode, view]);
 
   if (view === "summary") {
     const accuracy = filtered.length > 0 ? Math.round((score / filtered.length) * 100) : 0;
@@ -378,14 +356,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
             <div className="py-4 px-6 bg-emerald-900 rounded-2xl text-white">
               <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-1">Thống kê Flashcard</p>
               <div className="text-xl font-bold">{ratedCount} / {filtered.length} từ vựng đã được đánh giá</div>
-              {isSavingAssessments && <p className="text-xs uppercase tracking-widest opacity-60 mt-2">Đang lưu kết quả...</p>}
             </div>
           )}
 
           <div className="pt-4 space-y-3">
             <Button
               onClick={() => setView("topics")}
-              disabled={studyMode === "flashcard" && isSavingAssessments}
               className="w-full h-14 rounded-2xl bg-slate-800 hover:bg-slate-900 text-white font-bold text-lg shadow-lg border-none"
             >
               Quay lại trang chủ học tập
@@ -396,7 +372,6 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
                 reset();
                 setView("study");
               }}
-              disabled={studyMode === "flashcard" && isSavingAssessments}
               className="w-full h-12 text-emerald-600 font-bold hover:bg-emerald-50"
             >
               Học lại ngay
@@ -409,7 +384,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
 
   if (view === "topics") {
     return (
-      <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      <div className="max-w-5xl mx-auto space-y-8 pb-12 w-full">
         <div className="text-center space-y-2">
           <h2 className="text-3xl font-black text-slate-800 tracking-tight">Chọn chủ đề ôn tập</h2>
           <p className="text-slate-500 font-medium">Bắt đầu bài học Flashcard của bạn ngay hôm nay</p>
@@ -425,15 +400,15 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           <motion.div whileHover={{ y: -5 }} className="cursor-pointer group" onClick={startReviewSRS}>
             <Card className="h-full border-none shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400/50 transition-all overflow-hidden rounded-[32px] bg-emerald-600 border-b-8 border-emerald-800">
-              <CardHeader className="pt-8 pb-4 text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white group-hover:scale-110 transition-transform">
-                  <Brain className="w-8 h-8" />
+              <CardHeader className="p-6 text-center">
+                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
+                  <Brain className="w-7 h-7" />
                 </div>
                 <CardTitle className="text-xl font-bold text-white">Cần ôn tập</CardTitle>
-                <CardDescription className="text-emerald-100/60 font-medium tracking-wide uppercase text-[10px]">
+                <CardDescription className="text-emerald-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">
                   {dueCount} từ đến hạn
                 </CardDescription>
               </CardHeader>
@@ -442,12 +417,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
 
           <motion.div whileHover={{ y: -5 }} className="cursor-pointer group" onClick={startQuickQuiz}>
             <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-400/50 transition-all overflow-hidden rounded-[32px] bg-linear-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
-              <CardHeader className="pt-8 pb-4 text-center">
-                <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-white group-hover:scale-110 transition-transform">
-                  <Trophy className="w-8 h-8" />
+              <CardHeader className="p-6 text-center">
+                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
+                  <Trophy className="w-7 h-7" />
                 </div>
                 <CardTitle className="text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
-                <CardDescription className="text-amber-100/60 font-medium tracking-wide uppercase text-[10px]">10 từ ngẫu nhiên</CardDescription>
+                <CardDescription className="text-amber-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">10 từ ngẫu nhiên</CardDescription>
               </CardHeader>
             </Card>
           </motion.div>
@@ -455,12 +430,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
           {showAllTopicsCard && (
             <motion.div whileHover={{ y: -5 }} className="cursor-pointer group" onClick={() => selectTopic(DEFAULT_TOPIC_FILTER)}>
               <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-200/50 transition-all overflow-hidden rounded-[32px] bg-emerald-900 border-b-8 border-emerald-700">
-                <CardHeader className="pt-8 pb-4 text-center">
-                  <div className="w-16 h-16 bg-emerald-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4 text-emerald-400 group-hover:scale-110 transition-transform">
-                    <BookOpen className="w-8 h-8" />
+                <CardHeader className="p-6 text-center">
+                  <div className="w-14 h-14 bg-emerald-50/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-emerald-400 group-hover:scale-110 transition-transform">
+                    <BookOpen className="w-7 h-7" />
                   </div>
                   <CardTitle className="text-xl font-bold text-white">Tất cả bài học</CardTitle>
-                  <CardDescription className="text-emerald-300/60">{vocabulary.length} từ vựng</CardDescription>
+                  <CardDescription className="text-emerald-300/60 text-xs mt-1">{vocabulary.length} từ vựng</CardDescription>
                 </CardHeader>
               </Card>
             </motion.div>
@@ -474,14 +449,14 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
                   <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Brain className="w-24 h-24 text-emerald-900" />
                   </div>
-                  <CardHeader className="pt-8 pb-4">
-                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4 text-emerald-600">
+                  <CardHeader className="p-6 pb-3">
+                    <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-3 text-emerald-600">
                       <Layers className="w-6 h-6" />
                     </div>
                     <CardTitle className="text-lg font-bold text-slate-800 line-clamp-1">{topic.name}</CardTitle>
-                    <CardDescription className="text-slate-400 font-medium">{topicVocabCount} từ vựng</CardDescription>
+                    <CardDescription className="text-slate-400 font-medium text-xs mt-0.5">{topicVocabCount} từ vựng</CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="px-6 pb-5 pt-0">
                     <div className="flex -space-x-2">
                       {[1, 2, 3].map((i) => (
                         <div key={i} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-400">
@@ -519,10 +494,35 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   }
 
   const current = filtered[currentIndex];
-  const handleFlashcardRating = (rating: FlashcardRating) => {
+  const handleFlashcardRating = async (rating: FlashcardRating) => {
+    if (isRating) return; // prevent double-click race condition
+    setIsRating(true);
+
     const currentLevel = current.level ?? 0;
     const newLevel = getNextLevelFromRating(currentLevel, rating);
     const nextReview = getNextReviewDate(newLevel);
+
+    // Skip Firestore write if nothing actually changes
+    // (e.g., mastered word at maxLevel rated "easy" again keeps level=maxLevel, nextReview=null)
+    const existingNextReview = resolveReviewDate(current.nextReview);
+    const levelUnchanged = newLevel === currentLevel;
+    const reviewUnchanged = nextReview === null && existingNextReview === null;
+    const isNoOp = levelUnchanged && reviewUnchanged;
+
+    if (!isNoOp) {
+      try {
+        await updateDoc(doc(db, "vocabularies", current.id), {
+          level: newLevel,
+          nextReview: nextReview ?? null,
+          updatedAt: serverTimestamp()
+        });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `vocabularies/${current.id}`);
+        console.error("SRS Update Error:", err);
+        setIsRating(false);
+        return;
+      }
+    }
 
     setFlashcardAssessments((prev) => ({
       ...prev,
@@ -533,22 +533,45 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
       }
     }));
 
+    setIsRating(false);
     next();
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8 pb-12">
+    <div className="max-w-2xl mx-auto space-y-6 pb-12 w-full flex flex-col flex-grow">
+      <style>{`
+        @keyframes cursor-blink {
+          0%, 100% { opacity: 0; }
+          50% { opacity: 1; }
+        }
+        .cursor-blink-anim {
+          animation: cursor-blink 1.2s step-end infinite;
+        }
+      `}</style>
+
       <div className="space-y-4">
+        {/* Breadcrumb & Tab Toggle */}
         <div className="flex items-center justify-between gap-4">
-          <Button variant="ghost" size="sm" onClick={() => setView("topics")} className="text-slate-400 hover:text-emerald-600 p-0 h-auto">
-            <ChevronLeft className="w-4 h-4 mr-1" /> Danh sách chủ đề
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setView("topics")}
+            className="text-[#006c49] hover:bg-[#ECFDF5] hover:text-[#006c49] p-2 rounded-full h-auto flex items-center group font-semibold text-sm border-none"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
+            Danh sách chủ đề
           </Button>
 
-          <div className="flex items-center p-1 bg-white rounded-xl border border-emerald-100 shadow-sm">
+          <div className="bg-white border border-slate-200/60 p-1 rounded-full flex gap-1 shadow-sm">
             <Button
               variant="ghost"
               size="sm"
-              className={`rounded-lg px-4 h-9 ${studyMode === "flashcard" ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white" : "text-slate-500"}`}
+              className={cn(
+                "rounded-full px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer",
+                studyMode === "flashcard"
+                  ? "bg-[#006c49] text-white hover:bg-[#006c49]/90 hover:text-white shadow-sm"
+                  : "text-slate-500 hover:bg-[#ECFDF5]"
+              )}
               onClick={() => setStudyMode("flashcard")}
             >
               Flashcard
@@ -556,18 +579,23 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
             <Button
               variant="ghost"
               size="sm"
-              className={`rounded-lg px-4 h-9 ${studyMode === "quiz" ? "bg-emerald-500 text-white hover:bg-emerald-600 hover:text-white" : "text-slate-500"}`}
+              className={cn(
+                "rounded-full px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer",
+                studyMode === "quiz"
+                  ? "bg-[#006c49] text-white hover:bg-[#006c49]/90 hover:text-white shadow-sm"
+                  : "text-slate-500 hover:bg-[#ECFDF5]"
+              )}
               onClick={() => setStudyMode("quiz")}
             >
               Điền từ
             </Button>
           </div>
-          <div className="w-25" />
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col">
-            <h3 className="text-lg font-bold text-slate-800 tracking-tight">
+        {/* Topic Info Header */}
+        <div className="flex justify-between items-end gap-4 mt-2">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
               {selectedTopic === DEFAULT_TOPIC_FILTER
                 ? "Tất cả bài học"
                 : selectedTopic === QUICK_QUIZ_TOPIC
@@ -575,48 +603,53 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
                   : selectedTopic === SRS_REVIEW_TOPIC
                     ? "Ôn tập đến hạn"
                     : topics.find((t) => t.id === selectedTopic)?.name}
-            </h3>
-            <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+            </h2>
+            <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
               {selectedTopic === SRS_REVIEW_TOPIC
-                ? "Thuật toán SRS Spaced Repetition"
+                ? "Thuật toán SRS"
                 : selectedTopic === QUICK_QUIZ_TOPIC
                   ? "Thử thách 10 từ vựng"
                   : "Đang ôn tập"}
-            </p>
+            </span>
           </div>
-          <span className="text-[10px] font-bold text-emerald-700 tracking-widest uppercase bg-emerald-100 px-3 py-1 rounded-full">
+          <div className="bg-[#10b981]/25 text-[#006c49] px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
             {currentIndex + 1} / {filtered.length} {studyMode === "flashcard" ? "THẺ" : "CÂU"}
-          </span>
+          </div>
         </div>
-        <div className="w-full h-1.5 bg-emerald-100 rounded-full overflow-hidden">
+
+        {/* Progress Bar */}
+        <div className="w-full h-2 bg-white rounded-full overflow-hidden border border-slate-200">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${((currentIndex + 1) / filtered.length) * 100}%` }}
-            className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+            className="h-full bg-[#10b981] rounded-full transition-all duration-500"
           />
         </div>
       </div>
 
-      <div className="flex items-center gap-4 sm:gap-8 justify-center min-h-125">
+      {/* Central Interactive Card & Nav Arrows */}
+      <div className="flex-grow flex items-center justify-center relative w-full mt-4 min-h-[420px]">
+        {/* Left Arrow on Desktop */}
         <Button
           variant="outline"
           size="icon"
-          className="hidden sm:flex w-14 h-14 rounded-full bg-white border-none shadow-lg shadow-emerald-100 ring-1 ring-emerald-50 hover:-translate-y-0.5 transition-all disabled:opacity-30 shrink-0"
+          className="hidden md:flex absolute -left-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
           onClick={(e) => {
             e.stopPropagation();
             prev();
           }}
           disabled={currentIndex === 0}
         >
-          <ChevronLeft className="w-6 h-6 text-emerald-600" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
 
-        <div className="flex-1 max-w-2xl">
+        {/* Central Card */}
+        <div className="w-full max-w-2xl flex-grow flex flex-col justify-center">
           {studyMode === "flashcard" ? (
-            <div className="relative h-120 perspective-1000">
+            <div className="relative h-[420px] perspective-1000 w-full">
               <motion.div
                 key={currentIndex}
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{
                   opacity: 1,
                   scale: 1,
@@ -628,215 +661,303 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
                   rotateY: { duration: 0.6, type: "spring", stiffness: 260, damping: 25 },
                   y: { duration: 0.4, type: "spring" }
                 }}
-                className="w-full h-full cursor-pointer relative shadow-xl rounded-[40px]"
+                className="w-full h-full cursor-pointer relative rounded-xl"
                 style={{ transformStyle: "preserve-3d" }}
                 onClick={() => setIsFlipped(!isFlipped)}
               >
-                <div className="absolute inset-0 backface-hidden w-full h-full rounded-[40px] bg-white flex flex-col items-center justify-center p-8 text-center border-b-8 border-emerald-400 overflow-hidden shadow-lg">
-                  <motion.div animate={{ opacity: isFlipped ? 0 : 1, y: isFlipped ? 10 : 0 }} className="flex flex-col items-center">
-                    <div className="absolute top-8 left-8 opacity-10">
-                      <BookOpen className="w-20 h-20 text-emerald-500" />
-                    </div>
-                    <div className="absolute top-4 left-4 text-[10px] font-bold text-slate-300 uppercase tracking-widest">Flashcard Mode</div>
+                {/* Front Side */}
+                <div className="absolute inset-0 backface-hidden w-full h-full rounded-xl bg-white border border-slate-200 p-6 flex flex-col items-center justify-center text-center shadow-[0px_4px_20px_rgba(15,23,42,0.08)] overflow-hidden">
+                  <div className="absolute top-6 left-6 opacity-[0.03]">
+                    <BookOpen className="w-32 h-32 text-slate-800" />
+                  </div>
+                  <div className="absolute top-4 left-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                    Flashcard Mode
+                  </div>
 
-                    <Badge variant="outline" className="mb-6 rounded-lg border-emerald-100 bg-emerald-50 text-emerald-700 text-xs font-bold uppercase tracking-wider px-3 py-1">
-                      {current.partOfSpeech || "Vocabulary"}
-                    </Badge>
-                    <div className="flex items-center gap-4 mb-3">
-                      <h2 className="text-5xl font-black text-slate-800 tracking-tight">{current.word}</h2>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="w-12 h-12 rounded-full text-emerald-500 hover:bg-emerald-50 hover:text-emerald-600 transition-all"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          playAudio(current.word);
-                        }}
-                      >
-                        <Volume2 className="w-8 h-8" />
-                      </Button>
-                    </div>
-                    <p className="text-xl font-medium text-slate-400">/ {current.phonetic} /</p>
+                  <Badge variant="outline" className="mb-6 rounded-lg border-[#ECFDF5] bg-[#ECFDF5] text-[#006c49] text-xs font-bold uppercase tracking-wider px-3 py-1 border-none shadow-sm">
+                    {current.partOfSpeech || "Vocabulary"}
+                  </Badge>
+                  
+                  <div className="flex items-center gap-3 mb-2 flex-wrap justify-center">
+                    <h2 className="text-4xl sm:text-5xl font-black text-slate-800 tracking-tight">{current.word}</h2>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-10 h-10 rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#006c49] transition-all border-none"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        playAudio(current.word);
+                      }}
+                    >
+                      <Volume2 className="w-6 h-6" />
+                    </Button>
+                  </div>
+                  <p className="text-lg font-medium text-slate-400 italic mb-10">/ {current.phonetic} /</p>
 
-                    <div className="mt-12 flex items-center gap-3 text-slate-400 animate-pulse">
-                      <Brain className="w-5 h-5 text-emerald-500" />
-                      <span className="text-sm font-medium uppercase tracking-widest text-[10px]">Nhấn để xem nghĩa tiếng Việt</span>
-                    </div>
-                  </motion.div>
+                  <div className="flex items-center gap-2 text-slate-400/80 animate-pulse mt-4">
+                    <Brain className="w-4 h-4 text-[#10b981]" />
+                    <span className="text-[10px] font-semibold uppercase tracking-widest">Nhấn để xem nghĩa tiếng Việt</span>
+                  </div>
                 </div>
 
+                {/* Back Side */}
                 <div
-                  className="absolute inset-0 backface-hidden w-full h-full rounded-[40px] bg-emerald-900 flex flex-col items-center justify-center p-8 text-center"
+                  className="absolute inset-0 backface-hidden w-full h-full rounded-xl bg-[#006c49] border border-[#006c49] p-6 flex flex-col items-center justify-center text-center shadow-[0px_4px_20px_rgba(15,23,42,0.08)]"
                   style={{ transform: "rotateY(180deg)", backfaceVisibility: "hidden" }}
                 >
-                  <motion.div
-                    animate={{ opacity: isFlipped ? 1 : 0, scale: isFlipped ? 1 : 0.8 }}
-                    transition={{ delay: 0.1 }}
-                    className="flex flex-col items-center"
-                  >
-                    <div className="absolute top-8 right-8 opacity-10">
-                      <Brain className="w-20 h-20 text-emerald-400" />
-                    </div>
-                    <p className="text-emerald-400/60 text-[10px] font-bold uppercase tracking-widest mb-6">Nghĩa Tiếng Việt</p>
-                    <h3 className="text-4xl font-bold text-white leading-relaxed tracking-tight">{current.definition}</h3>
-                    <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-sm">
-                      <Button
-                        className="h-11 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFlashcardRating("again");
-                        }}
-                      >
-                        Again
-                      </Button>
-                      <Button
-                        className="h-11 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFlashcardRating("hard");
-                        }}
-                      >
-                        Hard
-                      </Button>
-                      <Button
-                        className="h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFlashcardRating("good");
-                        }}
-                      >
-                        Good
-                      </Button>
-                      <Button
-                        className="h-11 rounded-2xl bg-sky-500 hover:bg-sky-600 text-white font-bold"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleFlashcardRating("easy");
-                        }}
-                      >
-                        Easy
-                      </Button>
-                    </div>
-                    <p className="absolute bottom-10 text-[10px] text-white/40 font-bold uppercase tracking-[0.2em]">Chọn mức độ nhớ để tiếp tục</p>
-                  </motion.div>
+                  <div className="absolute top-6 right-6 opacity-5">
+                    <Brain className="w-32 h-32 text-white" />
+                  </div>
+                  <p className="text-white/60 text-[10px] font-bold uppercase tracking-widest mb-4">Nghĩa Tiếng Việt</p>
+                  <h3 className="text-3xl sm:text-4xl font-bold text-white leading-relaxed tracking-tight px-4 max-h-[160px] overflow-y-auto">
+                    {current.definition}
+                  </h3>
+
+                  <div className="mt-8 grid grid-cols-2 gap-3 w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      disabled={isRating}
+                      className="h-10 rounded-full bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs uppercase tracking-wider border-none shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={() => handleFlashcardRating("again")}
+                    >
+                      Again
+                    </Button>
+                    <Button
+                      disabled={isRating}
+                      className="h-10 rounded-full bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs uppercase tracking-wider border-none shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={() => handleFlashcardRating("hard")}
+                    >
+                      Hard
+                    </Button>
+                    <Button
+                      disabled={isRating}
+                      className="h-10 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider border-none shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={() => handleFlashcardRating("good")}
+                    >
+                      Good
+                    </Button>
+                    <Button
+                      disabled={isRating}
+                      className="h-10 rounded-full bg-sky-500 hover:bg-sky-600 text-white font-bold text-xs uppercase tracking-wider border-none shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      onClick={() => handleFlashcardRating("easy")}
+                    >
+                      Easy
+                    </Button>
+                  </div>
                 </div>
               </motion.div>
             </div>
           ) : (
             <motion.div
               key={`quiz-${currentIndex}`}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="bg-white rounded-[40px] p-8 shadow-xl border border-emerald-50 h-120 flex flex-col items-center justify-between"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="w-full bg-white rounded-xl border border-slate-200 p-6 flex flex-col items-center justify-between shadow-[0px_4px_20px_rgba(15,23,42,0.08)] min-h-[420px]"
             >
-              <div className="w-full text-center space-y-6">
-                <div className="text-[10px] font-bold text-slate-300 uppercase tracking-[0.2em]">Fill in the blanks</div>
-                <div className="space-y-4">
-                  <p className="text-emerald-600/60 text-xs font-bold uppercase tracking-widest">Nghĩa Tiếng Việt</p>
-                  <h3 className="text-3xl font-black text-slate-800 leading-tight">{current.definition}</h3>
-                </div>
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">
+                FILL IN THE BLANKS
+              </span>
+
+              <div className="text-center mb-6">
+                <p className="text-xs font-bold text-[#10b981] mb-2 uppercase tracking-wide">
+                  NGHĨA TIẾNG VIỆT
+                </p>
+                <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">
+                  {current.definition}
+                </h3>
               </div>
 
-              <form onSubmit={handleSubmit(checkAnswer)} className="w-full space-y-6">
-                <div className="space-y-3">
-                  <div className="relative">
+              {/* Visual Underscores & Hidden Input */}
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (feedback === "correct") {
+                    next();
+                  } else {
+                    handleSubmit(checkAnswer)(e);
+                  }
+                }}
+                className="w-full flex-grow flex flex-col justify-between items-center"
+              >
+                <div className="w-full max-w-xs flex flex-col items-center gap-2 my-auto">
+                  <div
+                    onClick={() => hiddenInputRef.current?.focus()}
+                    className="relative w-full flex justify-center items-center h-14 cursor-text"
+                  >
                     <input
+                      type="text"
                       autoFocus
-                      placeholder={`${current.word.length} chữ`}
-                      aria-invalid={!!errors.userAnswer}
-                      {...register("userAnswer", {
-                        onChange: () => {
-                          if (feedback) setFeedback(null);
+                      maxLength={current.word.length}
+                      className="absolute inset-0 opacity-0 cursor-default w-full h-full z-10"
+                      value={userAnswer}
+                      {...userAnswerRest}
+                      onCompositionStart={() => setIsComposing(true)}
+                      onCompositionEnd={(e) => {
+                        setIsComposing(false);
+                        const val = e.currentTarget.value;
+                        const limit = current.word.length;
+                        if (val.length > limit) {
+                          const truncated = val.slice(0, limit);
+                          e.currentTarget.value = truncated;
+                          setValue("userAnswer", truncated, { shouldDirty: true, shouldValidate: true });
                         }
-                      })}
-                      className={`w-full h-14 text-3xl font-black text-center bg-transparent border-b-2 transition-all outline-none tracking-wide ${
-                        feedback === "correct"
-                          ? "border-emerald-500 text-emerald-700"
-                          : feedback === "incorrect"
-                            ? "border-rose-500 text-rose-700"
-                            : "border-emerald-200 focus:border-emerald-500 text-slate-800"
-                      }`}
+                      }}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const limit = current.word.length;
+                        if (!isComposing && val.length > limit) {
+                          const truncated = val.slice(0, limit);
+                          e.target.value = truncated;
+                        }
+                        userAnswerRest.onChange(e);
+                      }}
+                      ref={(e) => {
+                        userAnswerRef(e);
+                        (hiddenInputRef as any).current = e;
+                      }}
                     />
-                    {feedback === "correct" && (
-                      <Sparkles className="absolute right-0 top-1/2 -translate-y-1/2 text-emerald-500 w-6 h-6 animate-bounce" />
-                    )}
+
+                    {/* Styled underscored blocks */}
+                    <div className="flex gap-1.5 flex-wrap justify-center">
+                      {Array.from({ length: current.word.length }).map((_, index) => {
+                        const char = userAnswer[index] || "";
+                        const isActive = index === userAnswer.length;
+                        const isFilled = index < userAnswer.length;
+                        const isSpace = current.word[index] === " ";
+
+                        if (isSpace) {
+                          return <div key={index} className="w-4 h-12" />;
+                        }
+
+                        return (
+                          <div
+                            key={index}
+                            className={cn(
+                              "w-8 h-12 border-b-2 flex items-center justify-center transition-all duration-150",
+                              feedback === "correct"
+                                ? "border-emerald-500 text-emerald-700"
+                                : feedback === "incorrect"
+                                  ? "border-rose-500 text-rose-700"
+                                  : isActive
+                                    ? "border-[#10b981] bg-[#ECFDF5]/10"
+                                    : isFilled
+                                      ? "border-slate-800"
+                                      : "border-slate-200/60"
+                            )}
+                          >
+                            {char ? (
+                              <span className={cn(
+                                "text-[28px] font-bold",
+                                feedback === "correct"
+                                  ? "text-[#006c49]"
+                                  : feedback === "incorrect"
+                                    ? "text-rose-600"
+                                    : "text-slate-800"
+                              )}>
+                                {char}
+                              </span>
+                            ) : isActive && !feedback ? (
+                              <div className="h-6 w-[2px] bg-[#006c49] cursor-blink-anim" />
+                            ) : null}
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400 text-center">
-                    {userAnswer.trim().length}/{current.word.length} chữ
-                  </div>
-                  {errors.userAnswer && <p className="text-xs text-rose-500 font-medium text-center">{errors.userAnswer.message}</p>}
+
+                  <span className="text-[10px] font-bold uppercase tracking-wider mt-2 text-slate-400">
+                    {Math.min(userAnswer.trim().length, current.word.length)}/{current.word.length} CHỮ
+                  </span>
+
+                  {errors.userAnswer && (
+                    <p className="text-xs text-rose-500 font-medium text-center mt-1">
+                      {errors.userAnswer.message}
+                    </p>
+                  )}
+                  {feedback === "incorrect" && (
+                    <motion.p
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-center text-xs font-semibold text-rose-500 mt-1"
+                    >
+                      Gợi ý: Từ này bắt đầu bằng chữ <span className="font-bold text-rose-700">"{current.word[0].toUpperCase()}"</span>
+                    </motion.p>
+                  )}
                 </div>
 
-                <Button
-                  type="submit"
-                  disabled={userAnswer.trim().length !== current.word.length}
-                  className={`w-full h-14 rounded-2xl text-lg font-bold shadow-lg transition-all border-none ${
-                    feedback === "correct" ? "bg-emerald-500 hover:bg-emerald-600" : "bg-emerald-600 hover:bg-emerald-700"
-                  }`}
-                >
-                  {feedback === "correct" ? "Làm tiếp câu khác" : "Kiểm tra kết quả"}
-                </Button>
+                {/* Form Buttons */}
+                <div className="mt-auto w-full flex flex-col gap-3">
+                  {feedback === "correct" ? (
+                    <Button
+                      type="button"
+                      onClick={next}
+                      className="w-full py-6 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-semibold text-sm rounded-full shadow-sm active:scale-95 transition-all duration-200 border-none cursor-pointer"
+                    >
+                      Làm tiếp câu khác
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      className="w-full py-6 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-semibold text-sm rounded-full shadow-sm active:scale-95 transition-all duration-200 border-none cursor-pointer disabled:opacity-50"
+                    >
+                      Kiểm tra kết quả
+                    </Button>
+                  )}
 
-                {feedback === "incorrect" && (
-                  <motion.p initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center text-sm font-medium text-rose-500">
-                    Gợi ý: Từ này bắt đầu bằng chữ <span className="font-bold text-rose-700">"{current.word[0].toUpperCase()}"</span>
-                  </motion.p>
-                )}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full py-2 text-slate-400 hover:text-[#006c49] font-bold text-xs uppercase tracking-widest hover:bg-transparent cursor-pointer border-none"
+                    onClick={() => {
+                      setValue("userAnswer", current.word, { shouldDirty: true, shouldValidate: true });
+                      setFeedback("correct");
+                    }}
+                  >
+                    XEM ĐÁP ÁN
+                  </Button>
+                </div>
               </form>
-
-              <div className="w-full pt-4 border-t border-slate-50 flex justify-center">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-400 text-[10px] font-bold uppercase tracking-widest hover:text-emerald-500"
-                  onClick={() => {
-                    setValue("userAnswer", current.word, { shouldDirty: true, shouldValidate: true });
-                    setFeedback("correct");
-                  }}
-                >
-                  Xem đáp án
-                </Button>
-              </div>
             </motion.div>
           )}
         </div>
 
+        {/* Right Arrow on Desktop */}
         <Button
           variant="outline"
           size="icon"
-          className="hidden sm:flex w-14 h-14 rounded-full bg-white border-none shadow-lg shadow-emerald-100 ring-1 ring-emerald-50 hover:-translate-y-0.5 transition-all disabled:opacity-30 shrink-0"
+          className="hidden md:flex absolute -right-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
           onClick={(e) => {
             e.stopPropagation();
             next();
           }}
         >
-          {currentIndex === filtered.length - 1 ? <Check className="w-6 h-6 text-emerald-600" /> : <ChevronRight className="w-6 h-6 text-emerald-600" />}
+          {currentIndex === filtered.length - 1 ? <Check className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
         </Button>
       </div>
 
-      <div className="flex items-center justify-center gap-6 pt-4 sm:hidden">
+      {/* Mobile Navigation Helpers */}
+      <div className="flex md:hidden justify-center gap-6 mt-6">
         <Button
           variant="outline"
           size="icon"
-          className="w-14 h-14 rounded-full bg-white border-none shadow-lg shadow-emerald-100 ring-1 ring-emerald-50 hover:-translate-y-0.5 transition-all disabled:opacity-30"
+          className="w-12 h-12 flex items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] active:scale-90 transition-all shadow-sm disabled:opacity-30"
           onClick={(e) => {
             e.stopPropagation();
             prev();
           }}
           disabled={currentIndex === 0}
         >
-          <ChevronLeft className="w-6 h-6 text-emerald-600" />
+          <ChevronLeft className="w-5 h-5" />
         </Button>
         <Button
           variant="outline"
           size="icon"
-          className="w-14 h-14 rounded-full bg-white border-none shadow-lg shadow-emerald-100 ring-1 ring-emerald-50 hover:-translate-y-0.5 transition-all disabled:opacity-30"
+          className="w-12 h-12 flex items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] active:scale-90 transition-all shadow-sm"
           onClick={(e) => {
             e.stopPropagation();
             next();
           }}
         >
-          {currentIndex === filtered.length - 1 ? <Check className="w-6 h-6 text-emerald-600" /> : <ChevronRight className="w-6 h-6 text-emerald-600" />}
+          {currentIndex === filtered.length - 1 ? <Check className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
         </Button>
       </div>
     </div>

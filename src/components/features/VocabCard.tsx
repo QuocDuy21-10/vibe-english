@@ -43,15 +43,15 @@ export function VocabCard({ vocabulary, topics }: VocabCardProps) {
       whileHover={{ y: -4 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:bg-emerald-50/30 transition-all overflow-hidden relative group">
+      <Card className="rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:bg-[#ECFDF5]/30 transition-all overflow-hidden relative">
         <CardHeader className="pb-3 pr-10">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-1.5">
-              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border-none">
+              <Badge variant="secondary" className="bg-[#ECFDF5] text-[#006c49] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border-none">
                 {vocabulary.partOfSpeech || "n/a"}
               </Badge>
               {vocabulary.level > 0 && (
-                <Badge variant="outline" className="border-emerald-200 text-emerald-600 text-[9px] font-bold px-1.5 py-0 rounded-md">
+                <Badge variant="outline" className="border-[#10b981]/30 text-[#006c49] text-[9px] font-bold px-1.5 py-0 rounded-md">
                   Lvl {vocabulary.level}
                 </Badge>
               )}
@@ -59,11 +59,11 @@ export function VocabCard({ vocabulary, topics }: VocabCardProps) {
             <span className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{topicName}</span>
           </div>
           <div className="flex items-center gap-2 mb-1">
-            <CardTitle className="text-2xl font-bold text-emerald-700 tracking-tight">{vocabulary.word}</CardTitle>
+            <CardTitle className="text-2xl font-bold text-[#006c49] tracking-tight">{vocabulary.word}</CardTitle>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-emerald-500 hover:bg-emerald-100 hover:text-emerald-700"
+              className="h-8 w-8 text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#006c49] border-none"
               onClick={() => playAudio(vocabulary.word)}
             >
               <Volume2 className="w-4 h-4" />
@@ -74,9 +74,9 @@ export function VocabCard({ vocabulary, topics }: VocabCardProps) {
         <CardContent className="pb-4">
           <p className="text-lg font-bold text-slate-800 leading-snug">{vocabulary.definition}</p>
         </CardContent>
-        <div className="absolute top-4 right-4 flex flex-col gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <div className="absolute top-4 right-4 flex flex-col gap-1">
           <Dialog open={isEditing} onOpenChange={setIsEditing}>
-            <DialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-emerald-600 hover:bg-emerald-100/50" />}>
+            <DialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#006c49] hover:bg-[#ECFDF5]/50 border-none" />}>
               <Edit3 className="w-4 h-4" />
             </DialogTrigger>
             <EditVocabDialog vocabulary={vocabulary} topics={topics} onClose={() => setIsEditing(false)} />

@@ -55,7 +55,24 @@ service cloud.firestore {
         && data.createdAt is timestamp
         && data.updatedAt is timestamp
         && data.level is int
-        && data.nextReview is timestamp;
+        && (data.nextReview == null || data.nextReview is timestamp);
+    }
+
+    // Relaxed validation for updates: all required fields must exist and be valid,
+    // but exact key count is not enforced (documents created with older schemas remain updatable).
+    // Level is bounded to [0, 5] to prevent out-of-range SRS values.
+    function isValidVocabularyUpdate(data) {
+      return data.keys().hasAll(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'userId', 'createdAt', 'updatedAt', 'level', 'nextReview'])
+        && data.word is string && data.word.size() > 0 && data.word.size() <= 100
+        && data.definition is string && data.definition.size() > 0 && data.definition.size() <= 500
+        && data.partOfSpeech is string && data.partOfSpeech.size() <= 50
+        && data.phonetic is string && data.phonetic.size() <= 100
+        && (data.topicId == null || data.topicId is string)
+        && data.userId == request.auth.uid
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp
+        && data.level is int && data.level >= 0 && data.level <= 5
+        && (data.nextReview == null || data.nextReview is timestamp);
     }
 
     // --- Rules ---
@@ -80,7 +97,7 @@ service cloud.firestore {
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time;
 
-      allow update: if isOwner(existing().userId) && isValidVocabulary(incoming())
+      allow update: if isOwner(existing().userId) && isValidVocabularyUpdate(incoming())
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
         && incoming().diff(existing()).affectedKeys().hasOnly(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'updatedAt', 'level', 'nextReview']);

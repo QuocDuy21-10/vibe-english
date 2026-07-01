@@ -72,7 +72,9 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(() => {
-    return signOut(auth).then(() => toast.info("Đã đăng xuất."));
+    return signOut(auth).then(() => {
+      toast.info("Đã đăng xuất.");
+    });
   }, []);
 
   const value = useMemo(

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { BookOpen, Brain, LayoutDashboard, Layers, LogOut, Plus } from "lucide-react";
+import { BookOpen, Brain, LayoutDashboard, Layers, LogOut, Plus, Menu, Search } from "lucide-react";
 import { AddVocabDialog } from "@/components/features/AddVocabDialog";
 import { TopicDialog } from "@/components/features/TopicDialog";
 import { Badge } from "@/components/ui/badge";
@@ -30,52 +30,75 @@ export function AppLayout() {
     cn(
       "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
       isActive
-        ? "bg-emerald-500 text-white shadow-sm"
-        : "text-slate-600 hover:text-emerald-700 hover:bg-emerald-50"
+        ? "bg-[#006c49] text-white shadow-sm"
+        : "text-slate-600 hover:text-[#006c49] hover:bg-[#ECFDF5]"
     );
 
   return (
-    <div className="min-h-screen bg-emerald-50 text-slate-800">
-      <header className="sticky top-0 z-50 w-full border-b border-emerald-100 bg-white/80 backdrop-blur-md">
+    <div className="min-h-screen bg-[#ECFDF5] text-slate-800 flex flex-col">
+      {/* Custom TopAppBar matching mockup */}
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white sticky top-0">
         <div className="container max-w-5xl mx-auto h-16 flex items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-emerald-500 rounded-lg flex items-center justify-center shadow-md shadow-emerald-100">
-              <BookOpen className="w-5 h-5 text-white" />
+            {/* Menu icon visible on mobile only */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[#006c49] hover:bg-[#ECFDF5] p-2 rounded-full active:scale-95 duration-150 md:hidden"
+            >
+              <Menu className="w-5 h-5" />
+            </Button>
+            
+            {/* Logo on desktop, or simple text on mobile */}
+            <div className="hidden md:flex items-center gap-2">
+              <div className="w-8 h-8 bg-[#006c49] rounded-lg flex items-center justify-center shadow-md shadow-[#006c49]/10">
+                <BookOpen className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-[#006c49]">Vibe English</span>
             </div>
-            <span className="text-xl font-bold tracking-tight text-emerald-900 hidden sm:inline-block">Vibe English</span>
+            
+            <h1 className="text-xl font-bold text-[#006c49] md:hidden">Vibe English</h1>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Badge
-              variant="outline"
-              className="bg-emerald-50 border-emerald-200 text-emerald-700 hidden sm:flex font-bold uppercase text-[10px]"
-            >
-              {totalVocab} từ vựng
-            </Badge>
-            <div className="flex items-center gap-2">
-              <img
-                src={user.photoURL || ""}
-                alt={user.displayName || ""}
-                className="w-8 h-8 rounded-full border border-emerald-200 shadow-sm"
-                referrerPolicy="no-referrer"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={logout}
-                className="text-slate-500 hover:text-emerald-600 hover:bg-emerald-50"
-              >
-                <LogOut className="w-5 h-5" />
-              </Button>
+          <div className="flex items-center gap-2">
+            <div className="hidden md:flex bg-[#10b981]/15 px-3 py-1 rounded-full items-center gap-1">
+              <span className="text-[#006c49] font-bold text-[10px] uppercase tracking-wider">{totalVocab} TỪ VỰNG</span>
             </div>
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-[#006c49] hover:bg-[#ECFDF5] p-2 rounded-full active:scale-95 duration-150"
+            >
+              <Search className="w-5 h-5" />
+            </Button>
+            
+            <img
+              src={user.photoURL || ""}
+              alt={user.displayName || ""}
+              className="w-8 h-8 rounded-full border border-slate-200 shadow-sm"
+              referrerPolicy="no-referrer"
+            />
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={logout}
+              className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full p-2"
+              title="Đăng xuất"
+            >
+              <LogOut className="w-5 h-5" />
+            </Button>
           </div>
         </div>
       </header>
 
-      <main className="container max-w-5xl mx-auto py-8 px-4">
-        <div className="space-y-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <nav className="bg-white p-1 rounded-xl w-fit border border-emerald-100 shadow-sm flex flex-wrap gap-1">
+      {/* Main Content Area */}
+      <main className="flex-grow w-full max-w-5xl mx-auto py-6 px-4 pb-28 md:pb-8 flex flex-col">
+        <div className="space-y-6 flex-grow flex flex-col">
+          <div className="flex items-center justify-between gap-4">
+            {/* Desktop Navigation Link Cluster */}
+            <nav className="bg-white p-1 rounded-xl w-fit border border-slate-200/60 shadow-sm hidden md:flex gap-1">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -86,14 +109,15 @@ export function AppLayout() {
               })}
             </nav>
 
-            <div className="flex items-center gap-2">
+            {/* Quick Action dialog triggers */}
+            <div className="flex items-center gap-2 ml-auto">
               <Dialog open={isAddingTopic} onOpenChange={setIsAddingTopic}>
                 <DialogTrigger
                   render={
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-xl border-emerald-200 text-emerald-700 bg-white hover:bg-emerald-50 transition-all shadow-sm"
+                      className="rounded-xl border-slate-200 text-[#006c49] bg-white hover:bg-[#ECFDF5] transition-all shadow-sm h-9"
                     />
                   }
                 >
@@ -107,7 +131,7 @@ export function AppLayout() {
                   render={
                     <Button
                       size="sm"
-                      className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-100 border-none transition-all"
+                      className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-xl shadow-md shadow-[#10b981]/10 border-none transition-all h-9"
                     />
                   }
                 >
@@ -121,6 +145,30 @@ export function AppLayout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation Bar matching mockup */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200/60 py-2 px-4 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] flex md:hidden justify-around items-center pb-safe">
+        {navItems.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "flex flex-col items-center justify-center gap-1 transition-all duration-200",
+                  isActive
+                    ? "bg-[#006c49] text-white rounded-full px-5 py-2 active:scale-95 shadow-sm"
+                    : "text-slate-500 hover:text-[#006c49] px-3 py-1"
+                )
+              }
+            >
+              <Icon className="w-5 h-5" />
+              <span className="text-[10px] font-bold">{item.label}</span>
+            </NavLink>
+          );
+        })}
+      </nav>
     </div>
   );
 }

@@ -65,7 +65,7 @@ export function TopicsPage() {
                 {topicVocabCounts.get(topic.id) ?? 0} TỪ VỰNG
               </CardDescription>
             </CardHeader>
-            <CardFooter className="flex justify-end gap-2 pt-2 opacity-0 group-hover:opacity-100 transition-opacity relative">
+            <CardFooter className="flex justify-end gap-2 pt-2 relative">
               <Dialog>
                 <DialogTrigger
                   render={
