@@ -58,7 +58,7 @@ service cloud.firestore {
 
     function isValidLegacyVocabulary(data) {
       return isValidVocabularyBase(data)
-        && data.level is number && data.level >= 0 && data.level <= 5
+        && data.level is int && data.level >= 0 && data.level <= 5
         && !data.keys().hasAny(['srsVersion', 'intervalDays', 'easeFactor', 'repetitions', 'lapses', 'lastReviewedAt']);
     }
 
@@ -66,12 +66,12 @@ service cloud.firestore {
       return isValidVocabularyBase(data)
         && data.keys().hasAll(['srsVersion', 'intervalDays', 'easeFactor', 'repetitions', 'lapses', 'lastReviewedAt'])
         && data.srsVersion == 1
-        && data.intervalDays is number && data.intervalDays >= 0 && data.intervalDays <= 3650
-        && data.easeFactor is number && data.easeFactor >= 1.3 && data.easeFactor <= 3.0
-        && data.repetitions is number && data.repetitions >= 0
-        && data.lapses is number && data.lapses >= 0
+        && data.intervalDays is int && data.intervalDays >= 0 && data.intervalDays <= 3650
+        && (data.easeFactor is float || data.easeFactor is int) && data.easeFactor >= 1.3 && data.easeFactor <= 3.0
+        && data.repetitions is int && data.repetitions >= 0
+        && data.lapses is int && data.lapses >= 0
         && (data.lastReviewedAt == null || data.lastReviewedAt is timestamp)
-        && data.level is number && data.level >= 0 && data.level <= 4;
+        && data.level is int && data.level >= 0 && data.level <= 4;
     }
 
     // --- Rules ---
