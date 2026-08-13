@@ -10,6 +10,7 @@ import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { db } from "@/lib/firebase";
 import { playAudio } from "@/lib/audio";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
+import { getVocabularyLevel } from "@/lib/srs";
 import { OperationType, Topic, Vocabulary } from "@/types/types";
 import { EditVocabDialog } from "@/components/features/EditVocabDialog";
 
@@ -21,6 +22,7 @@ type VocabCardProps = {
 export function VocabCard({ vocabulary, topics }: VocabCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
+  const level = getVocabularyLevel(vocabulary);
 
   const handleDelete = async () => {
     if (confirm(`Xóa từ "${vocabulary.word}"?`)) {
@@ -50,9 +52,9 @@ export function VocabCard({ vocabulary, topics }: VocabCardProps) {
               <Badge variant="secondary" className="bg-[#ECFDF5] text-[#006c49] text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-lg border-none">
                 {vocabulary.partOfSpeech || "n/a"}
               </Badge>
-              {vocabulary.level > 0 && (
+              {level > 0 && (
                 <Badge variant="outline" className="border-[#10b981]/30 text-[#006c49] text-[9px] font-bold px-1.5 py-0 rounded-md">
-                  Lvl {vocabulary.level}
+                  Lvl {level}
                 </Badge>
               )}
             </div>

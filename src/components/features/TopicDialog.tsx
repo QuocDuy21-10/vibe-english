@@ -54,11 +54,7 @@ export function TopicDialog({ onClose, userId, topic }: TopicDialogProps) {
       }
       onClose?.();
     } catch (e) {
-      if (e instanceof Error && e.message.includes('{"error"')) {
-        // Already handled
-      } else {
-        handleFirestoreError(e, topic ? OperationType.UPDATE : OperationType.CREATE, "topics");
-      }
+      handleFirestoreError(e, topic ? OperationType.UPDATE : OperationType.CREATE, "topics");
       toast.error("Lỗi khi xử lý chủ đề.");
     }
   };

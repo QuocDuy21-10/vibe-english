@@ -21,8 +21,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
+import { DEFAULT_EASE_FACTOR, SRS_VERSION } from "@/lib/srs";
 import { Topic, OperationType } from "@/types/types";
-import { getWordDetails } from "@/services/geminiService";
 
 const vocabSchema = z.object({
   word: z.string().trim().min(1, "Vui lòng nhập từ tiếng Anh."),
@@ -65,6 +65,7 @@ export function AddVocabDialog({ onClose, userId, topics }: {
     if (!trimmedWord) return;
     setIsAiLoading(true);
     try {
+      const { getWordDetails } = await import("@/services/geminiService");
       const details = await getWordDetails(trimmedWord);
       if (details) {
         setValue("definition", details.definition || "", { shouldDirty: true, shouldValidate: true });
@@ -99,7 +100,13 @@ export function AddVocabDialog({ onClose, userId, topics }: {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         level: 0,
-        nextReview: serverTimestamp()
+        nextReview: serverTimestamp(),
+        srsVersion: SRS_VERSION,
+        intervalDays: 0,
+        easeFactor: DEFAULT_EASE_FACTOR,
+        repetitions: 0,
+        lapses: 0,
+        lastReviewedAt: null
       });
       toast.success("Đã thêm từ vựng!");
       onClose();

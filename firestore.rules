@@ -43,9 +43,8 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
-    function isValidVocabulary(data) {
+    function isValidVocabularyBase(data) {
       return data.keys().hasAll(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'userId', 'createdAt', 'updatedAt', 'level', 'nextReview'])
-        && data.keys().size() == 10
         && data.word is string && data.word.size() > 0 && data.word.size() <= 100
         && data.definition is string && data.definition.size() > 0 && data.definition.size() <= 500
         && data.partOfSpeech is string && data.partOfSpeech.size() <= 50
@@ -54,25 +53,25 @@ service cloud.firestore {
         && data.userId == request.auth.uid
         && data.createdAt is timestamp
         && data.updatedAt is timestamp
-        && data.level is int
         && (data.nextReview == null || data.nextReview is timestamp);
     }
 
-    // Relaxed validation for updates: all required fields must exist and be valid,
-    // but exact key count is not enforced (documents created with older schemas remain updatable).
-    // Level is bounded to [0, 5] to prevent out-of-range SRS values.
-    function isValidVocabularyUpdate(data) {
-      return data.keys().hasAll(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'userId', 'createdAt', 'updatedAt', 'level', 'nextReview'])
-        && data.word is string && data.word.size() > 0 && data.word.size() <= 100
-        && data.definition is string && data.definition.size() > 0 && data.definition.size() <= 500
-        && data.partOfSpeech is string && data.partOfSpeech.size() <= 50
-        && data.phonetic is string && data.phonetic.size() <= 100
-        && (data.topicId == null || data.topicId is string)
-        && data.userId == request.auth.uid
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp
+    function isValidLegacyVocabulary(data) {
+      return isValidVocabularyBase(data)
         && data.level is int && data.level >= 0 && data.level <= 5
-        && (data.nextReview == null || data.nextReview is timestamp);
+        && !data.keys().hasAny(['srsVersion', 'intervalDays', 'easeFactor', 'repetitions', 'lapses', 'lastReviewedAt']);
+    }
+
+    function isValidSrsVocabulary(data) {
+      return isValidVocabularyBase(data)
+        && data.keys().hasAll(['srsVersion', 'intervalDays', 'easeFactor', 'repetitions', 'lapses', 'lastReviewedAt'])
+        && data.srsVersion == 1
+        && data.intervalDays is int && data.intervalDays >= 0 && data.intervalDays <= 3650
+        && data.easeFactor is number && data.easeFactor >= 1.3 && data.easeFactor <= 3.0
+        && data.repetitions is int && data.repetitions >= 0
+        && data.lapses is int && data.lapses >= 0
+        && (data.lastReviewedAt == null || data.lastReviewedAt is timestamp)
+        && data.level is int && data.level >= 0 && data.level <= 4;
     }
 
     // --- Rules ---
@@ -93,14 +92,22 @@ service cloud.firestore {
       allow get, delete: if isOwner(existing().userId);
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
 
-      allow create: if isSignedIn() && isValidVocabulary(incoming())
+      allow create: if isSignedIn() && isValidSrsVocabulary(incoming())
+        && incoming().keys().size() == 16
         && incoming().createdAt == request.time
-        && incoming().updatedAt == request.time;
+        && incoming().updatedAt == request.time
+        && incoming().nextReview == request.time
+        && incoming().lastReviewedAt == null;
 
-      allow update: if isOwner(existing().userId) && isValidVocabularyUpdate(incoming())
+      allow update: if isOwner(existing().userId)
+        && (isValidLegacyVocabulary(incoming()) || isValidSrsVocabulary(incoming()))
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
-        && incoming().diff(existing()).affectedKeys().hasOnly(['word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'updatedAt', 'level', 'nextReview']);
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'word', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'updatedAt',
+          'level', 'nextReview', 'srsVersion', 'intervalDays', 'easeFactor',
+          'repetitions', 'lapses', 'lastReviewedAt'
+        ]);
     }
   }
 }

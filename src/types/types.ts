@@ -1,8 +1,10 @@
+import type { Timestamp } from "firebase/firestore";
+
 export interface Topic {
   id: string;
   name: string;
   userId: string;
-  createdAt: any;
+  createdAt: Timestamp | Date;
 }
 
 export interface Vocabulary {
@@ -11,15 +13,19 @@ export interface Vocabulary {
   definition: string;
   partOfSpeech: string;
   phonetic: string;
-  topicId: string;
+  topicId: string | null;
   userId: string;
-  createdAt: any;
-  updatedAt: any;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
   level: number;
-  nextReview: any;
+  nextReview: Timestamp | Date | null;
+  srsVersion?: 1;
+  intervalDays?: number;
+  easeFactor?: number;
+  repetitions?: number;
+  lapses?: number;
+  lastReviewedAt?: Timestamp | Date | null;
 }
-
-export const SRS_INTERVALS = [1, 3, 7, 14, 30];
 
 export enum OperationType {
   CREATE = 'create',
@@ -36,13 +42,6 @@ export interface FirestoreErrorInfo {
   path: string | null;
   authInfo: {
     userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-    tenantId?: string | null;
-    providerInfo?: {
-      providerId?: string | null;
-      email?: string | null;
-    }[];
+    isAuthenticated: boolean;
   }
 }

@@ -1,4 +1,5 @@
 import { GoogleGenAI, Type } from "@google/genai";
+import { z } from "zod";
 
 let aiClient: GoogleGenAI | null = null;
 
@@ -14,12 +15,14 @@ function getClient(): GoogleGenAI {
   return aiClient;
 }
 
-export interface WordDetails {
-  word: string;
-  definition: string;
-  partOfSpeech: string;
-  phonetic: string;
-}
+const wordDetailsSchema = z.object({
+  word: z.string(),
+  definition: z.string(),
+  partOfSpeech: z.string(),
+  phonetic: z.string()
+});
+
+export type WordDetails = z.infer<typeof wordDetailsSchema>;
 
 export async function getWordDetails(word: string): Promise<WordDetails> {
   const response = await getClient().models.generateContent({
@@ -42,5 +45,6 @@ export async function getWordDetails(word: string): Promise<WordDetails> {
 
   const text = response.text;
   if (!text) throw new Error("No response from AI");
-  return JSON.parse(text) as WordDetails;
+  const parsed: unknown = JSON.parse(text);
+  return wordDetailsSchema.parse(parsed);
 }

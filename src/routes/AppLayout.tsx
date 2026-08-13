@@ -1,9 +1,8 @@
 import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
-import { BookOpen, Brain, LayoutDashboard, Layers, LogOut, Plus, Menu, Search } from "lucide-react";
+import { BookOpen, Brain, LayoutDashboard, Layers, Loader2, LogOut, Plus, Menu, Search } from "lucide-react";
 import { AddVocabDialog } from "@/components/features/AddVocabDialog";
 import { TopicDialog } from "@/components/features/TopicDialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
@@ -17,7 +16,7 @@ const navItems = [
 ];
 
 export function AppLayout() {
-  const { user, topics, vocabularies, logout } = useAppData();
+  const { user, dataLoading, topics, vocabularies, logout } = useAppData();
   const [isAddingVocab, setIsAddingVocab] = useState(false);
   const [isAddingTopic, setIsAddingTopic] = useState(false);
 
@@ -142,7 +141,13 @@ export function AppLayout() {
             </div>
           </div>
 
-          <Outlet />
+          {dataLoading ? (
+            <div className="flex min-h-64 flex-1 items-center justify-center" role="status" aria-label="Đang tải dữ liệu">
+              <Loader2 className="h-8 w-8 animate-spin text-[#006c49]" />
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </div>
       </main>
 

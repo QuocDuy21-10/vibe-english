@@ -1,18 +1,16 @@
 import { auth } from "./firebase";
-import { FirestoreErrorInfo, OperationType } from "../types/types";
+import type { FirestoreErrorInfo } from "../types/types";
+import { OperationType } from "../types/types";
 
 export function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
       userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
+      isAuthenticated: auth.currentUser !== null,
     },
     operationType,
     path
   };
   console.error("Firestore Error: ", JSON.stringify(errInfo));
-  throw new Error(JSON.stringify(errInfo));
 }

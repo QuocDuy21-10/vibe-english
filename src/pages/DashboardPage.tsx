@@ -2,18 +2,13 @@ import { Award, Target, Trophy, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { Card } from "@/components/ui/card";
-import { LEVELS, DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
-import { useVocabStats } from "@/hooks/useVocabStats";
+import { LEVELS } from "@/constants/vocab";
+import { useVocabularyOverview } from "@/hooks/useVocabStats";
 import { useAppData } from "@/routes/AppDataProvider";
 
 export function DashboardPage() {
   const { vocabularies, topics } = useAppData();
-  const { stats, levelCounts } = useVocabStats({
-    vocabularies,
-    topics,
-    searchQuery: "",
-    selectedTopicId: DEFAULT_TOPIC_FILTER,
-  });
+  const { stats, levelCounts } = useVocabularyOverview(vocabularies);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
