@@ -3,6 +3,7 @@ import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -90,13 +91,29 @@ export function AddVocabDialog({ onClose, userId, topics }: {
     };
 
     try {
+      const currentUser = getAuth().currentUser;
+
+      if (!currentUser) {
+        toast.error("Bạn cần đăng nhập trước khi thêm từ vựng.");
+        return;
+      }
+
+      // Firestore Rules require vocabulary.userId === request.auth.uid.
+      // Never trust a userId passed from the UI as the source of truth.
+      if (userId && userId !== currentUser.uid) {
+        console.warn("AddVocabDialog userId does not match authenticated user", {
+          propUserId: userId,
+          authUserId: currentUser.uid,
+        });
+      }
+
       await addDoc(collection(db, "vocabularies"), {
         word: normalized.word,
         definition: normalized.definition,
         partOfSpeech: normalized.partOfSpeech,
         phonetic: normalized.phonetic,
         topicId: normalized.topicId || null,
-        userId,
+        userId: currentUser.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
         level: 0,
