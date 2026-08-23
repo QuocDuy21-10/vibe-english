@@ -3,11 +3,13 @@ import { deleteDoc, doc } from "firebase/firestore";
 import { Edit3, SearchIcon, Trash2, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TopicDialog } from "@/components/features/TopicDialog";
+import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PaginationControls } from "@/components/ui/pagination-controls";
+import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
 import { db } from "@/lib/firebase";
@@ -18,6 +20,7 @@ import { OperationType } from "@/types/types";
 export function TopicsPage() {
   const { topics, user, vocabularies } = useAppData();
   const [topicSearchQuery, setTopicSearchQuery] = useState("");
+  const [selectedTopicId, setSelectedTopicId] = useState<string>(DEFAULT_TOPIC_FILTER);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
 
@@ -27,38 +30,54 @@ export function TopicsPage() {
     return null;
   }
 
-  const filteredTopics = topics.filter((topic) =>
-    topic.name.toLowerCase().includes(topicSearchQuery.toLowerCase())
-  );
+  const filteredTopics = topics.filter((topic) => {
+    const matchesSearch = topic.name.toLowerCase().includes(topicSearchQuery.toLowerCase());
+    const matchesTopic = selectedTopicId === DEFAULT_TOPIC_FILTER || topic.id === selectedTopicId;
+    return matchesSearch && matchesTopic;
+  });
 
   const pagination = getPaginationModel(filteredTopics.length, pageSize, currentPage);
   const paginatedTopics = filteredTopics.slice(pagination.startIndex, pagination.endIndex);
 
   return (
     <div className="space-y-6">
-      <div className="relative max-w-md">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input
-          placeholder="Tìm kiếm chủ đề..."
-          className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
-          value={topicSearchQuery}
-          onChange={(event) => {
-            setTopicSearchQuery(event.target.value);
-            setCurrentPage(1);
-          }}
-        />
-        {topicSearchQuery && (
-          <button
-            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
-            onClick={() => {
-              setTopicSearchQuery("");
+      <div className="flex flex-col sm:flex-row gap-4">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Tìm kiếm chủ đề..."
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+            value={topicSearchQuery}
+            onChange={(event) => {
+              setTopicSearchQuery(event.target.value);
               setCurrentPage(1);
             }}
-            aria-label="Xóa tìm kiếm"
-          >
-            <X className="w-4 h-4 text-slate-400" />
-          </button>
-        )}
+          />
+          {topicSearchQuery && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+              onClick={() => {
+                setTopicSearchQuery("");
+                setCurrentPage(1);
+              }}
+              aria-label="Xóa tìm kiếm"
+            >
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          )}
+        </div>
+
+        <TopicFilterSelect
+          value={selectedTopicId}
+          onValueChange={(value) => {
+            setSelectedTopicId(value);
+            setCurrentPage(1);
+          }}
+          topics={topics}
+          vocabularies={vocabularies}
+          showUnassignedOption={false}
+          className="w-full sm:w-60 md:w-64"
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">

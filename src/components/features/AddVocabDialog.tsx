@@ -21,6 +21,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from "@/components/ui/select";
+import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
 import { DEFAULT_EASE_FACTOR, SRS_VERSION } from "@/lib/srs";
 import { Topic, OperationType } from "@/types/types";
@@ -214,18 +215,15 @@ export function AddVocabDialog({ onClose, userId, topics }: {
               control={control}
               name="topicId"
               render={({ field }) => (
-                <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
-                  <SelectTrigger className="rounded-xl h-11 border-slate-100">
-                    <SelectValue placeholder="Chọn chủ đề">
-                      {(val) => topics.find((t) => t.id === val)?.name ?? val}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {topics.map(t => (
-                      <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <TopicFilterSelect
+                  value={field.value ?? ""}
+                  onValueChange={(val) => field.onChange(val)}
+                  topics={topics}
+                  showAllOption={false}
+                  unassignedValue=""
+                  placeholder="Chọn chủ đề"
+                  variant="form"
+                />
               )}
             />
           </div>

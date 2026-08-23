@@ -15,6 +15,7 @@ import {
   SelectTrigger,
   SelectValue
 } from "@/components/ui/select";
+import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { db } from "@/lib/firebase";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
 import { OperationType, Topic, Vocabulary } from "@/types/types";
@@ -184,21 +185,15 @@ export function EditVocabDialog({ vocabulary, topics, onClose }: EditVocabDialog
               control={control}
               name="topicId"
               render={({ field }) => (
-                <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
-                  <SelectTrigger className="rounded-xl h-11 border-slate-100">
-                    <SelectValue placeholder="Chọn chủ đề">
-                      {(val) => (val ? topics.find((t) => t.id === val)?.name ?? "Chưa phân loại" : "Chọn chủ đề")}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Chưa phân loại</SelectItem>
-                    {topics.map((t) => (
-                      <SelectItem key={t.id} value={t.id}>
-                        {t.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <TopicFilterSelect
+                  value={field.value ?? ""}
+                  onValueChange={(val) => field.onChange(val)}
+                  topics={topics}
+                  showAllOption={false}
+                  unassignedValue=""
+                  placeholder="Chọn chủ đề"
+                  variant="form"
+                />
               )}
             />
           </div>

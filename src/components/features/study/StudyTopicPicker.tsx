@@ -1,13 +1,16 @@
-import { BookOpen, Brain, Layers, SearchIcon, Trophy } from "lucide-react";
+import { useMemo, useState } from "react";
+import { BookOpen, Brain, Layers, Search, SearchIcon, Trophy, X } from "lucide-react";
 import { motion } from "motion/react";
 
+import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
-import type { Topic } from "@/types/types";
+import { DEFAULT_TOPIC_FILTER, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
+import type { Topic, Vocabulary } from "@/types/types";
 
 type StudyTopicPickerProps = {
   topics: Topic[];
+  vocabularies?: Vocabulary[];
   vocabularyCount: number;
   dueCount: number;
   searchQuery: string;
@@ -20,6 +23,7 @@ type StudyTopicPickerProps = {
 
 export function StudyTopicPicker({
   topics,
+  vocabularies = [],
   vocabularyCount,
   dueCount,
   searchQuery,
@@ -29,9 +33,22 @@ export function StudyTopicPicker({
   onStartQuickQuiz,
   onSelectTopic
 }: StudyTopicPickerProps) {
+  const [selectedTopicFilter, setSelectedTopicFilter] = useState<string>(DEFAULT_TOPIC_FILTER);
+
   const normalizedSearch = searchQuery.toLowerCase();
-  const filteredTopics = topics.filter((topic) => topic.name.toLowerCase().includes(normalizedSearch));
-  const showAllTopicsCard = !searchQuery || "tất cả bài học".includes(normalizedSearch);
+  const filteredTopics = topics.filter((topic) => {
+    const matchesSearch = topic.name.toLowerCase().includes(normalizedSearch);
+    const matchesTopic = selectedTopicFilter === DEFAULT_TOPIC_FILTER || topic.id === selectedTopicFilter;
+    return matchesSearch && matchesTopic;
+  });
+
+  const unassignedCount = useMemo(
+    () => vocabularies.filter((v) => !v.topicId).length,
+    [vocabularies]
+  );
+
+  const showSpecialCards = selectedTopicFilter === DEFAULT_TOPIC_FILTER && !searchQuery;
+  const showAllTopicsCard = selectedTopicFilter === DEFAULT_TOPIC_FILTER && (!searchQuery || "tất cả bài học".includes(normalizedSearch));
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 pb-12 w-full">
@@ -40,42 +57,66 @@ export function StudyTopicPicker({
         <p className="text-slate-500 font-medium">Bắt đầu bài học Flashcard của bạn ngay hôm nay</p>
       </div>
 
-      <div className="relative max-w-md mx-auto">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-        <Input
-          placeholder="Tìm kiếm chủ đề ôn tập..."
-          className="pl-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
-          value={searchQuery}
-          onChange={(event) => onSearchChange(event.target.value)}
+      <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto items-center">
+        <div className="relative flex-1 w-full">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Input
+            placeholder="Tìm kiếm chủ đề ôn tập..."
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+            value={searchQuery}
+            onChange={(event) => onSearchChange(event.target.value)}
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+              onClick={() => onSearchChange("")}
+              aria-label="Xóa tìm kiếm"
+            >
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          )}
+        </div>
+
+        <TopicFilterSelect
+          value={selectedTopicFilter}
+          onValueChange={setSelectedTopicFilter}
+          topics={topics}
+          vocabularies={vocabularies}
+          className="w-full sm:w-60"
         />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartSrsReview}>
-          <Card className="h-full border-none shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400/50 transition-all overflow-hidden rounded-[32px] bg-emerald-600 border-b-8 border-emerald-800">
-            <CardHeader className="p-6 text-center">
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
-                <Brain className="w-7 h-7" />
-              </div>
-              <CardTitle className="text-xl font-bold text-white">Cần ôn tập</CardTitle>
-              <CardDescription className="text-emerald-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">
-                {dueCount} từ đến hạn
-              </CardDescription>
-            </CardHeader>
-          </Card>
-        </motion.button>
+        {showSpecialCards && (
+          <>
+            <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartSrsReview}>
+              <Card className="h-full border-none shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400/50 transition-all overflow-hidden rounded-[32px] bg-emerald-600 border-b-8 border-emerald-800">
+                <CardHeader className="p-6 text-center">
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
+                    <Brain className="w-7 h-7" />
+                  </div>
+                  <CardTitle className="text-xl font-bold text-white">Cần ôn tập</CardTitle>
+                  <CardDescription className="text-emerald-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">
+                    {dueCount} từ đến hạn
+                  </CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.button>
 
-        <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartQuickQuiz}>
-          <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-400/50 transition-all overflow-hidden rounded-[32px] bg-linear-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
-            <CardHeader className="p-6 text-center">
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
-                <Trophy className="w-7 h-7" />
-              </div>
-              <CardTitle className="text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
-              <CardDescription className="text-amber-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">10 từ ngẫu nhiên</CardDescription>
-            </CardHeader>
-          </Card>
-        </motion.button>
+            <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartQuickQuiz}>
+              <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-400/50 transition-all overflow-hidden rounded-[32px] bg-linear-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
+                <CardHeader className="p-6 text-center">
+                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
+                    <Trophy className="w-7 h-7" />
+                  </div>
+                  <CardTitle className="text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
+                  <CardDescription className="text-amber-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">10 từ ngẫu nhiên</CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.button>
+          </>
+        )}
 
         {showAllTopicsCard && (
           <motion.button
@@ -91,6 +132,30 @@ export function StudyTopicPicker({
                 </div>
                 <CardTitle className="text-xl font-bold text-white">Tất cả bài học</CardTitle>
                 <CardDescription className="text-emerald-300/60 text-xs mt-1">{vocabularyCount} từ vựng</CardDescription>
+              </CardHeader>
+            </Card>
+          </motion.button>
+        )}
+
+        {selectedTopicFilter === UNASSIGNED_TOPIC_FILTER && (
+          <motion.button
+            type="button"
+            whileHover={{ y: -5 }}
+            className="cursor-pointer group text-left"
+            onClick={() => onSelectTopic(UNASSIGNED_TOPIC_FILTER)}
+          >
+            <Card className="h-full border-2 border-transparent bg-white shadow-lg shadow-slate-200/50 hover:shadow-emerald-100 transition-all overflow-hidden rounded-[32px] border-b-8 border-b-emerald-50 relative group-hover:border-emerald-500/20">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <Brain className="w-24 h-24 text-emerald-900" />
+              </div>
+              <CardHeader className="p-6 pb-3">
+                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-3 text-emerald-600">
+                  <Layers className="w-6 h-6" />
+                </div>
+                <CardTitle className="text-lg font-bold text-slate-800 line-clamp-1">Chưa phân loại</CardTitle>
+                <CardDescription className="text-slate-400 font-medium text-xs mt-0.5">
+                  {unassignedCount} từ vựng
+                </CardDescription>
               </CardHeader>
             </Card>
           </motion.button>
@@ -130,6 +195,15 @@ export function StudyTopicPicker({
           </motion.button>
         ))}
       </div>
+
+      {filteredTopics.length === 0 && selectedTopicFilter !== UNASSIGNED_TOPIC_FILTER && (
+        <div className="py-12 text-center space-y-4">
+          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto opacity-50">
+            <Search className="w-8 h-8 text-emerald-600" />
+          </div>
+          <p className="text-emerald-800/60 italic font-medium">Không tìm thấy chủ đề ôn tập nào phù hợp.</p>
+        </div>
+      )}
     </div>
   );
 }

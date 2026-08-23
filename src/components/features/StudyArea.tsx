@@ -7,7 +7,7 @@ import { StudySessionView } from "@/components/features/study/StudySessionView";
 import { StudySummary } from "@/components/features/study/StudySummary";
 import { StudyTopicPicker } from "@/components/features/study/StudyTopicPicker";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC } from "@/constants/vocab";
+import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
 import { db } from "@/lib/firebase";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
@@ -55,7 +55,11 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     () =>
       sessionVocab.length > 0
         ? sessionVocab
-        : vocabulary.filter((item) => selectedTopic === DEFAULT_TOPIC_FILTER || item.topicId === selectedTopic),
+        : vocabulary.filter((item) => {
+            if (selectedTopic === DEFAULT_TOPIC_FILTER) return true;
+            if (selectedTopic === UNASSIGNED_TOPIC_FILTER) return !item.topicId;
+            return item.topicId === selectedTopic;
+          }),
     [sessionVocab, selectedTopic, vocabulary]
   );
 
@@ -196,6 +200,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     return (
       <StudyTopicPicker
         topics={topics}
+        vocabularies={vocabulary}
         vocabularyCount={vocabulary.length}
         dueCount={dueCount}
         searchQuery={searchQuery}
@@ -274,11 +279,13 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const title =
     selectedTopic === DEFAULT_TOPIC_FILTER
       ? "Tất cả bài học"
-      : selectedTopic === QUICK_QUIZ_TOPIC
-        ? "Kiểm tra nhanh"
-        : selectedTopic === SRS_REVIEW_TOPIC
-          ? "Ôn tập đến hạn"
-          : topics.find((topic) => topic.id === selectedTopic)?.name || "Chủ đề";
+      : selectedTopic === UNASSIGNED_TOPIC_FILTER
+        ? "Chưa phân loại"
+        : selectedTopic === QUICK_QUIZ_TOPIC
+          ? "Kiểm tra nhanh"
+          : selectedTopic === SRS_REVIEW_TOPIC
+            ? "Ôn tập đến hạn"
+            : topics.find((topic) => topic.id === selectedTopic)?.name || "Chủ đề";
   const subtitle =
     selectedTopic === SRS_REVIEW_TOPIC
       ? "Thuật toán SRS"
