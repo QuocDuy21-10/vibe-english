@@ -111,7 +111,7 @@ export function DictionaryPage() {
           <div className="flex items-center gap-2 shrink-0">
             {user && (
               <>
-                {/* File Import Trigger */}
+                {/* Bulk & File Import Trigger */}
                 <Dialog open={isBulkImporting} onOpenChange={setIsBulkImporting}>
                   <DialogTrigger
                     render={
@@ -121,9 +121,9 @@ export function DictionaryPage() {
                       />
                     }
                   >
-                    <FileSpreadsheet className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
-                    <span className="hidden sm:inline">Nhập từ file</span>
-                    <span className="sm:hidden text-xs font-semibold">Nhập file</span>
+                    <UploadCloud className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
+                    <span className="hidden sm:inline">Nhập nhiều từ</span>
+                    <span className="sm:hidden text-xs font-semibold">Nhập từ</span>
                   </DialogTrigger>
                   <ImportVocabDialog
                     onClose={() => setIsBulkImporting(false)}
