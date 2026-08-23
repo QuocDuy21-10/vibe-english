@@ -17,6 +17,12 @@
   .rotate-y-180 {
     transform: rotateY(180deg);
   }
+  .pb-safe {
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+  .pt-safe {
+    padding-top: max(0.5rem, env(safe-area-inset-top));
+  }
 }
 @import "tw-animate-css";
 

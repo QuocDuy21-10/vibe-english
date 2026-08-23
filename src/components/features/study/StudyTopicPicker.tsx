@@ -53,29 +53,29 @@ export function StudyTopicPicker({
   const showAllTopicsCard = selectedTopicFilter === DEFAULT_TOPIC_FILTER && (!searchQuery || "tất cả bài học".includes(normalizedSearch));
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 pb-12 w-full">
-      <div className="text-center space-y-2">
-        <h2 className="text-3xl font-black text-slate-800 tracking-tight">Chọn chủ đề ôn tập</h2>
-        <p className="text-slate-500 font-medium">Bắt đầu bài học Flashcard của bạn ngay hôm nay</p>
+    <div className="max-w-5xl mx-auto space-y-6 sm:space-y-8 pb-8 sm:pb-12 w-full">
+      <div className="text-center space-y-1.5 sm:space-y-2">
+        <h2 className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight">Chọn chủ đề ôn tập</h2>
+        <p className="text-slate-500 text-sm sm:text-base font-medium">Bắt đầu bài học Flashcard của bạn ngay hôm nay</p>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto items-center">
+      <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 max-w-xl mx-auto items-stretch sm:items-center">
         <div className="relative flex-1 w-full">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Tìm kiếm chủ đề ôn tập..."
-            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11 text-sm"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
           />
           {searchQuery && (
             <button
               type="button"
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer text-slate-400 hover:text-slate-600 rounded-full"
               onClick={() => onSearchChange("")}
               aria-label="Xóa tìm kiếm"
             >
-              <X className="w-4 h-4 text-slate-400" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
@@ -85,43 +85,43 @@ export function StudyTopicPicker({
           onValueChange={setSelectedTopicFilter}
           topics={topics}
           vocabularies={vocabularies}
-          className="w-full sm:w-60"
+          className="w-full sm:w-60 h-11"
         />
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {showSpecialCards && (
           <>
             <motion.button
               type="button"
-              whileHover={{ y: -5 }}
-              className="cursor-pointer group text-left"
+              whileHover={{ y: -4 }}
+              className="cursor-pointer group text-left w-full touch-manipulation"
               onClick={onStartSrsReview}
             >
               <Card
                 className={cn(
-                  "h-full border-none shadow-lg transition-all overflow-hidden rounded-[32px] border-b-8",
+                  "h-full border-none shadow-lg transition-all overflow-hidden rounded-2xl sm:rounded-3xl border-b-8",
                   dueCount > 0
-                    ? "bg-emerald-600 border-emerald-800 shadow-emerald-200/50 hover:shadow-emerald-400/50"
+                    ? "bg-[#006c49] border-emerald-900 shadow-emerald-200/50 hover:shadow-emerald-300/50"
                     : "bg-slate-800 border-slate-950 shadow-slate-200/50 hover:shadow-emerald-900/30"
                 )}
               >
-                <CardHeader className="p-6 text-center">
+                <CardHeader className="p-5 sm:p-6 text-center">
                   <div
                     className={cn(
-                      "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform",
+                      "w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-105 transition-transform",
                       dueCount > 0 ? "bg-white/20" : "bg-emerald-500/20 text-emerald-400"
                     )}
                   >
-                    <Brain className="w-7 h-7" />
+                    <Brain className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
-                  <CardTitle className="text-xl font-bold text-white">
+                  <CardTitle className="text-lg sm:text-xl font-bold text-white">
                     {dueCount > 0 ? "Cần ôn tập" : "Đã hoàn thành ✨"}
                   </CardTitle>
                   <CardDescription
                     className={cn(
                       "font-medium tracking-wide text-xs mt-1",
-                      dueCount > 0 ? "text-emerald-100/80 uppercase text-[10px]" : "text-emerald-300/80"
+                      dueCount > 0 ? "text-emerald-100 uppercase font-bold" : "text-emerald-300/80"
                     )}
                   >
                     {dueCount > 0
@@ -132,15 +132,19 @@ export function StudyTopicPicker({
               </Card>
             </motion.button>
 
-
-            <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartQuickQuiz}>
-              <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-400/50 transition-all overflow-hidden rounded-[32px] bg-linear-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
-                <CardHeader className="p-6 text-center">
-                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
-                    <Trophy className="w-7 h-7" />
+            <motion.button
+              type="button"
+              whileHover={{ y: -4 }}
+              className="cursor-pointer group text-left w-full touch-manipulation"
+              onClick={onStartQuickQuiz}
+            >
+              <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-300/50 transition-all overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
+                <CardHeader className="p-5 sm:p-6 text-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-105 transition-transform">
+                    <Trophy className="w-6 h-6 sm:w-7 sm:h-7" />
                   </div>
-                  <CardTitle className="text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
-                  <CardDescription className="text-amber-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">10 từ ngẫu nhiên</CardDescription>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
+                  <CardDescription className="text-amber-100 font-bold tracking-wider uppercase text-xs mt-1">10 từ ngẫu nhiên</CardDescription>
                 </CardHeader>
               </Card>
             </motion.button>
@@ -150,17 +154,17 @@ export function StudyTopicPicker({
         {showAllTopicsCard && (
           <motion.button
             type="button"
-            whileHover={{ y: -5 }}
-            className="cursor-pointer group text-left"
+            whileHover={{ y: -4 }}
+            className="cursor-pointer group text-left w-full touch-manipulation"
             onClick={() => onSelectTopic(DEFAULT_TOPIC_FILTER)}
           >
-            <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-200/50 transition-all overflow-hidden rounded-[32px] bg-emerald-900 border-b-8 border-emerald-700">
-              <CardHeader className="p-6 text-center">
-                <div className="w-14 h-14 bg-emerald-50/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-emerald-400 group-hover:scale-110 transition-transform">
-                  <BookOpen className="w-7 h-7" />
+            <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-200/50 transition-all overflow-hidden rounded-2xl sm:rounded-3xl bg-emerald-950 border-b-8 border-emerald-800">
+              <CardHeader className="p-5 sm:p-6 text-center">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 bg-emerald-50/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-emerald-400 group-hover:scale-105 transition-transform">
+                  <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
-                <CardTitle className="text-xl font-bold text-white">Tất cả bài học</CardTitle>
-                <CardDescription className="text-emerald-300/60 text-xs mt-1">{vocabularyCount} từ vựng</CardDescription>
+                <CardTitle className="text-lg sm:text-xl font-bold text-white">Tất cả bài học</CardTitle>
+                <CardDescription className="text-emerald-300 text-xs mt-1 font-medium">{vocabularyCount} từ vựng</CardDescription>
               </CardHeader>
             </Card>
           </motion.button>
@@ -169,15 +173,15 @@ export function StudyTopicPicker({
         {selectedTopicFilter === UNASSIGNED_TOPIC_FILTER && (
           <motion.button
             type="button"
-            whileHover={{ y: -5 }}
-            className="cursor-pointer group text-left"
+            whileHover={{ y: -4 }}
+            className="cursor-pointer group text-left w-full touch-manipulation"
             onClick={() => onSelectTopic(UNASSIGNED_TOPIC_FILTER)}
           >
-            <Card className="h-full border-2 border-transparent bg-white shadow-lg shadow-slate-200/50 hover:shadow-emerald-100 transition-all overflow-hidden rounded-[32px] border-b-8 border-b-emerald-50 relative group-hover:border-emerald-500/20">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Card className="h-full border border-slate-100 bg-white shadow-md shadow-slate-200/50 hover:shadow-emerald-100 transition-all overflow-hidden rounded-2xl sm:rounded-3xl border-b-8 border-b-emerald-50 relative group-hover:border-emerald-500/20">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
                 <Brain className="w-24 h-24 text-emerald-900" />
               </div>
-              <CardHeader className="p-6 pb-3">
+              <CardHeader className="p-5 sm:p-6">
                 <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-3 text-emerald-600">
                   <Layers className="w-6 h-6" />
                 </div>
@@ -194,43 +198,34 @@ export function StudyTopicPicker({
           <motion.button
             key={topic.id}
             type="button"
-            whileHover={{ y: -5 }}
-            className="cursor-pointer group text-left"
+            whileHover={{ y: -4 }}
+            className="cursor-pointer group text-left w-full touch-manipulation"
             onClick={() => onSelectTopic(topic.id)}
           >
-            <Card className="h-full border-2 border-transparent bg-white shadow-lg shadow-slate-200/50 hover:shadow-emerald-100 transition-all overflow-hidden rounded-[32px] border-b-8 border-b-emerald-50 relative group-hover:border-emerald-500/20">
-              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Card className="h-full border border-slate-100 bg-white shadow-md shadow-slate-200/50 hover:shadow-emerald-100 transition-all overflow-hidden rounded-2xl sm:rounded-3xl border-b-8 border-b-emerald-50 relative group-hover:border-emerald-500/20">
+              <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
                 <Brain className="w-24 h-24 text-emerald-900" />
               </div>
-              <CardHeader className="p-6 pb-3">
+              <CardHeader className="p-5 sm:p-6">
                 <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-3 text-emerald-600">
                   <Layers className="w-6 h-6" />
                 </div>
-                <CardTitle className="text-lg font-bold text-slate-800 line-clamp-1">{topic.name}</CardTitle>
-                <CardDescription className="text-slate-400 font-medium text-xs mt-0.5">
+                <CardTitle className="text-lg font-bold text-slate-800 line-clamp-2 break-words">{topic.name}</CardTitle>
+                <CardDescription className="text-slate-400 font-medium text-xs mt-1">
                   {topicCounts.get(topic.id) ?? 0} từ vựng
                 </CardDescription>
               </CardHeader>
-              <CardContent className="px-6 pb-5 pt-0">
-                <div className="flex -space-x-2">
-                  {[1, 2, 3].map((item) => (
-                    <div key={item} className="w-6 h-6 rounded-full border-2 border-white bg-slate-100 flex items-center justify-center text-[8px] font-bold text-slate-400">
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
             </Card>
           </motion.button>
         ))}
       </div>
 
       {filteredTopics.length === 0 && selectedTopicFilter !== UNASSIGNED_TOPIC_FILTER && (
-        <div className="py-12 text-center space-y-4">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto opacity-50">
-            <Search className="w-8 h-8 text-emerald-600" />
+        <div className="py-12 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
+          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+            <Search className="w-8 h-8" />
           </div>
-          <p className="text-emerald-800/60 italic font-medium">Không tìm thấy chủ đề ôn tập nào phù hợp.</p>
+          <p className="text-slate-600 text-sm font-medium">Không tìm thấy chủ đề ôn tập nào phù hợp.</p>
         </div>
       )}
     </div>

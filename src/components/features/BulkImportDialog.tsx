@@ -170,26 +170,26 @@ export function BulkImportDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col p-0 rounded-[2rem] overflow-hidden border-none shadow-2xl">
-      <DialogHeader className="bg-gradient-to-r from-emerald-600 to-teal-600 p-6 text-white shrink-0">
+    <DialogContent className="sm:max-w-3xl max-h-[90dvh] flex flex-col p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
+      <DialogHeader className="bg-[#006c49] p-5 sm:p-6 text-white shrink-0">
         <div className="flex items-center justify-between">
           <div>
-            <DialogTitle className="text-2xl font-bold tracking-tight">
+            <DialogTitle className="text-xl sm:text-2xl font-bold tracking-tight text-white">
               Nhập từ vựng hàng loạt
             </DialogTitle>
-            <p className="text-white/80 text-sm font-medium mt-1">
+            <p className="text-white/80 text-xs sm:text-sm font-medium mt-1">
               Dán danh sách hoặc tải file CSV để thêm nhanh nhiều từ vựng
             </p>
           </div>
-          <Badge className="bg-white/20 text-white hover:bg-white/30 border-none font-semibold px-3 py-1">
-            Phase 4 Bulk Import
+          <Badge className="hidden sm:inline-flex bg-white/20 text-white hover:bg-white/30 border-none font-semibold px-3 py-1 text-xs">
+            Bulk Import
           </Badge>
         </div>
       </DialogHeader>
 
-      <div className="p-6 space-y-5 flex-1 overflow-hidden flex flex-col bg-white">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1 overflow-y-auto flex flex-col bg-white">
         {/* Topic Selector Row */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-100">
           <div className="flex items-center gap-2">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
               Gán chủ đề mặc định:
@@ -204,7 +204,7 @@ export function BulkImportDialog({
             unassignedValue=""
             placeholder="Chưa phân loại"
             variant="form"
-            className="w-full sm:w-64"
+            className="w-full sm:w-64 h-10"
           />
         </div>
 
@@ -216,13 +216,13 @@ export function BulkImportDialog({
           }}
           className="flex-1 flex flex-col overflow-hidden"
         >
-          <TabsList className="grid grid-cols-2 bg-slate-100 p-1 rounded-xl shrink-0">
-            <TabsTrigger value="paste" className="rounded-lg font-medium text-xs py-2">
-              <FileText className="w-4 h-4 mr-2 text-emerald-600" />
+          <TabsList className="grid grid-cols-2 bg-slate-100 p-1 rounded-xl shrink-0 h-11">
+            <TabsTrigger value="paste" className="rounded-lg font-semibold text-xs py-2">
+              <FileText className="w-4 h-4 mr-1.5 text-emerald-700" />
               Dán văn bản
             </TabsTrigger>
-            <TabsTrigger value="csv" className="rounded-lg font-medium text-xs py-2">
-              <FileSpreadsheet className="w-4 h-4 mr-2 text-emerald-600" />
+            <TabsTrigger value="csv" className="rounded-lg font-semibold text-xs py-2">
+              <FileSpreadsheet className="w-4 h-4 mr-1.5 text-emerald-700" />
               Tải file CSV
             </TabsTrigger>
           </TabsList>
@@ -232,7 +232,7 @@ export function BulkImportDialog({
             <div className="relative">
               <textarea
                 placeholder={`Nhập hoặc dán các từ, mỗi từ một dòng:&#10;apple | quả táo | noun | /ˈæp.əl/&#10;banana | quả chuối&#10;orange&#10;computer | máy tính`}
-                className="w-full h-32 p-3 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono resize-none leading-relaxed"
+                className="w-full h-28 sm:h-32 p-3 text-xs sm:text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-[#006c49] font-mono resize-none leading-relaxed"
                 value={rawText}
                 onChange={(e) => {
                   setRawText(e.target.value);
@@ -241,12 +241,14 @@ export function BulkImportDialog({
               />
               {rawText && (
                 <button
+                  type="button"
                   onClick={() => {
                     setRawText("");
                     setEnrichedOverrides(new Map());
                   }}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 cursor-pointer"
+                  className="absolute right-3 top-3 p-1 text-slate-400 hover:text-slate-600 cursor-pointer"
                   title="Xóa nội dung"
+                  aria-label="Xóa nội dung dán"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -254,7 +256,7 @@ export function BulkImportDialog({
             </div>
             <p className="text-[11px] text-slate-400 flex items-center gap-1.5">
               <HelpCircle className="w-3.5 h-3.5" />
-              Hỗ trợ format: <code>word</code> hoặc <code>word | definition | partOfSpeech | phonetic</code>
+              Hỗ trợ: <code>word</code> hoặc <code>word | definition | partOfSpeech | phonetic</code>
             </p>
           </TabsContent>
 
@@ -269,9 +271,9 @@ export function BulkImportDialog({
             />
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/40 transition-all rounded-2xl p-6 text-center cursor-pointer space-y-2"
+              className="border-2 border-dashed border-slate-200 hover:border-[#006c49] hover:bg-emerald-50/40 transition-all rounded-2xl p-5 sm:p-6 text-center cursor-pointer space-y-2"
             >
-              <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 bg-emerald-50 text-[#006c49] rounded-full flex items-center justify-center mx-auto">
                 <Upload className="w-5 h-5" />
               </div>
               <div>
@@ -288,8 +290,8 @@ export function BulkImportDialog({
 
         {/* Live Analysis Summary & AI Action Bar */}
         {rows.length > 0 && (
-          <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/80 shrink-0">
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/80 shrink-0">
+            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-semibold">
               <span className="text-slate-600 font-bold">Tổng: {summary.total}</span>
               <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> {summary.valid} hợp lệ
@@ -301,7 +303,7 @@ export function BulkImportDialog({
               )}
               {summary.duplicateInDb > 0 && (
                 <span className="text-amber-700 bg-amber-100 px-2 py-0.5 rounded-md flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" /> {summary.duplicateInDb} đã có trong từ điển
+                  <AlertCircle className="w-3 h-3" /> {summary.duplicateInDb} đã có
                 </span>
               )}
               {summary.invalid > 0 && (
@@ -317,7 +319,7 @@ export function BulkImportDialog({
               size="sm"
               onClick={handleAiBatchEnrich}
               disabled={isAiLoading || validRows.length === 0}
-              className="border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-xs font-semibold h-8"
+              className="border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-xs font-semibold h-9 shrink-0"
             >
               {isAiLoading ? (
                 <>
@@ -326,7 +328,7 @@ export function BulkImportDialog({
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-emerald-600" />
+                  <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#006c49]" />
                   AI tra cứu tự động
                 </>
               )}
@@ -336,19 +338,19 @@ export function BulkImportDialog({
 
         {/* Live Preview List */}
         {rows.length > 0 && (
-          <div className="flex-1 overflow-hidden border border-slate-200 rounded-xl bg-white flex flex-col">
-            <div className="bg-slate-100/80 px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 grid grid-cols-12 gap-2 shrink-0">
-              <span className="col-span-3">Từ vựng</span>
+          <div className="flex-1 overflow-hidden border border-slate-200 rounded-xl bg-white flex flex-col min-h-[140px]">
+            <div className="bg-slate-100/80 px-3 sm:px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-500 grid grid-cols-12 gap-2 shrink-0">
+              <span className="col-span-4 sm:col-span-3">Từ vựng</span>
               <span className="col-span-4">Định nghĩa</span>
-              <span className="col-span-2">Phiên âm</span>
-              <span className="col-span-3">Trạng thái</span>
+              <span className="hidden sm:inline sm:col-span-2">Phiên âm</span>
+              <span className="col-span-4 sm:col-span-3">Trạng thái</span>
             </div>
-            <ScrollArea className="flex-1 max-h-48">
+            <ScrollArea className="flex-1 max-h-44 sm:max-h-48">
               <div className="divide-y divide-slate-100 text-xs">
                 {rows.map((row) => (
                   <div
                     key={row.rawId}
-                    className={`px-4 py-2.5 grid grid-cols-12 gap-2 items-center transition-colors ${
+                    className={`px-3 sm:px-4 py-2.5 grid grid-cols-12 gap-2 items-center transition-colors ${
                       row.status === "valid"
                         ? "hover:bg-slate-50"
                         : row.status === "invalid"
@@ -356,7 +358,7 @@ export function BulkImportDialog({
                           : "bg-amber-50/40"
                     }`}
                   >
-                    <div className="col-span-3 font-semibold text-slate-800 truncate">
+                    <div className="col-span-4 sm:col-span-3 font-semibold text-slate-800 truncate">
                       {row.word}
                       {row.partOfSpeech && (
                         <span className="ml-1 text-[10px] text-slate-400 font-normal">
@@ -367,21 +369,21 @@ export function BulkImportDialog({
                     <div className="col-span-4 text-slate-600 truncate">
                       {row.definition || <span className="text-slate-300 italic">Chưa có nghĩa</span>}
                     </div>
-                    <div className="col-span-2 text-slate-400 font-mono text-[11px] truncate">
+                    <div className="hidden sm:inline sm:col-span-2 text-slate-400 font-mono text-[11px] truncate">
                       {row.phonetic ? `/${row.phonetic}/` : "—"}
                     </div>
-                    <div className="col-span-3">
+                    <div className="col-span-4 sm:col-span-3">
                       {row.status === "valid" ? (
                         <span className="text-emerald-700 bg-emerald-50 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Hợp lệ
                         </span>
                       ) : row.status === "duplicate_in_file" ? (
                         <span className="text-amber-700 bg-amber-50 text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <Copy className="w-3 h-3" /> Trùng trong file
+                          <Copy className="w-3 h-3" /> Trùng file
                         </span>
                       ) : row.status === "duplicate_in_db" ? (
                         <span className="text-amber-700 bg-amber-50 text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                          <AlertCircle className="w-3 h-3" /> Đã có trong từ điển
+                          <AlertCircle className="w-3 h-3" /> Đã có
                         </span>
                       ) : (
                         <span className="text-rose-700 bg-rose-50 text-[10px] font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-1">
@@ -397,13 +399,13 @@ export function BulkImportDialog({
         )}
       </div>
 
-      <DialogFooter className="p-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between sm:flex-row gap-3 shrink-0">
+      <DialogFooter className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 -mx-0 -mb-0">
         <Button
           type="button"
           variant="ghost"
           onClick={onClose}
           disabled={isSubmitting}
-          className="rounded-xl text-slate-500 font-medium"
+          className="rounded-xl text-slate-500 font-medium h-11"
         >
           Hủy bỏ
         </Button>
@@ -411,7 +413,7 @@ export function BulkImportDialog({
           type="button"
           onClick={handleImportSubmit}
           disabled={isSubmitting || validRows.length === 0}
-          className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-6 font-semibold shadow-md shadow-emerald-200 h-11"
+          className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-xl px-6 font-semibold shadow-md shadow-[#006c49]/20 h-11 min-h-[44px] cursor-pointer"
         >
           {isSubmitting ? (
             <>

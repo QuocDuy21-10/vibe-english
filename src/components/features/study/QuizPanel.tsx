@@ -55,13 +55,13 @@ export function QuizPanel({
       key={`quiz-${vocabulary.id}-${currentIndex}`}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full bg-white rounded-xl border border-slate-200 p-6 flex flex-col items-center justify-between shadow-[0px_4px_20px_rgba(15,23,42,0.08)] min-h-[420px]"
+      className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-5 sm:p-8 flex flex-col items-center justify-between shadow-lg shadow-emerald-950/5 min-h-[380px] sm:min-h-[420px]"
     >
-      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-4">FILL IN THE BLANKS</span>
+      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">ĐIỀN TỪ VÀO CHỖ TRỐNG</span>
 
-      <div className="text-center mb-6">
-        <p className="text-xs font-bold text-[#10b981] mb-2 uppercase tracking-wide">NGHĨA TIẾNG VIỆT</p>
-        <h3 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight">{vocabulary.definition}</h3>
+      <div className="text-center mb-4 sm:mb-6 max-w-full">
+        <p className="text-xs font-bold text-[#006c49] mb-1.5 uppercase tracking-wide">NGHĨA TIẾNG VIỆT</p>
+        <h3 className="text-xl sm:text-3xl font-bold text-slate-900 leading-snug break-words px-2">{vocabulary.definition}</h3>
       </div>
 
       <form
@@ -78,7 +78,7 @@ export function QuizPanel({
         <div className="w-full max-w-xs flex flex-col items-center gap-2 my-auto">
           <div
             onClick={() => hiddenInputRef.current?.focus()}
-            className="relative w-full flex justify-center items-center h-14 cursor-text"
+            className="relative w-full flex justify-center items-center min-h-[56px] cursor-text"
           >
             <input
               type="text"
@@ -112,35 +112,35 @@ export function QuizPanel({
               aria-label="Nhập từ tiếng Anh"
             />
 
-            <div className="flex gap-1.5 flex-wrap justify-center" aria-hidden="true">
+            <div className="flex gap-1 sm:gap-1.5 flex-wrap justify-center max-w-full" aria-hidden="true">
               {Array.from({ length: vocabulary.word.length }).map((_, index) => {
                 const character = userAnswer[index] || "";
                 const isActive = index === userAnswer.length;
                 const isFilled = index < userAnswer.length;
                 const isSpace = vocabulary.word[index] === " ";
 
-                if (isSpace) return <div key={index} className="w-4 h-12" />;
+                if (isSpace) return <div key={index} className="w-3 sm:w-4 h-10 sm:h-12" />;
 
                 return (
                   <div
                     key={index}
                     className={cn(
-                      "w-8 h-12 border-b-2 flex items-center justify-center transition-all duration-150",
+                      "w-7 sm:w-8 h-10 sm:h-12 border-b-2 flex items-center justify-center transition-all duration-150 rounded-xs",
                       feedback === "correct"
-                        ? "border-emerald-500 text-emerald-700"
+                        ? "border-emerald-500 text-emerald-700 bg-emerald-50/30"
                         : feedback === "incorrect"
-                          ? "border-rose-500 text-rose-700"
+                          ? "border-rose-500 text-rose-700 bg-rose-50/30"
                           : isActive
-                            ? "border-[#10b981] bg-[#ECFDF5]/10"
+                            ? "border-[#006c49] bg-[#ECFDF5]"
                             : isFilled
                               ? "border-slate-800"
-                              : "border-slate-200/60"
+                              : "border-slate-300"
                     )}
                   >
                     {character ? (
                       <span
                         className={cn(
-                          "text-[28px] font-bold",
+                          "text-xl sm:text-2xl font-bold",
                           feedback === "correct"
                             ? "text-[#006c49]"
                             : feedback === "incorrect"
@@ -151,7 +151,7 @@ export function QuizPanel({
                         {character}
                       </span>
                     ) : isActive && !feedback ? (
-                      <div className="h-6 w-[2px] bg-[#006c49] cursor-blink-anim" />
+                      <div className="h-5 sm:h-6 w-[2px] bg-[#006c49] cursor-blink-anim" />
                     ) : null}
                   </div>
                 );
@@ -159,14 +159,14 @@ export function QuizPanel({
             </div>
           </div>
 
-          <span className="text-[10px] font-bold uppercase tracking-wider mt-2 text-slate-400">
-            {Math.min(userAnswer.trim().length, vocabulary.word.length)}/{vocabulary.word.length} CHỮ
+          <span className="text-xs font-bold uppercase tracking-wider mt-2 text-slate-400">
+            {Math.min(userAnswer.trim().length, vocabulary.word.length)}/{vocabulary.word.length} CHỮ CÁI
           </span>
 
           {errors.userAnswer && <p className="text-xs text-rose-500 font-medium text-center mt-1">{errors.userAnswer.message}</p>}
           {feedback === "incorrect" && (
             <motion.p
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -8 }}
               animate={{ opacity: 1, y: 0 }}
               className="text-center text-xs font-semibold text-rose-500 mt-1"
             >
@@ -175,19 +175,19 @@ export function QuizPanel({
           )}
         </div>
 
-        <div className="mt-auto w-full flex flex-col gap-3">
+        <div className="mt-6 w-full flex flex-col gap-2.5">
           {feedback === "correct" ? (
             <Button
               type="button"
               onClick={onNext}
-              className="w-full py-6 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-semibold text-sm rounded-full shadow-sm active:scale-95 transition-all duration-200 border-none cursor-pointer"
+              className="w-full h-12 bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-sm rounded-full shadow-md active:scale-95 transition-all duration-200 border-none cursor-pointer min-h-[48px]"
             >
               Làm tiếp câu khác
             </Button>
           ) : (
             <Button
               type="submit"
-              className="w-full py-6 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-semibold text-sm rounded-full shadow-sm active:scale-95 transition-all duration-200 border-none cursor-pointer disabled:opacity-50"
+              className="w-full h-12 bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-sm rounded-full shadow-md active:scale-95 transition-all duration-200 border-none cursor-pointer disabled:opacity-50 min-h-[48px]"
             >
               Kiểm tra kết quả
             </Button>
@@ -196,7 +196,7 @@ export function QuizPanel({
           <Button
             type="button"
             variant="ghost"
-            className="w-full py-2 text-slate-400 hover:text-[#006c49] font-bold text-xs uppercase tracking-widest hover:bg-transparent cursor-pointer border-none"
+            className="w-full h-9 text-slate-400 hover:text-[#006c49] font-bold text-xs uppercase tracking-widest hover:bg-transparent cursor-pointer border-none"
             onClick={() => {
               setValue("userAnswer", vocabulary.word, { shouldDirty: true, shouldValidate: true });
               onRevealAnswer();

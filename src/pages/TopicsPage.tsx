@@ -37,14 +37,20 @@ export function TopicsPage() {
   const pagination = getPaginationModel(filteredTopics.length, pageSize, currentPage);
   const paginatedTopics = filteredTopics.slice(pagination.startIndex, pagination.endIndex);
 
+  const resetFilters = () => {
+    setTopicSearchQuery("");
+    setSelectedTopicId(DEFAULT_TOPIC_FILTER);
+    setCurrentPage(1);
+  };
+
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
+    <div className="space-y-5 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
         <div className="relative flex-1">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Tìm kiếm chủ đề..."
-            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11 text-sm"
             value={topicSearchQuery}
             onChange={(event) => {
               setTopicSearchQuery(event.target.value);
@@ -53,19 +59,20 @@ export function TopicsPage() {
           />
           {topicSearchQuery && (
             <button
-              className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer"
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer text-slate-400 hover:text-slate-600 rounded-full"
               onClick={() => {
                 setTopicSearchQuery("");
                 setCurrentPage(1);
               }}
               aria-label="Xóa tìm kiếm"
             >
-              <X className="w-4 h-4 text-slate-400" />
+              <X className="w-4 h-4" />
             </button>
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <TopicFilterSelect
             value={selectedTopicId}
             onValueChange={(value) => {
@@ -75,48 +82,50 @@ export function TopicsPage() {
             topics={topics}
             vocabularies={vocabularies}
             showUnassignedOption={false}
-            className="flex-1 md:w-60"
+            className="flex-1 sm:w-56 h-11"
           />
 
           <Dialog open={isAddingTopic} onOpenChange={setIsAddingTopic}>
             <DialogTrigger
               render={
                 <Button
-                  size="default"
-                  className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/10 border-none transition-all h-11 shrink-0 font-medium cursor-pointer"
+                  className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-4 shadow-sm shadow-[#006c49]/20 border-none transition-all h-11 shrink-0 font-medium cursor-pointer min-h-[44px]"
                 />
               }
             >
               <Plus className="w-4 h-4 mr-1.5" />
               <span className="hidden sm:inline">Thêm chủ đề</span>
-              <span className="sm:hidden">Thêm</span>
+              <span className="sm:hidden text-xs font-semibold">Thêm</span>
             </DialogTrigger>
             <TopicDialog onClose={() => setIsAddingTopic(false)} userId={user.uid} />
           </Dialog>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {paginatedTopics.map((topic) => (
           <Card
             key={topic.id}
-            className="rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md transition-all group overflow-hidden relative"
+            className="rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-emerald-200/60 transition-all group overflow-hidden relative flex flex-col justify-between"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-8 -mt-8 opacity-50 group-hover:bg-emerald-100 transition-colors"></div>
+            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-8 -mt-8 opacity-50 group-hover:bg-emerald-100 transition-colors pointer-events-none" />
             <CardHeader className="pb-2 relative">
-              <CardTitle className="text-xl font-bold text-slate-800 tracking-tight">{topic.name}</CardTitle>
-              <CardDescription className="text-xs font-bold text-emerald-600 uppercase tracking-wider">
+              <CardTitle className="text-xl font-bold text-slate-800 tracking-tight break-words line-clamp-2">
+                {topic.name}
+              </CardTitle>
+              <CardDescription className="text-xs font-bold text-emerald-700 uppercase tracking-wider mt-1">
                 {topicVocabCounts.get(topic.id) ?? 0} TỪ VỰNG
               </CardDescription>
             </CardHeader>
-            <CardFooter className="flex justify-end gap-2 pt-2 relative">
+            <CardFooter className="flex justify-end gap-1.5 pt-2 pb-3 px-4 relative border-t-0 bg-transparent">
               <Dialog>
                 <DialogTrigger
                   render={
                     <Button
                       variant="ghost"
-                      size="sm"
-                      className="text-slate-400 h-8 px-2 hover:text-emerald-600 hover:bg-emerald-50"
+                      size="icon"
+                      className="text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer"
+                      aria-label={`Chỉnh sửa chủ đề ${topic.name}`}
                     />
                   }
                 >
@@ -124,10 +133,12 @@ export function TopicsPage() {
                 </DialogTrigger>
                 <TopicDialog topic={topic} userId={user.uid} />
               </Dialog>
+
               <Button
                 variant="ghost"
-                size="sm"
-                className="text-slate-400 h-8 px-2 hover:text-destructive hover:bg-rose-50"
+                size="icon"
+                className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer"
+                aria-label={`Xóa chủ đề ${topic.name}`}
                 onClick={async () => {
                   if (
                     confirm(
@@ -148,36 +159,64 @@ export function TopicsPage() {
             </CardFooter>
           </Card>
         ))}
-        {topics.length === 0 && (
-          <div className="col-span-full py-20 text-center text-emerald-800/60 italic">
-            Chưa có chủ đề nào. Hãy tạo chủ đề ngay!
-          </div>
-        )}
       </div>
 
-      {filteredTopics.length === 0 && topics.length > 0 ? (
-        <div className="py-20 text-center space-y-4">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto opacity-50">
-            <Search className="w-8 h-8 text-emerald-600" />
+      {topics.length === 0 && (
+        <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
+          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+            <Plus className="w-8 h-8" />
           </div>
-          <p className="text-emerald-800/60 italic font-medium">Không tìm thấy chủ đề nào phù hợp.</p>
+          <div className="space-y-1.5">
+            <p className="text-slate-800 font-bold text-base">Chưa có chủ đề nào.</p>
+            <p className="text-slate-400 text-xs">Hãy tạo chủ đề đầu tiên để phân loại và học từ vựng hiệu quả hơn.</p>
+          </div>
+          <Dialog open={isAddingTopic} onOpenChange={setIsAddingTopic}>
+            <DialogTrigger
+              render={
+                <Button className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
+              }
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Tạo chủ đề mới
+            </DialogTrigger>
+            <TopicDialog onClose={() => setIsAddingTopic(false)} userId={user.uid} />
+          </Dialog>
         </div>
-      ) : (
-        topics.length > 0 && (
-          <PaginationControls
-            {...pagination}
-            totalItems={filteredTopics.length}
-            pageSize={pageSize}
-            pageSizeOptions={[6, 12, 18, 24, 30]}
-            itemLabel="chủ đề"
-            pageSizeLabel="Số chủ đề mỗi trang:"
-            onPageChange={setCurrentPage}
-            onPageSizeChange={(nextPageSize) => {
-              setPageSize(nextPageSize);
-              setCurrentPage(1);
-            }}
-          />
-        )
+      )}
+
+      {filteredTopics.length === 0 && topics.length > 0 && (
+        <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
+          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+            <Search className="w-8 h-8" />
+          </div>
+          <div className="space-y-1.5">
+            <p className="text-slate-800 font-bold text-base">Không tìm thấy chủ đề phù hợp.</p>
+            <p className="text-slate-400 text-xs">Thử tìm kiếm với tên chủ đề khác hoặc xóa bộ lọc.</p>
+          </div>
+          <Button
+            variant="outline"
+            onClick={resetFilters}
+            className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50"
+          >
+            Xóa tìm kiếm
+          </Button>
+        </div>
+      )}
+
+      {topics.length > 0 && filteredTopics.length > 0 && (
+        <PaginationControls
+          {...pagination}
+          totalItems={filteredTopics.length}
+          pageSize={pageSize}
+          pageSizeOptions={[6, 12, 18, 24, 30]}
+          itemLabel="chủ đề"
+          pageSizeLabel="Số chủ đề mỗi trang:"
+          onPageChange={setCurrentPage}
+          onPageSizeChange={(nextPageSize) => {
+            setPageSize(nextPageSize);
+            setCurrentPage(1);
+          }}
+        />
       )}
     </div>
   );

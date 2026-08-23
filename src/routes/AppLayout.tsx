@@ -28,26 +28,26 @@ export function AppLayout() {
     );
 
   return (
-    <div className="min-h-screen bg-[#ECFDF5] text-slate-800 flex flex-col">
+    <div className="min-h-dvh bg-[#ECFDF5] text-slate-800 flex flex-col">
       {/* Custom TopAppBar */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white">
         <div className="container max-w-5xl mx-auto h-16 flex items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#006c49] rounded-lg flex items-center justify-center shadow-md shadow-[#006c49]/10">
+            <div className="w-8 h-8 bg-[#006c49] rounded-lg flex items-center justify-center shadow-md shadow-[#006c49]/10 shrink-0">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
             <span className="text-xl font-bold tracking-tight text-[#006c49]">Vibe English</span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden md:flex bg-[#10b981]/15 px-3 py-1 rounded-full items-center gap-1">
-              <span className="text-[#006c49] font-bold text-[10px] uppercase tracking-wider">{totalVocab} TỪ VỰNG</span>
+              <span className="text-[#006c49] font-bold text-xs uppercase tracking-wider">{totalVocab} TỪ VỰNG</span>
             </div>
 
             <img
               src={user.photoURL || ""}
-              alt={user.displayName || ""}
-              className="w-8 h-8 rounded-full border border-slate-200 shadow-sm"
+              alt={user.displayName || "User avatar"}
+              className="w-9 h-9 rounded-full border border-slate-200 shadow-sm object-cover shrink-0"
               referrerPolicy="no-referrer"
             />
 
@@ -55,8 +55,9 @@ export function AppLayout() {
               variant="ghost"
               size="icon"
               onClick={logout}
-              className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full p-2"
+              className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full w-10 h-10 min-w-[40px] p-0"
               title="Đăng xuất"
+              aria-label="Đăng xuất"
             >
               <LogOut className="w-5 h-5" />
             </Button>
@@ -68,7 +69,7 @@ export function AppLayout() {
       <main className="flex-grow w-full max-w-5xl mx-auto py-6 px-4 pb-28 md:pb-8 flex flex-col">
         <div className="space-y-6 flex-grow flex flex-col">
           {/* Desktop Navigation Link Cluster */}
-          <nav className="bg-white p-1 rounded-xl w-fit border border-slate-200/60 shadow-sm hidden md:flex gap-1">
+          <nav aria-label="Desktop Navigation" className="bg-white p-1.5 rounded-xl w-fit border border-slate-200/60 shadow-sm hidden md:flex gap-1">
             {navItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -89,8 +90,11 @@ export function AppLayout() {
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation Bar matching mockup */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200/60 py-2 px-4 shadow-[0_-4px_12px_rgba(0,0,0,0.03)] flex md:hidden justify-around items-center pb-safe">
+      {/* Mobile Bottom Navigation Bar */}
+      <nav
+        aria-label="Mobile Navigation"
+        className="fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-slate-200/80 py-1.5 px-3 shadow-[0_-4px_16px_rgba(0,0,0,0.04)] flex md:hidden justify-around items-center pb-safe"
+      >
         {navItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -99,15 +103,15 @@ export function AppLayout() {
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center justify-center gap-1 transition-all duration-200",
+                  "flex flex-col items-center justify-center min-h-[48px] min-w-[60px] px-2 py-1 rounded-2xl transition-all duration-200 touch-manipulation",
                   isActive
-                    ? "bg-[#006c49] text-white rounded-full px-5 py-2 active:scale-95 shadow-sm"
-                    : "text-slate-500 hover:text-[#006c49] px-3 py-1"
+                    ? "bg-[#006c49] text-white shadow-sm font-bold scale-[1.02]"
+                    : "text-slate-600 hover:text-[#006c49] hover:bg-slate-50 font-medium"
                 )
               }
             >
-              <Icon className="w-5 h-5" />
-              <span className="text-[10px] font-bold">{item.label}</span>
+              <Icon className="w-5 h-5 mb-0.5" />
+              <span className="text-[11px] leading-tight tracking-tight">{item.label}</span>
             </NavLink>
           );
         })}

@@ -55,17 +55,35 @@ export function DictionaryPage() {
   const pagination = getPaginationModel(filteredVocab.length, pageSize, currentPage);
   const paginatedVocab = filteredVocab.slice(pagination.startIndex, pagination.endIndex);
 
+  const hasActiveFilter =
+    selectedTopicId !== DEFAULT_TOPIC_FILTER ||
+    statusFilter !== "all" ||
+    searchQuery.trim().length > 0;
+
+  const activeFilterCount =
+    (selectedTopicId !== DEFAULT_TOPIC_FILTER ? 1 : 0) +
+    (statusFilter !== "all" ? 1 : 0) +
+    (searchQuery.trim().length > 0 ? 1 : 0);
+
+  const resetAllFilters = () => {
+    setSearchQuery("");
+    setSelectedTopicId(DEFAULT_TOPIC_FILTER);
+    setStatusFilter("all");
+    setSortOption("newest");
+    setCurrentPage(1);
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       {/* Top Action Bar & Search */}
       <div className="flex flex-col gap-3">
-        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center">
+        <div className="flex flex-col sm:flex-row gap-2.5 sm:gap-3 items-stretch sm:items-center">
           {/* Search Input */}
           <div className="relative flex-1">
             <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Tìm kiếm từ vựng, định nghĩa hoặc phiên âm..."
-              className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11"
+              className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11 text-sm"
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
@@ -74,7 +92,8 @@ export function DictionaryPage() {
             />
             {searchQuery && (
               <button
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-400 hover:text-slate-600"
+                type="button"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 cursor-pointer text-slate-400 hover:text-slate-600 rounded-full"
                 onClick={() => {
                   setSearchQuery("");
                   setCurrentPage(1);
@@ -87,7 +106,7 @@ export function DictionaryPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 shrink-0">
             {user && (
               <>
                 {/* Bulk Import Trigger */}
@@ -96,14 +115,13 @@ export function DictionaryPage() {
                     render={
                       <Button
                         variant="outline"
-                        size="default"
-                        className="rounded-full px-4 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-slate-700 hover:text-emerald-700 transition-all h-11 shrink-0 font-medium cursor-pointer shadow-sm"
+                        className="flex-1 sm:flex-none rounded-full px-3.5 sm:px-4 border-slate-200 hover:border-emerald-500 hover:bg-emerald-50/50 text-slate-700 hover:text-emerald-700 transition-all h-11 font-medium cursor-pointer shadow-sm min-h-[44px]"
                       />
                     }
                   >
-                    <UploadCloud className="w-4 h-4 mr-1.5 text-emerald-600" />
+                    <UploadCloud className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
                     <span className="hidden sm:inline">Nhập hàng loạt</span>
-                    <span className="sm:hidden">Nhập</span>
+                    <span className="sm:hidden text-xs font-semibold">Nhập</span>
                   </DialogTrigger>
                   <BulkImportDialog
                     onClose={() => setIsBulkImporting(false)}
@@ -118,14 +136,13 @@ export function DictionaryPage() {
                   <DialogTrigger
                     render={
                       <Button
-                        size="default"
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full px-4 shadow-sm shadow-emerald-600/20 border-none transition-all h-11 shrink-0 font-medium cursor-pointer"
+                        className="flex-1 sm:flex-none bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-4 shadow-sm shadow-[#006c49]/20 border-none transition-all h-11 font-medium cursor-pointer min-h-[44px]"
                       />
                     }
                   >
-                    <Plus className="w-4 h-4 mr-1.5" />
+                    <Plus className="w-4 h-4 mr-1.5 shrink-0" />
                     <span className="hidden sm:inline">Thêm từ mới</span>
-                    <span className="sm:hidden">Thêm</span>
+                    <span className="sm:hidden text-xs font-semibold">Thêm từ</span>
                   </DialogTrigger>
                   <AddVocabDialog
                     onClose={() => setIsAddingVocab(false)}
@@ -140,22 +157,24 @@ export function DictionaryPage() {
         </div>
 
         {/* Filter & Sort Bar */}
-        <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 rounded-2xl border border-slate-100 shadow-sm">
-          <div className="flex flex-wrap items-center gap-2.5 flex-1 min-w-[280px]">
+        <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center lg:justify-between gap-2.5">
             {/* Topic Filter */}
-            <TopicFilterSelect
-              value={selectedTopicId}
-              onValueChange={(value) => {
-                setSelectedTopicId(value);
-                setCurrentPage(1);
-              }}
-              topics={topics}
-              vocabularies={vocabularies}
-              className="w-48 sm:w-56"
-            />
+            <div className="w-full lg:w-56">
+              <TopicFilterSelect
+                value={selectedTopicId}
+                onValueChange={(value) => {
+                  setSelectedTopicId(value);
+                  setCurrentPage(1);
+                }}
+                topics={topics}
+                vocabularies={vocabularies}
+                className="w-full h-10"
+              />
+            </div>
 
             {/* Status Filter */}
-            <div className="w-40 sm:w-44">
+            <div className="w-full sm:w-auto lg:w-48">
               <Select
                 value={statusFilter}
                 onValueChange={(val) => {
@@ -163,7 +182,7 @@ export function DictionaryPage() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-xl h-10 border-slate-200 bg-white text-xs font-medium">
+                <SelectTrigger className="w-full rounded-full h-10 border-slate-200 bg-white text-xs font-medium px-3.5">
                   <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
@@ -175,12 +194,9 @@ export function DictionaryPage() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
 
-          {/* Sort Option */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium hidden sm:inline">Sắp xếp:</span>
-            <div className="w-44 sm:w-48">
+            {/* Sort Option */}
+            <div className="w-full sm:w-auto lg:w-52 sm:col-span-2 lg:col-span-1">
               <Select
                 value={sortOption}
                 onValueChange={(val) => {
@@ -188,7 +204,7 @@ export function DictionaryPage() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="rounded-xl h-10 border-slate-200 bg-white text-xs font-medium">
+                <SelectTrigger className="w-full rounded-full h-10 border-slate-200 bg-white text-xs font-medium px-3.5">
                   <SelectValue placeholder="Sắp xếp" />
                 </SelectTrigger>
                 <SelectContent>
@@ -203,11 +219,32 @@ export function DictionaryPage() {
               </Select>
             </div>
           </div>
+
+          {/* Active Filter Indicators */}
+          {hasActiveFilter && (
+            <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
+              <div className="flex items-center gap-1.5 text-slate-500 font-medium">
+                <Filter className="w-3.5 h-3.5 text-emerald-600" />
+                <span>Đang lọc:</span>
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 font-semibold text-[11px] px-2 py-0.5 rounded-full">
+                  {activeFilterCount} tiêu chí
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetAllFilters}
+                className="h-7 text-xs font-semibold text-rose-600 hover:text-rose-700 hover:bg-rose-50 px-2 rounded-lg cursor-pointer"
+              >
+                Xóa bộ lọc
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Vocabulary Card Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
         <AnimatePresence mode="popLayout">
           {paginatedVocab.map((vocabulary) => (
             <VocabCard
@@ -222,16 +259,48 @@ export function DictionaryPage() {
 
       {/* Empty State or Pagination Controls */}
       {filteredVocab.length === 0 ? (
-        <div className="py-20 text-center space-y-4">
-          <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto opacity-60">
-            <Search className="w-8 h-8 text-emerald-600" />
+        <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
+          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+            <Search className="w-8 h-8" />
           </div>
-          <div>
-            <p className="text-emerald-900 font-semibold">Không tìm thấy từ vựng nào.</p>
-            <p className="text-slate-400 text-xs mt-1">
-              Thử tìm với từ khóa khác hoặc điều chỉnh bộ lọc chủ đề/trạng thái.
+          <div className="space-y-1.5">
+            <p className="text-slate-800 font-bold text-base">
+              {vocabularies.length === 0 ? "Bạn chưa có từ vựng nào." : "Không tìm thấy từ vựng phù hợp."}
+            </p>
+            <p className="text-slate-400 text-xs leading-relaxed">
+              {vocabularies.length === 0
+                ? "Thêm từ đầu tiên để bắt đầu hành trình học từ vựng tiếng Anh."
+                : "Thử tìm với từ khóa khác hoặc xóa bộ lọc để xem toàn bộ danh sách."}
             </p>
           </div>
+          {vocabularies.length === 0 ? (
+            <Dialog open={isAddingVocab} onOpenChange={setIsAddingVocab}>
+              <DialogTrigger
+                render={
+                  <Button className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
+                }
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                Thêm từ mới ngay
+              </DialogTrigger>
+              {user && (
+                <AddVocabDialog
+                  onClose={() => setIsAddingVocab(false)}
+                  userId={user.uid}
+                  topics={topics}
+                  vocabularies={vocabularies}
+                />
+              )}
+            </Dialog>
+          ) : (
+            <Button
+              variant="outline"
+              onClick={resetAllFilters}
+              className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50"
+            >
+              Xóa bộ lọc tìm kiếm
+            </Button>
+          )}
         </div>
       ) : (
         <PaginationControls

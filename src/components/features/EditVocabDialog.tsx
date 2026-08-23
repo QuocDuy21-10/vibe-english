@@ -102,62 +102,66 @@ export function EditVocabDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-lg rounded-[2rem] overflow-hidden p-0 border-none shadow-2xl">
-      <div className="bg-emerald-500 p-8 text-white text-center shadow-inner">
-        <DialogTitle className="text-3xl font-bold tracking-tight">Chỉnh sửa từ vựng</DialogTitle>
-        <p className="text-white/80 text-sm font-medium mt-1">Cập nhật và hoàn thiện thông tin từ vựng</p>
+    <DialogContent className="sm:max-w-lg rounded-3xl overflow-hidden p-0 border-none shadow-2xl max-h-[90dvh] flex flex-col">
+      <div className="bg-[#006c49] p-5 sm:p-6 text-white text-center shrink-0">
+        <DialogTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Chỉnh sửa từ vựng</DialogTitle>
+        <p className="text-white/80 text-xs sm:text-sm font-medium mt-1">Cập nhật và hoàn thiện thông tin từ vựng</p>
       </div>
-      <form onSubmit={handleSubmit(onSubmit)} className="p-8 space-y-6 bg-white">
-        <div className="flex gap-3">
-          <div className="flex-1 relative">
-            <Input
-              placeholder="Nhập từ tiếng Anh..."
-              aria-invalid={!!errors.word}
-              {...register("word")}
-              className="rounded-xl h-12 text-lg border-slate-200 focus:ring-emerald-500"
-            />
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-12 rounded-xl border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100"
-            onClick={handleAiLookup}
-            disabled={isAiLoading || !wordValue.trim()}
-          >
-            {isAiLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4 mr-2" />}
-            AI Tra
-          </Button>
-        </div>
-        {errors.word && <p className="text-xs text-rose-500 font-medium -mt-3">{errors.word.message}</p>}
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Phiên âm</label>
+      <form onSubmit={handleSubmit(onSubmit)} className="p-5 sm:p-6 space-y-4 sm:space-y-5 bg-white overflow-y-auto flex-1">
+        <div className="space-y-1.5">
+          <label className="text-xs font-semibold text-slate-600 ml-0.5">Từ vựng tiếng Anh <span className="text-rose-500">*</span></label>
+          <div className="flex gap-2 sm:gap-3">
+            <div className="flex-1 relative">
               <Input
-                placeholder="/Phonetic/"
+                placeholder="Ví dụ: resilient, comprehensive..."
+                aria-invalid={!!errors.word}
+                {...register("word")}
+                className="rounded-xl h-11 sm:h-12 text-base border-slate-200 focus:ring-emerald-500"
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-semibold text-xs sm:text-sm shrink-0 min-h-[44px]"
+              onClick={handleAiLookup}
+              disabled={isAiLoading || !wordValue.trim()}
+            >
+              {isAiLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4 sm:mr-1.5 text-emerald-600" />}
+              <span>AI Tra</span>
+            </Button>
+          </div>
+          {errors.word && <p className="text-xs text-rose-500 font-medium">{errors.word.message}</p>}
+        </div>
+
+        <div className="space-y-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-600 ml-0.5">Phiên âm</label>
+              <Input
+                placeholder="/rɪˈzɪl.jənt/"
                 {...register("phonetic")}
-                className="rounded-xl h-11 border-slate-100"
+                className="rounded-xl h-11 border-slate-200 text-sm"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Loại từ</label>
+              <label className="text-xs font-semibold text-slate-600 ml-0.5">Loại từ</label>
               <Controller
                 control={control}
                 name="partOfSpeech"
                 render={({ field }) => (
                   <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
-                    <SelectTrigger className="rounded-xl h-11 border-slate-100">
+                    <SelectTrigger className="w-full rounded-xl h-11 border-slate-200 text-sm">
                       <SelectValue placeholder="Chọn loại từ" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="noun">Noun</SelectItem>
-                      <SelectItem value="verb">Verb</SelectItem>
-                      <SelectItem value="adjective">Adjective</SelectItem>
-                      <SelectItem value="adverb">Adverb</SelectItem>
-                      <SelectItem value="prep">Prep</SelectItem>
-                      <SelectItem value="conj">Conj</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="noun">Noun (Danh từ)</SelectItem>
+                      <SelectItem value="verb">Verb (Động từ)</SelectItem>
+                      <SelectItem value="adjective">Adjective (Tính từ)</SelectItem>
+                      <SelectItem value="adverb">Adverb (Trạng từ)</SelectItem>
+                      <SelectItem value="prep">Prep (Giới từ)</SelectItem>
+                      <SelectItem value="conj">Conj (Liên từ)</SelectItem>
+                      <SelectItem value="other">Other (Khác)</SelectItem>
                     </SelectContent>
                   </Select>
                 )}
@@ -166,18 +170,18 @@ export function EditVocabDialog({
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Định nghĩa</label>
+            <label className="text-xs font-semibold text-slate-600 ml-0.5">Định nghĩa tiếng Việt <span className="text-rose-500">*</span></label>
             <Input
               placeholder="Nghĩa tiếng Việt..."
               aria-invalid={!!errors.definition}
               {...register("definition")}
-              className="rounded-xl h-11 border-slate-100 font-bold text-emerald-700"
+              className="rounded-xl h-11 border-slate-200 font-semibold text-[#006c49] text-sm sm:text-base"
             />
             {errors.definition && <p className="text-xs text-rose-500 font-medium">{errors.definition.message}</p>}
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Chủ đề</label>
+            <label className="text-xs font-semibold text-slate-600 ml-0.5">Chủ đề</label>
             <Controller
               control={control}
               name="topicId"
@@ -190,20 +194,21 @@ export function EditVocabDialog({
                   unassignedValue=""
                   placeholder="Chọn chủ đề"
                   variant="form"
+                  className="w-full h-11"
                 />
               )}
             />
           </div>
         </div>
 
-        <DialogFooter className="pt-4 flex justify-between! items-center sm:flex-row! gap-4">
-          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl text-slate-400">
+        <DialogFooter className="pt-3 flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2.5 shrink-0 border-t border-slate-100 bg-transparent p-0 -mx-0 -mb-0">
+          <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl text-slate-500 h-11">
             Hủy
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-emerald-500 hover:bg-emerald-600 h-12 px-10 rounded-xl shadow-lg shadow-emerald-100 border-none transition-all"
+            className="bg-[#006c49] hover:bg-[#006c49]/90 text-white h-11 sm:h-12 px-6 rounded-xl shadow-md shadow-[#006c49]/20 font-semibold text-sm border-none transition-all cursor-pointer min-h-[44px]"
           >
             {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : "Lưu thay đổi"}
           </Button>
