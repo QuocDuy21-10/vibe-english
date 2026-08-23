@@ -162,26 +162,25 @@ export function StudySessionView({
         </Button>
       </div>
 
-      <div className="flex md:hidden justify-center gap-6 mt-6">
+      <div className="flex md:hidden items-center gap-3 mt-6 w-full">
         <Button
           variant="outline"
-          size="icon"
-          className="w-12 h-12 flex items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] active:scale-90 transition-all shadow-sm disabled:opacity-30"
+          className="flex-1 h-12 rounded-full border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-[#ECFDF5] hover:text-[#006c49] active:scale-[0.98] transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-1.5"
           onClick={onPrevious}
           disabled={currentIndex === 0 || isPending}
           aria-label="Câu trước"
         >
-          <ChevronLeft className="w-5 h-5" />
+          <ChevronLeft className="w-4 h-4" />
+          <span>Quay lại</span>
         </Button>
         <Button
-          variant="outline"
-          size="icon"
-          className="w-12 h-12 flex items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] active:scale-90 transition-all shadow-sm"
+          className="flex-[1.5] h-12 rounded-full bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-sm shadow-md shadow-[#006c49]/15 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 border-none"
           onClick={onNext}
           disabled={isPending}
           aria-label={isLastItem ? "Hoàn thành" : "Câu tiếp theo"}
         >
-          {isLastItem ? <Check className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+          <span>{isLastItem ? "Hoàn thành" : "Tiếp theo"}</span>
+          {isLastItem ? <Check className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
         </Button>
       </div>
 
