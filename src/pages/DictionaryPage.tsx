@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   ArrowDownAZ,
   ArrowUpDown,
+  FileSpreadsheet,
   Filter,
   Layers,
   Plus,
@@ -13,8 +14,9 @@ import {
 import { AnimatePresence } from "motion/react";
 
 import { AddVocabDialog } from "@/components/features/AddVocabDialog";
-import { BulkImportDialog } from "@/components/features/BulkImportDialog";
+import { ImportVocabDialog } from "@/components/features/ImportVocabDialog";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
+
 import { VocabCard } from "@/components/features/VocabCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -109,7 +111,7 @@ export function DictionaryPage() {
           <div className="flex items-center gap-2 shrink-0">
             {user && (
               <>
-                {/* Bulk Import Trigger */}
+                {/* File Import Trigger */}
                 <Dialog open={isBulkImporting} onOpenChange={setIsBulkImporting}>
                   <DialogTrigger
                     render={
@@ -119,11 +121,11 @@ export function DictionaryPage() {
                       />
                     }
                   >
-                    <UploadCloud className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
-                    <span className="hidden sm:inline">Nhập hàng loạt</span>
-                    <span className="sm:hidden text-xs font-semibold">Nhập</span>
+                    <FileSpreadsheet className="w-4 h-4 mr-1.5 text-emerald-600 shrink-0" />
+                    <span className="hidden sm:inline">Nhập từ file</span>
+                    <span className="sm:hidden text-xs font-semibold">Nhập file</span>
                   </DialogTrigger>
-                  <BulkImportDialog
+                  <ImportVocabDialog
                     onClose={() => setIsBulkImporting(false)}
                     userId={user.uid}
                     topics={topics}

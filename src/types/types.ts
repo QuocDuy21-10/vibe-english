@@ -31,6 +31,52 @@ export interface Vocabulary {
 
 export type BulkRowStatus = "valid" | "duplicate_in_file" | "duplicate_in_db" | "invalid";
 
+export type ImportRowStatus = "valid" | "duplicate-in-file" | "duplicate-existing" | "invalid";
+
+export interface RawImportRow {
+  rowNumber: number;
+  word: string;
+  definition: string;
+  partOfSpeech: string;
+  phonetic: string;
+  topicName: string;
+}
+
+export interface ProcessedImportRow {
+  rowNumber: number;
+  word: string;
+  normalizedWord: string;
+  definition: string;
+  partOfSpeech: string;
+  phonetic: string;
+  topicName: string;
+  topicId: string | null;
+  status: ImportRowStatus;
+  errors: string[];
+}
+
+export interface ImportStructureError {
+  missingColumns: string[];
+  extraColumns: string[];
+  invalidSheet?: boolean;
+  emptyFile?: boolean;
+  exceededMaxRows?: boolean;
+  customMessage?: string;
+}
+
+export interface ImportAnalysisResult {
+  success: boolean;
+  structureError?: ImportStructureError;
+  rows: ProcessedImportRow[];
+  summary: {
+    total: number;
+    valid: number;
+    duplicateInFile: number;
+    duplicateExisting: number;
+    invalid: number;
+  };
+}
+
 export interface ParsedBulkItem {
   rawId: string;
   word: string;
@@ -60,6 +106,7 @@ export interface BatchCreateResult {
   successCount: number;
   failedCount: number;
 }
+
 
 export interface ReviewEvent {
   id?: string;
