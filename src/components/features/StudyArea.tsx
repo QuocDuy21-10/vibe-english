@@ -3,6 +3,7 @@ import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Brain, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { StudyExitConfirmDialog } from "@/components/features/study/StudyExitConfirmDialog";
 import { StudySessionView } from "@/components/features/study/StudySessionView";
 import { StudySummary } from "@/components/features/study/StudySummary";
 import { StudyTopicPicker } from "@/components/features/study/StudyTopicPicker";
@@ -50,6 +51,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const [attemptedWords, setAttemptedWords] = useState<Set<string>>(new Set());
   const [requeuedIds, setRequeuedIds] = useState<Set<string>>(new Set());
   const [pendingVocabId, setPendingVocabId] = useState<string | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
 
   const filtered = useMemo(
     () =>
@@ -293,28 +295,40 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
         ? "Thử thách 10 từ vựng"
         : "Đang ôn tập";
 
+  const handleConfirmExit = () => {
+    setShowExitConfirm(false);
+    returnToTopics();
+  };
+
   return (
-    <StudySessionView
-      vocabulary={current}
-      currentIndex={safeCurrentIndex}
-      itemCount={filtered.length}
-      studyMode={studyMode}
-      title={title}
-      subtitle={subtitle}
-      isFlipped={isFlipped}
-      isPending={pendingVocabId === current.id}
-      feedback={feedback}
-      onReturnToTopics={returnToTopics}
-      onModeChange={switchStudyMode}
-      onPrevious={previous}
-      onNext={() => next()}
-      onFlip={() => setIsFlipped((flipped) => !flipped)}
-      onRate={(rating) => void handleFlashcardRating(rating)}
-      onAnswerChange={() => {
-        if (feedback) setFeedback(null);
-      }}
-      onCheckAnswer={checkAnswer}
-      onRevealAnswer={() => setFeedback("correct")}
-    />
+    <>
+      <StudySessionView
+        vocabulary={current}
+        currentIndex={safeCurrentIndex}
+        itemCount={filtered.length}
+        studyMode={studyMode}
+        title={title}
+        subtitle={subtitle}
+        isFlipped={isFlipped}
+        isPending={pendingVocabId === current.id}
+        feedback={feedback}
+        onReturnToTopics={() => setShowExitConfirm(true)}
+        onModeChange={switchStudyMode}
+        onPrevious={previous}
+        onNext={() => next()}
+        onFlip={() => setIsFlipped((flipped) => !flipped)}
+        onRate={(rating) => void handleFlashcardRating(rating)}
+        onAnswerChange={() => {
+          if (feedback) setFeedback(null);
+        }}
+        onCheckAnswer={checkAnswer}
+        onRevealAnswer={() => setFeedback("correct")}
+      />
+      <StudyExitConfirmDialog
+        isOpen={showExitConfirm}
+        onClose={() => setShowExitConfirm(false)}
+        onConfirmExit={handleConfirmExit}
+      />
+    </>
   );
 }
