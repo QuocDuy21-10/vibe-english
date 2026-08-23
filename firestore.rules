@@ -74,6 +74,24 @@ service cloud.firestore {
         && data.level is int && data.level >= 0 && data.level <= 4;
     }
 
+    function isValidReviewEvent(data) {
+      return data.keys().hasAll([
+        'userId', 'vocabularyId', 'rating', 'previousLevel', 'newLevel',
+        'previousIntervalDays', 'newIntervalDays', 'topicId', 'srsVersion', 'reviewedAt'
+      ])
+        && data.keys().size() == 10
+        && data.userId == request.auth.uid
+        && data.vocabularyId is string && data.vocabularyId.size() > 0 && data.vocabularyId.size() <= 128
+        && data.rating in ['again', 'hard', 'good', 'easy']
+        && data.previousLevel is int && data.previousLevel >= 0 && data.previousLevel <= 5
+        && data.newLevel is int && data.newLevel >= 0 && data.newLevel <= 4
+        && data.previousIntervalDays is int && data.previousIntervalDays >= 0 && data.previousIntervalDays <= 3650
+        && data.newIntervalDays is int && data.newIntervalDays >= 0 && data.newIntervalDays <= 3650
+        && (data.topicId == null || data.topicId is string)
+        && data.srsVersion == 1
+        && data.reviewedAt is timestamp;
+    }
+
     // --- Rules ---
 
     match /topics/{topicId} {
@@ -108,6 +126,16 @@ service cloud.firestore {
           'level', 'nextReview', 'srsVersion', 'intervalDays', 'easeFactor',
           'repetitions', 'lapses', 'lastReviewedAt'
         ]);
+    }
+
+    match /reviewEvents/{eventId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() && isValidReviewEvent(incoming())
+        && incoming().reviewedAt == request.time;
+
+      allow update, delete: if false;
     }
   }
 }

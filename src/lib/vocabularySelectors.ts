@@ -1,6 +1,15 @@
 import { DEFAULT_TOPIC_FILTER, LEVELS, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
-import { getVocabularyLevel } from "@/lib/srs";
+import { getVocabularyLevel, isDueForReview } from "@/lib/srs";
 import type { Topic, Vocabulary } from "@/types/types";
+
+export function getDueVocabularies(vocabularies: Vocabulary[], now = new Date()): Vocabulary[] {
+  return vocabularies.filter((vocab) => isDueForReview(vocab, now));
+}
+
+export function getDueCount(vocabularies: Vocabulary[], now = new Date()): number {
+  return getDueVocabularies(vocabularies, now).length;
+}
+
 
 export type VocabularyOverview = {
   stats: {

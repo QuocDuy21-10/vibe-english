@@ -445,4 +445,174 @@ describe("Firestore Security Rules Tests", () => {
       })
     );
   });
+
+  // 9. ReviewEvents security rules
+  describe("reviewEvents collection rules", () => {
+    it("denies unauthenticated users from creating reviewEvents", async () => {
+      const anonDb = testEnv.unauthenticatedContext().firestore();
+      await assertFails(
+        setDoc(doc(anonDb, "reviewEvents/e1"), {
+          userId: "anon",
+          vocabularyId: "v1",
+          rating: "good",
+          previousLevel: 0,
+          newLevel: 1,
+          previousIntervalDays: 0,
+          newIntervalDays: 1,
+          topicId: null,
+          srsVersion: 1,
+          reviewedAt: serverTimestamp()
+        })
+      );
+    });
+
+    it("allows authenticated user to create own valid reviewEvent", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(
+        setDoc(doc(aliceDb, "reviewEvents/e_alice"), {
+          userId: "alice",
+          vocabularyId: "v1",
+          rating: "good",
+          previousLevel: 0,
+          newLevel: 1,
+          previousIntervalDays: 0,
+          newIntervalDays: 1,
+          topicId: null,
+          srsVersion: 1,
+          reviewedAt: serverTimestamp()
+        })
+      );
+    });
+
+    it("denies user A from creating reviewEvent for user B", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(
+        setDoc(doc(aliceDb, "reviewEvents/e_bob"), {
+          userId: "bob",
+          vocabularyId: "v1",
+          rating: "good",
+          previousLevel: 0,
+          newLevel: 1,
+          previousIntervalDays: 0,
+          newIntervalDays: 1,
+          topicId: null,
+          srsVersion: 1,
+          reviewedAt: serverTimestamp()
+        })
+      );
+    });
+
+    it("denies user A from reading user B reviewEvent", async () => {
+      await seedDocument("reviewEvents/e_bob", {
+        userId: "bob",
+        vocabularyId: "v_bob",
+        rating: "good",
+        previousLevel: 0,
+        newLevel: 1,
+        previousIntervalDays: 0,
+        newIntervalDays: 1,
+        topicId: null,
+        srsVersion: 1,
+        reviewedAt: Timestamp.now()
+      });
+
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(getDoc(doc(aliceDb, "reviewEvents/e_bob")));
+    });
+
+    it("allows user A to read own reviewEvent", async () => {
+      await seedDocument("reviewEvents/e_alice", {
+        userId: "alice",
+        vocabularyId: "v_alice",
+        rating: "good",
+        previousLevel: 0,
+        newLevel: 1,
+        previousIntervalDays: 0,
+        newIntervalDays: 1,
+        topicId: null,
+        srsVersion: 1,
+        reviewedAt: Timestamp.now()
+      });
+
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(getDoc(doc(aliceDb, "reviewEvents/e_alice")));
+    });
+
+    it("denies updating reviewEvent", async () => {
+      await seedDocument("reviewEvents/e_alice", {
+        userId: "alice",
+        vocabularyId: "v_alice",
+        rating: "good",
+        previousLevel: 0,
+        newLevel: 1,
+        previousIntervalDays: 0,
+        newIntervalDays: 1,
+        topicId: null,
+        srsVersion: 1,
+        reviewedAt: Timestamp.now()
+      });
+
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(
+        updateDoc(doc(aliceDb, "reviewEvents/e_alice"), {
+          rating: "again"
+        })
+      );
+    });
+
+    it("denies deleting reviewEvent", async () => {
+      await seedDocument("reviewEvents/e_alice", {
+        userId: "alice",
+        vocabularyId: "v_alice",
+        rating: "good",
+        previousLevel: 0,
+        newLevel: 1,
+        previousIntervalDays: 0,
+        newIntervalDays: 1,
+        topicId: null,
+        srsVersion: 1,
+        reviewedAt: Timestamp.now()
+      });
+
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const { deleteDoc: firestoreDelete } = await import("firebase/firestore");
+      await assertFails(firestoreDelete(doc(aliceDb, "reviewEvents/e_alice")));
+    });
+
+    it("denies reviewEvent with invalid rating", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(
+        setDoc(doc(aliceDb, "reviewEvents/e_invalid_rating"), {
+          userId: "alice",
+          vocabularyId: "v1",
+          rating: "invalid_rating",
+          previousLevel: 0,
+          newLevel: 1,
+          previousIntervalDays: 0,
+          newIntervalDays: 1,
+          topicId: null,
+          srsVersion: 1,
+          reviewedAt: serverTimestamp()
+        })
+      );
+    });
+
+    it("denies reviewEvent with negative interval", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(
+        setDoc(doc(aliceDb, "reviewEvents/e_neg_interval"), {
+          userId: "alice",
+          vocabularyId: "v1",
+          rating: "good",
+          previousLevel: 0,
+          newLevel: 1,
+          previousIntervalDays: 0,
+          newIntervalDays: -5,
+          topicId: null,
+          srsVersion: 1,
+          reviewedAt: serverTimestamp()
+        })
+      );
+    });
+  });
 });

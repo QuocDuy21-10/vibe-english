@@ -4,10 +4,13 @@ import { DEFAULT_TOPIC_FILTER, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab
 import {
   countVocabulariesByTopic,
   filterVocabularies,
+  getDueCount,
+  getDueVocabularies,
   getVocabularyOverview,
   sortTopicsByName
 } from "@/lib/vocabularySelectors";
 import type { Topic, Vocabulary } from "@/types/types";
+
 
 const NOW = new Date("2026-08-13T00:00:00.000Z");
 
@@ -77,5 +80,19 @@ describe("topic selectors", () => {
 
     expect(sortTopicsByName(topics).map((topic) => topic.name)).toEqual(["Travel", "Work"]);
     expect(topics.map((topic) => topic.name)).toEqual(["Work", "Travel"]);
+  });
+});
+
+describe("due vocabulary selectors", () => {
+  it("filters vocabularies that are due for review", () => {
+    const dueItem = vocabulary("due", { nextReview: new Date("2026-08-12T00:00:00Z") });
+    const futureItem = vocabulary("future", { nextReview: new Date("2026-08-14T00:00:00Z") });
+    const nullDateItem = vocabulary("null-date", { nextReview: null });
+
+    const items = [dueItem, futureItem, nullDateItem];
+    const due = getDueVocabularies(items, NOW);
+
+    expect(due.map((i) => i.id)).toEqual(["due", "null-date"]);
+    expect(getDueCount(items, NOW)).toBe(2);
   });
 });

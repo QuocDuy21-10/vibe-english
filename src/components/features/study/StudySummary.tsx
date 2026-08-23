@@ -2,8 +2,9 @@ import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { QUICK_QUIZ_TOPIC } from "@/constants/vocab";
+import { QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC } from "@/constants/vocab";
 import type { FlashcardRating } from "@/lib/srs";
+import type { StudySession } from "@/types/types";
 
 type StudySummaryProps = {
   studyMode: "flashcard" | "quiz";
@@ -12,6 +13,7 @@ type StudySummaryProps = {
   score: number;
   flashcardStats: Record<FlashcardRating, number>;
   ratedCount: number;
+  sessionStats?: StudySession;
   onReturnToTopics: () => void;
   onRestart: () => void;
 };
@@ -23,11 +25,24 @@ export function StudySummary({
   score,
   flashcardStats,
   ratedCount,
+  sessionStats,
   onReturnToTopics,
   onRestart
 }: StudySummaryProps) {
+  const displayItemCount = sessionStats ? sessionStats.initialCount : itemCount;
+  const displayRatedCount = sessionStats ? sessionStats.completedCount : ratedCount;
+  const displayFlashcardStats: Record<FlashcardRating, number> = sessionStats
+    ? {
+        again: sessionStats.againCount,
+        hard: sessionStats.hardCount,
+        good: sessionStats.goodCount,
+        easy: sessionStats.easyCount
+      }
+    : flashcardStats;
+
   const accuracy = itemCount > 0 ? Math.round((score / itemCount) * 100) : 0;
   const isPerfect = accuracy === 100;
+
 
   return (
     <div className="max-w-2xl mx-auto py-12 text-center space-y-8">
@@ -54,7 +69,11 @@ export function StudySummary({
             {isPerfect ? "Tuyệt vời! ✨" : accuracy >= 80 ? "Rất tốt! 👏" : accuracy >= 50 ? "Khá lắm! 👍" : "Cố gắng lên! 💪"}
           </h2>
           <p className="text-slate-500 font-medium">
-            Bạn đã hoàn thành bài học {selectedTopic === QUICK_QUIZ_TOPIC ? "thử thách 10 từ vựng" : "chủ đề này"}.
+            {selectedTopic === SRS_REVIEW_TOPIC
+              ? `Bạn đã hoàn thành phiên ôn tập ${displayItemCount} từ vựng đến hạn!`
+              : selectedTopic === QUICK_QUIZ_TOPIC
+                ? "Bạn đã hoàn thành bài học thử thách 10 từ vựng."
+                : `Bạn đã hoàn thành ${displayItemCount} từ vựng trong chủ đề này.`}
           </p>
         </div>
 
@@ -62,19 +81,19 @@ export function StudySummary({
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div className="py-5 px-3 bg-rose-50 rounded-3xl space-y-1">
               <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Again</p>
-              <div className="text-2xl font-black text-rose-700">{flashcardStats.again}</div>
+              <div className="text-2xl font-black text-rose-700">{displayFlashcardStats.again}</div>
             </div>
             <div className="py-5 px-3 bg-amber-50 rounded-3xl space-y-1">
               <p className="text-[10px] font-bold text-amber-600 uppercase tracking-widest">Hard</p>
-              <div className="text-2xl font-black text-amber-700">{flashcardStats.hard}</div>
+              <div className="text-2xl font-black text-amber-700">{displayFlashcardStats.hard}</div>
             </div>
             <div className="py-5 px-3 bg-emerald-50 rounded-3xl space-y-1">
               <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest">Good</p>
-              <div className="text-2xl font-black text-emerald-700">{flashcardStats.good}</div>
+              <div className="text-2xl font-black text-emerald-700">{displayFlashcardStats.good}</div>
             </div>
             <div className="py-5 px-3 bg-sky-50 rounded-3xl space-y-1">
               <p className="text-[10px] font-bold text-sky-600 uppercase tracking-widest">Easy</p>
-              <div className="text-2xl font-black text-sky-700">{flashcardStats.easy}</div>
+              <div className="text-2xl font-black text-sky-700">{displayFlashcardStats.easy}</div>
             </div>
           </div>
         ) : (
@@ -85,11 +104,11 @@ export function StudySummary({
             </div>
             <div className="py-6 px-4 bg-slate-50 rounded-3xl space-y-1">
               <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Số câu đúng</p>
-              <div className="text-3xl font-black text-slate-700">{score}/{itemCount}</div>
+              <div className="text-3xl font-black text-slate-700">{score}/{displayItemCount}</div>
             </div>
             <div className="py-6 px-4 bg-rose-50 rounded-3xl space-y-1">
               <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest">Cần cải thiện</p>
-              <div className="text-3xl font-black text-rose-700">{itemCount - score}</div>
+              <div className="text-3xl font-black text-rose-700">{Math.max(0, displayItemCount - score)}</div>
             </div>
           </div>
         )}
@@ -97,9 +116,10 @@ export function StudySummary({
         {studyMode === "flashcard" && (
           <div className="py-4 px-6 bg-emerald-900 rounded-2xl text-white">
             <p className="text-xs font-bold uppercase tracking-widest opacity-60 mb-1">Thống kê Flashcard</p>
-            <div className="text-xl font-bold">{ratedCount} lượt đánh giá đã hoàn thành</div>
+            <div className="text-xl font-bold">{displayRatedCount} lượt đánh giá đã hoàn thành</div>
           </div>
         )}
+
 
         <div className="pt-4 space-y-3">
           <Button

@@ -8,12 +8,28 @@ import {
   query,
   serverTimestamp,
   updateDoc,
-  where
+  where,
+  writeBatch
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { DEFAULT_EASE_FACTOR, SRS_VERSION, type ScheduleUpdate } from "@/lib/srs";
+import {
+  DEFAULT_EASE_FACTOR,
+  SRS_VERSION,
+  deriveLevel,
+  normalizeSchedule,
+  type FlashcardRating,
+  type ScheduleUpdate
+} from "@/lib/srs";
 import { OperationType, type Vocabulary } from "@/types/types";
+
+export type RecordVocabularyReviewInput = {
+  vocabulary: Vocabulary;
+  schedule: ScheduleUpdate;
+  rating: FlashcardRating;
+  userId: string;
+};
+
 
 export type CreateVocabularyInput = {
   word: string;
@@ -105,6 +121,50 @@ export async function deleteVocabulary(id: string): Promise<void> {
   }
 }
 
+export async function recordVocabularyReview(
+  input: RecordVocabularyReviewInput
+): Promise<void> {
+  const { vocabulary, schedule, rating, userId } = input;
+  const previousSchedule = normalizeSchedule(vocabulary);
+  const previousLevel = deriveLevel(previousSchedule);
+
+  try {
+    const batch = writeBatch(db);
+    const vocabRef = doc(db, "vocabularies", vocabulary.id);
+    const eventRef = doc(collection(db, "reviewEvents"));
+
+    batch.update(vocabRef, {
+      srsVersion: schedule.srsVersion,
+      intervalDays: schedule.intervalDays,
+      easeFactor: schedule.easeFactor,
+      repetitions: schedule.repetitions,
+      lapses: schedule.lapses,
+      level: schedule.level,
+      nextReview: schedule.nextReview,
+      lastReviewedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    });
+
+    batch.set(eventRef, {
+      userId,
+      vocabularyId: vocabulary.id,
+      rating,
+      previousLevel,
+      newLevel: schedule.level,
+      previousIntervalDays: previousSchedule.intervalDays,
+      newIntervalDays: schedule.intervalDays,
+      topicId: vocabulary.topicId ?? null,
+      srsVersion: schedule.srsVersion,
+      reviewedAt: serverTimestamp()
+    });
+
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, `vocabularies/${vocabulary.id}/reviewEvents`);
+    throw error;
+  }
+}
+
 export async function updateVocabularyReview(
   id: string,
   schedule: ScheduleUpdate
@@ -126,6 +186,7 @@ export async function updateVocabularyReview(
     throw error;
   }
 }
+
 
 export function subscribeVocabularies(
   userId: string,

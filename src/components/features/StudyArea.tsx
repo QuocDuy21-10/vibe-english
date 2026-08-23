@@ -11,13 +11,14 @@ import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, UNASSIGNED_TO
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
 import {
   calculateNextSchedule,
-  isDueForReview,
   normalizeSchedule,
   requeueAgainOnce,
   type FlashcardRating
 } from "@/lib/srs";
-import { updateVocabularyReview } from "@/services/vocabularyRepository";
-import type { Topic, Vocabulary } from "@/types/types";
+import { getDueCount, getDueVocabularies } from "@/lib/vocabularySelectors";
+import { useAppData } from "@/routes/AppDataProvider";
+import { recordVocabularyReview } from "@/services/vocabularyRepository";
+import type { Topic, Vocabulary, StudySession } from "@/types/types";
 
 type StudyAreaProps = {
   vocabulary: Vocabulary[];
@@ -35,6 +36,7 @@ type FlashcardAssessment = {
 };
 
 export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
+  const { user } = useAppData();
   const [selectedTopic, setSelectedTopic] = useState(DEFAULT_TOPIC_FILTER);
   const [view, setView] = useState<StudyView>("topics");
   const [searchQuery, setSearchQuery] = useState("");
@@ -45,6 +47,14 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const [sessionVocab, setSessionVocab] = useState<Vocabulary[]>([]);
   const [score, setScore] = useState(0);
   const [flashcardAssessments, setFlashcardAssessments] = useState<FlashcardAssessment[]>([]);
+  const [sessionStats, setSessionStats] = useState<StudySession>({
+    initialCount: 0,
+    completedCount: 0,
+    againCount: 0,
+    hardCount: 0,
+    goodCount: 0,
+    easyCount: 0
+  });
   const [attemptedWords, setAttemptedWords] = useState<Set<string>>(new Set());
   const [requeuedIds, setRequeuedIds] = useState<Set<string>>(new Set());
   const [pendingVocabId, setPendingVocabId] = useState<string | null>(null);
@@ -62,10 +72,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     [sessionVocab, selectedTopic, vocabulary]
   );
 
-  const dueCount = useMemo(() => {
-    const now = new Date();
-    return vocabulary.filter((item) => isDueForReview(item, now)).length;
-  }, [vocabulary]);
+  const dueCount = useMemo(() => getDueCount(vocabulary), [vocabulary]);
 
   const flashcardStats = useMemo(() => {
     const stats: Record<FlashcardRating, number> = { again: 0, hard: 0, good: 0, easy: 0 };
@@ -93,10 +100,27 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   };
 
   const beginSession = (topicId: string, mode: StudyMode, items: Vocabulary[] = []) => {
+    const resolvedItems =
+      items.length > 0
+        ? items
+        : vocabulary.filter((item) => {
+            if (topicId === DEFAULT_TOPIC_FILTER) return true;
+            if (topicId === UNASSIGNED_TOPIC_FILTER) return !item.topicId;
+            return item.topicId === topicId;
+          });
+
     setSelectedTopic(topicId);
     setStudyMode(mode);
     setSessionVocab(items);
     setScore(0);
+    setSessionStats({
+      initialCount: resolvedItems.length,
+      completedCount: 0,
+      againCount: 0,
+      hardCount: 0,
+      goodCount: 0,
+      easyCount: 0
+    });
     resetCardState();
     resetAssessmentState();
     setView("study");
@@ -108,11 +132,10 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   };
 
   const startSrsReview = () => {
-    const now = new Date();
-    const due = vocabulary.filter((item) => isDueForReview(item, now));
+    const due = getDueVocabularies(vocabulary);
 
     if (due.length === 0) {
-      toast.info("Bạn đã hoàn thành hết các mục cần ôn tập! ✨");
+      toast.info("Bạn đã hoàn thành toàn bộ từ cần ôn hôm nay. ✨");
       return;
     }
 
@@ -143,6 +166,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     resetAssessmentState();
     setView("study");
   };
+
 
   const next = (queueLength = filtered.length) => {
     if (safeCurrentIndex < queueLength - 1) {
@@ -189,6 +213,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
         score={score}
         flashcardStats={flashcardStats}
         ratedCount={flashcardAssessments.length}
+        sessionStats={sessionStats}
         onReturnToTopics={returnToTopics}
         onRestart={restartSession}
       />
@@ -234,18 +259,36 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const current = filtered[safeCurrentIndex];
   const handleFlashcardRating = async (rating: FlashcardRating) => {
     if (pendingVocabId === current.id) return;
+    if (!user) {
+      toast.error("Vui lòng đăng nhập để lưu kết quả ôn tập.");
+      return;
+    }
     setPendingVocabId(current.id);
 
     const reviewedAt = new Date();
     const schedule = calculateNextSchedule(normalizeSchedule(current, reviewedAt), rating, reviewedAt);
 
     try {
-      await updateVocabularyReview(current.id, schedule);
+      await recordVocabularyReview({
+        vocabulary: current,
+        schedule,
+        rating,
+        userId: user.uid
+      });
 
       setFlashcardAssessments((previousAssessments) => [
         ...previousAssessments,
         { rating, newLevel: schedule.level, nextReview: schedule.nextReview }
       ]);
+
+      setSessionStats((prev) => ({
+        ...prev,
+        completedCount: prev.completedCount + 1,
+        againCount: rating === "again" ? prev.againCount + 1 : prev.againCount,
+        hardCount: rating === "hard" ? prev.hardCount + 1 : prev.hardCount,
+        goodCount: rating === "good" ? prev.goodCount + 1 : prev.goodCount,
+        easyCount: rating === "easy" ? prev.easyCount + 1 : prev.easyCount
+      }));
 
       let queueLength = filtered.length;
       if (rating === "again") {
@@ -258,11 +301,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
 
       next(queueLength);
     } catch {
-      toast.error("Không thể lưu đánh giá. Vui lòng thử lại.");
+      toast.error("Không thể lưu kết quả ôn tập. Vui lòng thử lại.");
     } finally {
       setPendingVocabId((pendingId) => (pendingId === current.id ? null : pendingId));
     }
   };
+
 
   const title =
     selectedTopic === DEFAULT_TOPIC_FILTER

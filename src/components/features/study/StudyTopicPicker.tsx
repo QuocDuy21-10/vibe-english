@@ -6,7 +6,9 @@ import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { DEFAULT_TOPIC_FILTER, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
+import { cn } from "@/lib/utils";
 import type { Topic, Vocabulary } from "@/types/types";
+
 
 type StudyTopicPickerProps = {
   topics: Topic[];
@@ -90,19 +92,46 @@ export function StudyTopicPicker({
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {showSpecialCards && (
           <>
-            <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartSrsReview}>
-              <Card className="h-full border-none shadow-lg shadow-emerald-200/50 hover:shadow-emerald-400/50 transition-all overflow-hidden rounded-[32px] bg-emerald-600 border-b-8 border-emerald-800">
+            <motion.button
+              type="button"
+              whileHover={{ y: -5 }}
+              className="cursor-pointer group text-left"
+              onClick={onStartSrsReview}
+            >
+              <Card
+                className={cn(
+                  "h-full border-none shadow-lg transition-all overflow-hidden rounded-[32px] border-b-8",
+                  dueCount > 0
+                    ? "bg-emerald-600 border-emerald-800 shadow-emerald-200/50 hover:shadow-emerald-400/50"
+                    : "bg-slate-800 border-slate-950 shadow-slate-200/50 hover:shadow-emerald-900/30"
+                )}
+              >
                 <CardHeader className="p-6 text-center">
-                  <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform">
+                  <div
+                    className={cn(
+                      "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-110 transition-transform",
+                      dueCount > 0 ? "bg-white/20" : "bg-emerald-500/20 text-emerald-400"
+                    )}
+                  >
                     <Brain className="w-7 h-7" />
                   </div>
-                  <CardTitle className="text-xl font-bold text-white">Cần ôn tập</CardTitle>
-                  <CardDescription className="text-emerald-100/60 font-medium tracking-wide uppercase text-[10px] mt-1">
-                    {dueCount} từ đến hạn
+                  <CardTitle className="text-xl font-bold text-white">
+                    {dueCount > 0 ? "Cần ôn tập" : "Đã hoàn thành ✨"}
+                  </CardTitle>
+                  <CardDescription
+                    className={cn(
+                      "font-medium tracking-wide text-xs mt-1",
+                      dueCount > 0 ? "text-emerald-100/80 uppercase text-[10px]" : "text-emerald-300/80"
+                    )}
+                  >
+                    {dueCount > 0
+                      ? `${dueCount} từ đến hạn`
+                      : "Bạn đã hoàn thành toàn bộ từ cần ôn hôm nay."}
                   </CardDescription>
                 </CardHeader>
               </Card>
             </motion.button>
+
 
             <motion.button type="button" whileHover={{ y: -5 }} className="cursor-pointer group text-left" onClick={onStartQuickQuiz}>
               <Card className="h-full border-none shadow-lg shadow-amber-200/50 hover:shadow-amber-400/50 transition-all overflow-hidden rounded-[32px] bg-linear-to-br from-amber-500 to-amber-600 border-b-8 border-amber-700">
