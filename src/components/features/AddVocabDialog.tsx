@@ -119,17 +119,17 @@ export function AddVocabDialog({
                 placeholder="Ví dụ: resilient, comprehensive..."
                 aria-invalid={!!errors.word}
                 {...register("word")}
-                className="rounded-xl h-11 sm:h-12 text-base border-slate-200 focus:ring-emerald-500"
+                className="rounded-xl h-11 sm:h-12 text-base border-slate-200 focus:ring-[#006c49]"
               />
             </div>
             <Button
               type="button"
               variant="outline"
-              className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border-emerald-200 text-emerald-700 bg-emerald-50 hover:bg-emerald-100 font-semibold text-xs sm:text-sm shrink-0 min-h-[44px]"
+              className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border-emerald-200 text-[#006c49] bg-[#ECFDF5] hover:bg-[#ECFDF5]/80 font-semibold text-xs sm:text-sm shrink-0 min-h-[44px] cursor-pointer"
               onClick={handleAiLookup}
               disabled={isAiLoading || !wordValue.trim()}
             >
-              {isAiLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4 sm:mr-1.5 text-emerald-600" />}
+              {isAiLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4 sm:mr-1.5 text-[#006c49]" />}
               <span>AI Tra</span>
             </Button>
           </div>

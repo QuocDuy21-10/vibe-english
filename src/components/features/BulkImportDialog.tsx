@@ -218,11 +218,11 @@ export function BulkImportDialog({
         >
           <TabsList className="grid grid-cols-2 bg-slate-100 p-1 rounded-xl shrink-0 h-11">
             <TabsTrigger value="paste" className="rounded-lg font-semibold text-xs py-2">
-              <FileText className="w-4 h-4 mr-1.5 text-emerald-700" />
+              <FileText className="w-4 h-4 mr-1.5 text-[#006c49]" />
               Dán văn bản
             </TabsTrigger>
             <TabsTrigger value="csv" className="rounded-lg font-semibold text-xs py-2">
-              <FileSpreadsheet className="w-4 h-4 mr-1.5 text-emerald-700" />
+              <FileSpreadsheet className="w-4 h-4 mr-1.5 text-[#006c49]" />
               Tải file CSV
             </TabsTrigger>
           </TabsList>
@@ -271,9 +271,9 @@ export function BulkImportDialog({
             />
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-slate-200 hover:border-[#006c49] hover:bg-emerald-50/40 transition-all rounded-2xl p-5 sm:p-6 text-center cursor-pointer space-y-2"
+              className="border-2 border-dashed border-slate-200 hover:border-[#006c49] hover:bg-[#ECFDF5]/40 transition-all rounded-2xl p-5 sm:p-6 text-center cursor-pointer space-y-2"
             >
-              <div className="w-10 h-10 bg-emerald-50 text-[#006c49] rounded-full flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 bg-[#ECFDF5] text-[#006c49] rounded-full flex items-center justify-center mx-auto">
                 <Upload className="w-5 h-5" />
               </div>
               <div>
@@ -293,7 +293,7 @@ export function BulkImportDialog({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200/80 shrink-0">
             <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-xs font-semibold">
               <span className="text-slate-600 font-bold">Tổng: {summary.total}</span>
-              <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-md flex items-center gap-1">
+              <span className="text-[#006c49] bg-[#ECFDF5] px-2 py-0.5 rounded-md flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3" /> {summary.valid} hợp lệ
               </span>
               {summary.duplicateInFile > 0 && (
@@ -319,7 +319,7 @@ export function BulkImportDialog({
               size="sm"
               onClick={handleAiBatchEnrich}
               disabled={isAiLoading || validRows.length === 0}
-              className="border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-xs font-semibold h-9 shrink-0"
+              className="border-emerald-200 text-[#006c49] bg-[#ECFDF5] hover:bg-[#ECFDF5]/80 rounded-lg text-xs font-semibold h-9 shrink-0 cursor-pointer"
             >
               {isAiLoading ? (
                 <>
@@ -374,7 +374,7 @@ export function BulkImportDialog({
                     </div>
                     <div className="col-span-4 sm:col-span-3">
                       {row.status === "valid" ? (
-                        <span className="text-emerald-700 bg-emerald-50 text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                        <span className="text-[#006c49] bg-[#ECFDF5] text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1">
                           <CheckCircle2 className="w-3 h-3" /> Hợp lệ
                         </span>
                       ) : row.status === "duplicate_in_file" ? (

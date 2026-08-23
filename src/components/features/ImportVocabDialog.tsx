@@ -334,8 +334,8 @@ export function ImportVocabDialog({
     switch (status) {
       case "valid":
         return (
-          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200/60">
-            <CheckCircle2 className="w-3 h-3 text-emerald-600 shrink-0" />
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#006c49] bg-[#ECFDF5] px-2 py-0.5 rounded-full border border-emerald-200/60">
+            <CheckCircle2 className="w-3 h-3 text-[#006c49] shrink-0" />
             Hợp lệ
           </span>
         );
@@ -400,14 +400,14 @@ export function ImportVocabDialog({
               value="excel"
               className="rounded-xl font-bold text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5"
             >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-700 shrink-0" />
+              <FileSpreadsheet className="w-4 h-4 text-[#006c49] shrink-0" />
               File mẫu Excel (.xlsx)
             </TabsTrigger>
             <TabsTrigger
               value="paste"
               className="rounded-xl font-bold text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5"
             >
-              <FileText className="w-4 h-4 text-emerald-700 shrink-0" />
+              <FileText className="w-4 h-4 text-[#006c49] shrink-0" />
               Dán văn bản nhanh
             </TabsTrigger>
           </TabsList>
@@ -437,9 +437,9 @@ export function ImportVocabDialog({
                   type="button"
                   variant="outline"
                   onClick={handleDownloadTemplate}
-                  className="w-full bg-white hover:bg-emerald-50 text-emerald-800 border-emerald-200 hover:border-emerald-500 font-semibold text-xs h-10 rounded-xl shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
+                  className="w-full bg-white hover:bg-[#ECFDF5] text-[#006c49] border-emerald-200 hover:border-[#006c49] font-semibold text-xs h-10 rounded-xl shadow-sm cursor-pointer transition-all flex items-center justify-center gap-1.5"
                 >
-                  <Download className="w-3.5 h-3.5 text-emerald-600" />
+                  <Download className="w-3.5 h-3.5 text-[#006c49]" />
                   Tải file mẫu (.xlsx)
                 </Button>
               </div>
@@ -470,7 +470,7 @@ export function ImportVocabDialog({
                 {selectedFile ? (
                   <div className="flex items-center justify-between bg-white px-3 py-1.5 rounded-xl border border-emerald-200 shadow-sm h-10">
                     <div className="flex items-center gap-2 truncate pr-2">
-                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <FileSpreadsheet className="w-4 h-4 text-[#006c49] shrink-0" />
                       <span className="text-xs font-semibold text-slate-700 truncate" title={selectedFile.name}>
                         {selectedFile.name}
                       </span>
@@ -491,9 +491,9 @@ export function ImportVocabDialog({
                     onClick={() => fileInputRef.current?.click()}
                     onDrop={handleDrop}
                     onDragOver={handleDragOver}
-                    className="border-2 border-dashed border-slate-300 hover:border-emerald-600 hover:bg-emerald-50/40 transition-all rounded-xl p-2 text-center cursor-pointer flex items-center justify-center gap-1.5 bg-white h-10"
+                    className="border-2 border-dashed border-slate-300 hover:border-[#006c49] hover:bg-[#ECFDF5]/40 transition-all rounded-xl p-2 text-center cursor-pointer flex items-center justify-center gap-1.5 bg-white h-10"
                   >
-                    <UploadCloud className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <UploadCloud className="w-4 h-4 text-[#006c49] shrink-0" />
                     <span className="text-xs font-semibold text-slate-700">
                       Chọn hoặc kéo thả file .xlsx vào đây
                     </span>
@@ -623,7 +623,7 @@ export function ImportVocabDialog({
                   size="sm"
                   onClick={handleAiBatchEnrich}
                   disabled={isAiLoading || validRowsToSubmit.length === 0}
-                  className="border-emerald-200 text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg text-xs font-semibold h-8 shrink-0 cursor-pointer self-start sm:self-auto"
+                  className="border-emerald-200 text-[#006c49] bg-[#ECFDF5] hover:bg-[#ECFDF5]/80 rounded-lg text-xs font-semibold h-8 shrink-0 cursor-pointer self-start sm:self-auto"
                 >
                   {isAiLoading ? (
                     <>
@@ -665,8 +665,8 @@ export function ImportVocabDialog({
                   onClick={() => setPreviewFilter("valid")}
                   className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer flex items-center gap-1 ${
                     previewFilter === "valid"
-                      ? "bg-emerald-700 text-white shadow-sm"
-                      : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200/60"
+                      ? "bg-[#006c49] text-white shadow-sm"
+                      : "bg-[#ECFDF5] text-[#006c49] hover:bg-[#ECFDF5]/80 border border-emerald-200/60"
                   }`}
                 >
                   <CheckCircle2 className="w-3 h-3" />

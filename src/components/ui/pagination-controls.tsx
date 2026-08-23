@@ -72,7 +72,7 @@ export function PaginationControls({
                 className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border-slate-200 transition-all font-semibold text-xs min-w-[36px] ${
                   currentPage === pageItem
                     ? "bg-[#006c49] hover:bg-[#006c49]/90 text-white border-[#006c49] shadow-xs"
-                    : "hover:bg-slate-50 text-slate-700"
+                    : "hover:bg-[#ECFDF5] hover:text-[#006c49] text-slate-700"
                 }`}
                 onClick={() => onPageChange(pageItem)}
                 aria-label={`Trang ${pageItem}`}
@@ -133,7 +133,7 @@ function PaginationButton({ label, disabled, onClick, children }: PaginationButt
       size="icon"
       onClick={onClick}
       disabled={disabled}
-      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-slate-200 hover:bg-slate-50 transition-colors min-w-[36px]"
+      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-slate-200 hover:bg-[#ECFDF5] hover:text-[#006c49] transition-colors min-w-[36px]"
       aria-label={label}
       title={label}
     >

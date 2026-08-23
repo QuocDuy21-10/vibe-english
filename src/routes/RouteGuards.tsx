@@ -9,8 +9,8 @@ type GuardProps = {
 
 function FullScreenLoader() {
   return (
-    <div className="h-screen w-full flex items-center justify-center bg-emerald-50">
-      <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+    <div className="h-screen w-full flex items-center justify-center bg-[#ECFDF5]">
+      <Loader2 className="w-8 h-8 animate-spin text-[#006c49]" />
     </div>
   );
 }

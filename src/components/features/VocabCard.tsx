@@ -44,7 +44,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
       transition={{ duration: 0.2 }}
       className="h-full"
     >
-      <Card className="h-full rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-emerald-200/60 hover:bg-[#ECFDF5]/20 transition-all overflow-hidden relative flex flex-col justify-between">
+      <Card className="h-full rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-[#10b981]/40 hover:bg-[#ECFDF5]/20 transition-all overflow-hidden relative flex flex-col justify-between">
         <CardHeader className="pb-2 pr-12">
           <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
             <div className="flex items-center gap-1.5">
@@ -67,7 +67,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
             <Button
               variant="ghost"
               size="icon"
-              className="w-9 h-9 min-w-[36px] rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#006c49] border-none shrink-0"
+              className="w-9 h-9 min-w-[36px] rounded-full text-[#006c49] hover:bg-[#ECFDF5] hover:text-[#006c49] border-none shrink-0"
               onClick={() => playAudio(vocabulary.word)}
               aria-label={`Phát âm ${vocabulary.word}`}
             >

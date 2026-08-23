@@ -50,7 +50,7 @@ export function TopicsPage() {
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Tìm kiếm chủ đề..."
-            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-emerald-500 transition-all shadow-sm h-11 text-sm"
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#006c49] transition-all shadow-sm h-11 text-sm"
             value={topicSearchQuery}
             onChange={(event) => {
               setTopicSearchQuery(event.target.value);
@@ -106,14 +106,14 @@ export function TopicsPage() {
         {paginatedTopics.map((topic) => (
           <Card
             key={topic.id}
-            className="rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-emerald-200/60 transition-all group overflow-hidden relative flex flex-col justify-between"
+            className="rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-[#10b981]/40 transition-all group overflow-hidden relative flex flex-col justify-between"
           >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-50 rounded-full -mr-8 -mt-8 opacity-50 group-hover:bg-emerald-100 transition-colors pointer-events-none" />
+            <div className="absolute top-0 right-0 w-24 h-24 bg-[#ECFDF5] rounded-full -mr-8 -mt-8 opacity-60 group-hover:bg-[#ECFDF5]/90 transition-colors pointer-events-none" />
             <CardHeader className="pb-2 relative">
               <CardTitle className="text-xl font-bold text-slate-800 tracking-tight break-words line-clamp-2">
                 {topic.name}
               </CardTitle>
-              <CardDescription className="text-xs font-bold text-emerald-700 uppercase tracking-wider mt-1">
+              <CardDescription className="text-xs font-bold text-[#006c49] uppercase tracking-wider mt-1">
                 {topicVocabCounts.get(topic.id) ?? 0} TỪ VỰNG
               </CardDescription>
             </CardHeader>
@@ -124,7 +124,7 @@ export function TopicsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer"
+                      className="text-slate-400 hover:text-[#006c49] hover:bg-[#ECFDF5] w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
                       aria-label={`Chỉnh sửa chủ đề ${topic.name}`}
                     />
                   }
@@ -137,7 +137,7 @@ export function TopicsPage() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer"
+                className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
                 aria-label={`Xóa chủ đề ${topic.name}`}
                 onClick={async () => {
                   if (
@@ -163,7 +163,7 @@ export function TopicsPage() {
 
       {topics.length === 0 && (
         <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#006c49]">
             <Plus className="w-8 h-8" />
           </div>
           <div className="space-y-1.5">
@@ -186,7 +186,7 @@ export function TopicsPage() {
 
       {filteredTopics.length === 0 && topics.length > 0 && (
         <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
-          <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto text-emerald-600">
+          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#006c49]">
             <Search className="w-8 h-8" />
           </div>
           <div className="space-y-1.5">
@@ -196,7 +196,7 @@ export function TopicsPage() {
           <Button
             variant="outline"
             onClick={resetFilters}
-            className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-slate-50"
+            className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-[#ECFDF5] hover:text-[#006c49] hover:border-emerald-300"
           >
             Xóa tìm kiếm
           </Button>

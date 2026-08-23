@@ -127,7 +127,7 @@ export function QuizPanel({
                     className={cn(
                       "w-7 sm:w-8 h-10 sm:h-12 border-b-2 flex items-center justify-center transition-all duration-150 rounded-xs",
                       feedback === "correct"
-                        ? "border-emerald-500 text-emerald-700 bg-emerald-50/30"
+                        ? "border-[#006c49] text-[#006c49] bg-[#ECFDF5]"
                         : feedback === "incorrect"
                           ? "border-rose-500 text-rose-700 bg-rose-50/30"
                           : isActive

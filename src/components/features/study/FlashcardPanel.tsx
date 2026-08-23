@@ -47,7 +47,7 @@ export function FlashcardPanel({
           rotateY: { duration: 0.6, type: "spring", stiffness: 260, damping: 25 },
           y: { duration: 0.4, type: "spring" }
         }}
-        className="w-full h-full cursor-pointer relative rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] touch-manipulation select-none"
+        className="w-full h-full cursor-pointer relative rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#006c49] touch-manipulation select-none"
         style={{ transformStyle: "preserve-3d" }}
         onClick={onFlip}
         onKeyDown={handleKeyDown}
@@ -75,7 +75,7 @@ export function FlashcardPanel({
             <Button
               variant="ghost"
               size="icon"
-              className="w-11 h-11 min-w-[44px] rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#006c49] transition-all border-none shrink-0"
+              className="w-11 h-11 min-w-[44px] rounded-full text-[#006c49] hover:bg-[#ECFDF5] hover:text-[#006c49] transition-all border-none shrink-0"
               onClick={(event) => {
                 event.stopPropagation();
                 playAudio(vocabulary.word);
