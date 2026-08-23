@@ -1,19 +1,5 @@
-import { GoogleGenAI, Type } from "@google/genai";
 import { z } from "zod";
-
-let aiClient: GoogleGenAI | null = null;
-
-function getClient(): GoogleGenAI {
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    throw new Error("Missing Gemini API key");
-  }
-  if (!aiClient) {
-    // Lazy init to avoid crashing the app when the key is missing.
-    aiClient = new GoogleGenAI({ apiKey });
-  }
-  return aiClient;
-}
+import { auth } from "@/lib/firebase";
 
 const wordDetailsSchema = z.object({
   word: z.string(),
@@ -25,26 +11,40 @@ const wordDetailsSchema = z.object({
 export type WordDetails = z.infer<typeof wordDetailsSchema>;
 
 export async function getWordDetails(word: string): Promise<WordDetails> {
-  const response = await getClient().models.generateContent({
-    model: "gemini-3-flash-preview",
-    contents: `Translate the English word "${word}" to Vietnamese and provide its phonetic transcription and part of speech. Return the result in the specified JSON format.`,
-    config: {
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          word: { type: Type.STRING },
-          definition: { type: Type.STRING, description: "Vietnamese definition" },
-          partOfSpeech: { type: Type.STRING, description: "e.g., noun, verb, adjective" },
-          phonetic: { type: Type.STRING, description: "IPA phonetic transcription" }
-        },
-        required: ["word", "definition", "partOfSpeech", "phonetic"]
-      }
-    }
+  const trimmed = word.trim();
+  if (!trimmed) {
+    throw new Error("Vui lòng nhập từ tiếng Anh cần tra cứu.");
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Bạn cần đăng nhập để sử dụng tính năng tra từ AI.");
+  }
+
+  const idToken = await currentUser.getIdToken();
+
+  const response = await fetch("/api/ai/word-details", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ word: trimmed })
   });
 
-  const text = response.text;
-  if (!text) throw new Error("No response from AI");
-  const parsed: unknown = JSON.parse(text);
-  return wordDetailsSchema.parse(parsed);
+  if (!response.ok) {
+    let errorMessage = "Không thể lấy thông tin từ AI.";
+    try {
+      const errorJson = await response.json();
+      if (errorJson?.error) {
+        errorMessage = errorJson.error;
+      }
+    } catch {
+      // Fall back to default error message
+    }
+    throw new Error(errorMessage);
+  }
+
+  const data = await response.json();
+  return wordDetailsSchema.parse(data);
 }
