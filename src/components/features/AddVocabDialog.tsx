@@ -216,7 +216,9 @@ export function AddVocabDialog({ onClose, userId, topics }: {
               render={({ field }) => (
                 <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
                   <SelectTrigger className="rounded-xl h-11 border-slate-100">
-                    <SelectValue placeholder="Chọn chủ đề" />
+                    <SelectValue placeholder="Chọn chủ đề">
+                      {(val) => topics.find((t) => t.id === val)?.name ?? val}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {topics.map(t => (

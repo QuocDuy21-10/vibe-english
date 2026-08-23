@@ -115,7 +115,9 @@ export function EditVocabDialog({ vocabulary, topics, onClose }: EditVocabDialog
             render={({ field }) => (
               <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
                 <SelectTrigger className="rounded-xl h-11 border-slate-100 bg-white">
-                  <SelectValue placeholder="Chọn chủ đề" />
+                  <SelectValue placeholder="Chọn chủ đề">
+                    {(val) => topics.find((t) => t.id === val)?.name ?? val}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {topics.map((t) => (

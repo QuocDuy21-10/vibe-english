@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Search, SearchIcon, X } from "lucide-react";
 import { AnimatePresence } from "motion/react";
+import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { VocabCard } from "@/components/features/VocabCard";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DEFAULT_TOPIC_FILTER, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
-import { useFilteredVocabularies, useSortedTopics } from "@/hooks/useVocabStats";
+import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
+import { useFilteredVocabularies } from "@/hooks/useVocabStats";
 import { getPaginationModel } from "@/lib/pagination";
 import { useAppData } from "@/routes/AppDataProvider";
 
@@ -18,7 +18,6 @@ export function DictionaryPage() {
   const [pageSize, setPageSize] = useState(50);
 
   const filteredVocab = useFilteredVocabularies(vocabularies, searchQuery, selectedTopicId);
-  const sortedTopics = useSortedTopics(topics);
 
   const pagination = getPaginationModel(filteredVocab.length, pageSize, currentPage);
   const paginatedVocab = filteredVocab.slice(pagination.startIndex, pagination.endIndex);
@@ -50,26 +49,16 @@ export function DictionaryPage() {
             </button>
           )}
         </div>
-        <Select
+        <TopicFilterSelect
           value={selectedTopicId}
           onValueChange={(value) => {
-            setSelectedTopicId(value ?? DEFAULT_TOPIC_FILTER);
+            setSelectedTopicId(value);
             setCurrentPage(1);
           }}
-        >
-          <SelectTrigger className="w-full sm:w-55 rounded-full border-slate-200 bg-white h-11 shadow-sm">
-            <SelectValue placeholder="Tất cả chủ đề" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={DEFAULT_TOPIC_FILTER}>Tất cả bài học</SelectItem>
-            <SelectItem value={UNASSIGNED_TOPIC_FILTER}>Chưa phân loại</SelectItem>
-            {sortedTopics.map((topic) => (
-              <SelectItem key={topic.id} value={topic.id}>
-                {topic.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          topics={topics}
+          vocabularies={vocabularies}
+          className="w-full sm:w-60 md:w-64"
+        />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
