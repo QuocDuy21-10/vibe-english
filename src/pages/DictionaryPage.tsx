@@ -1,21 +1,25 @@
 import { useState } from "react";
-import { Search, SearchIcon, X } from "lucide-react";
+import { Plus, Search, SearchIcon, X } from "lucide-react";
 import { AnimatePresence } from "motion/react";
+import { AddVocabDialog } from "@/components/features/AddVocabDialog";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { VocabCard } from "@/components/features/VocabCard";
-import { PaginationControls } from "@/components/ui/pagination-controls";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
 import { useFilteredVocabularies } from "@/hooks/useVocabStats";
 import { getPaginationModel } from "@/lib/pagination";
 import { useAppData } from "@/routes/AppDataProvider";
 
 export function DictionaryPage() {
-  const { vocabularies, topics } = useAppData();
+  const { vocabularies, topics, user } = useAppData();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState<string>(DEFAULT_TOPIC_FILTER);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(50);
+  const [isAddingVocab, setIsAddingVocab] = useState(false);
 
   const filteredVocab = useFilteredVocabularies(vocabularies, searchQuery, selectedTopicId);
 
@@ -24,7 +28,7 @@ export function DictionaryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -49,16 +53,37 @@ export function DictionaryPage() {
             </button>
           )}
         </div>
-        <TopicFilterSelect
-          value={selectedTopicId}
-          onValueChange={(value) => {
-            setSelectedTopicId(value);
-            setCurrentPage(1);
-          }}
-          topics={topics}
-          vocabularies={vocabularies}
-          className="w-full sm:w-60 md:w-64"
-        />
+
+        <div className="flex items-center gap-3">
+          <TopicFilterSelect
+            value={selectedTopicId}
+            onValueChange={(value) => {
+              setSelectedTopicId(value);
+              setCurrentPage(1);
+            }}
+            topics={topics}
+            vocabularies={vocabularies}
+            className="flex-1 md:w-60"
+          />
+
+          {user && (
+            <Dialog open={isAddingVocab} onOpenChange={setIsAddingVocab}>
+              <DialogTrigger
+                render={
+                  <Button
+                    size="default"
+                    className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/10 border-none transition-all h-11 shrink-0 font-medium cursor-pointer"
+                  />
+                }
+              >
+                <Plus className="w-4 h-4 mr-1.5" />
+                <span className="hidden sm:inline">Thêm từ mới</span>
+                <span className="sm:hidden">Thêm</span>
+              </DialogTrigger>
+              <AddVocabDialog onClose={() => setIsAddingVocab(false)} userId={user.uid} topics={topics} />
+            </Dialog>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">

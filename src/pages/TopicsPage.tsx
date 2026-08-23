@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { deleteDoc, doc } from "firebase/firestore";
-import { Edit3, SearchIcon, Trash2, X, Search } from "lucide-react";
+import { Edit3, Plus, SearchIcon, Trash2, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TopicDialog } from "@/components/features/TopicDialog";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
@@ -23,6 +23,7 @@ export function TopicsPage() {
   const [selectedTopicId, setSelectedTopicId] = useState<string>(DEFAULT_TOPIC_FILTER);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
+  const [isAddingTopic, setIsAddingTopic] = useState(false);
 
   const topicVocabCounts = useTopicVocabularyCounts(vocabularies);
 
@@ -41,7 +42,7 @@ export function TopicsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-center">
         <div className="relative flex-1">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
@@ -67,17 +68,35 @@ export function TopicsPage() {
           )}
         </div>
 
-        <TopicFilterSelect
-          value={selectedTopicId}
-          onValueChange={(value) => {
-            setSelectedTopicId(value);
-            setCurrentPage(1);
-          }}
-          topics={topics}
-          vocabularies={vocabularies}
-          showUnassignedOption={false}
-          className="w-full sm:w-60 md:w-64"
-        />
+        <div className="flex items-center gap-3">
+          <TopicFilterSelect
+            value={selectedTopicId}
+            onValueChange={(value) => {
+              setSelectedTopicId(value);
+              setCurrentPage(1);
+            }}
+            topics={topics}
+            vocabularies={vocabularies}
+            showUnassignedOption={false}
+            className="flex-1 md:w-60"
+          />
+
+          <Dialog open={isAddingTopic} onOpenChange={setIsAddingTopic}>
+            <DialogTrigger
+              render={
+                <Button
+                  size="default"
+                  className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/10 border-none transition-all h-11 shrink-0 font-medium cursor-pointer"
+                />
+              }
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              <span className="hidden sm:inline">Thêm chủ đề</span>
+              <span className="sm:hidden">Thêm</span>
+            </DialogTrigger>
+            <TopicDialog onClose={() => setIsAddingTopic(false)} userId={user.uid} />
+          </Dialog>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
