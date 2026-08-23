@@ -1,15 +1,13 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { db } from "@/lib/firebase";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { OperationType, Topic } from "@/types/types";
+import { createTopic, updateTopic } from "@/services/topicRepository";
+import type { Topic } from "@/types/types";
 
 const topicSchema = z.object({
   name: z.string().trim().min(1, "Vui lòng nhập tên chủ đề.")
@@ -36,25 +34,16 @@ export function TopicDialog({ onClose, userId, topic }: TopicDialogProps) {
   });
 
   const onSubmit = async (data: TopicFormValues) => {
-    const name = data.name.trim();
-
     try {
       if (topic) {
-        await updateDoc(doc(db, "topics", topic.id), {
-          name
-        });
+        await updateTopic(topic.id, { name: data.name });
         toast.success("Đã cập nhật chủ đề!");
       } else {
-        await addDoc(collection(db, "topics"), {
-          name,
-          userId,
-          createdAt: serverTimestamp()
-        });
+        await createTopic(userId, { name: data.name });
         toast.success("Đã thêm chủ đề mới!");
       }
       onClose?.();
-    } catch (e) {
-      handleFirestoreError(e, topic ? OperationType.UPDATE : OperationType.CREATE, "topics");
+    } catch {
       toast.error("Lỗi khi xử lý chủ đề.");
     }
   };

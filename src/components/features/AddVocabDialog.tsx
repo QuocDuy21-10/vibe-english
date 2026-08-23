@@ -2,9 +2,6 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { addDoc, collection, serverTimestamp } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { db } from "@/lib/firebase";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -22,9 +19,8 @@ import {
   SelectValue 
 } from "@/components/ui/select";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { DEFAULT_EASE_FACTOR, SRS_VERSION } from "@/lib/srs";
-import { Topic, OperationType } from "@/types/types";
+import { createVocabulary } from "@/services/vocabularyRepository";
+import type { Topic } from "@/types/types";
 
 const vocabSchema = z.object({
   word: z.string().trim().min(1, "Vui lòng nhập từ tiếng Anh."),
@@ -83,53 +79,17 @@ export function AddVocabDialog({ onClose, userId, topics }: {
   };
 
   const onSubmit = async (data: AddVocabFormValues) => {
-    const normalized = {
-      word: data.word.trim(),
-      definition: data.definition.trim(),
-      partOfSpeech: data.partOfSpeech?.trim() ?? "",
-      phonetic: data.phonetic?.trim() ?? "",
-      topicId: data.topicId?.trim() ?? ""
-    };
-
     try {
-      const currentUser = getAuth().currentUser;
-
-      if (!currentUser) {
-        toast.error("Bạn cần đăng nhập trước khi thêm từ vựng.");
-        return;
-      }
-
-      // Firestore Rules require vocabulary.userId === request.auth.uid.
-      // Never trust a userId passed from the UI as the source of truth.
-      if (userId && userId !== currentUser.uid) {
-        console.warn("AddVocabDialog userId does not match authenticated user", {
-          propUserId: userId,
-          authUserId: currentUser.uid,
-        });
-      }
-
-      await addDoc(collection(db, "vocabularies"), {
-        word: normalized.word,
-        definition: normalized.definition,
-        partOfSpeech: normalized.partOfSpeech,
-        phonetic: normalized.phonetic,
-        topicId: normalized.topicId || null,
-        userId: currentUser.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        level: 0,
-        nextReview: serverTimestamp(),
-        srsVersion: SRS_VERSION,
-        intervalDays: 0,
-        easeFactor: DEFAULT_EASE_FACTOR,
-        repetitions: 0,
-        lapses: 0,
-        lastReviewedAt: null
+      await createVocabulary(userId, {
+        word: data.word,
+        definition: data.definition,
+        partOfSpeech: data.partOfSpeech,
+        phonetic: data.phonetic,
+        topicId: data.topicId
       });
       toast.success("Đã thêm từ vựng!");
       onClose();
-    } catch (e) {
-      handleFirestoreError(e, OperationType.CREATE, "vocabularies");
+    } catch {
       toast.error("Lỗi khi thêm từ vựng.");
     }
   };

@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Sparkles, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
-import { db } from "@/lib/firebase";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { OperationType, Topic, Vocabulary } from "@/types/types";
+import { updateVocabulary } from "@/services/vocabularyRepository";
+import type { Topic, Vocabulary } from "@/types/types";
 
 const vocabSchema = z.object({
   word: z.string().trim().min(1, "Vui lòng nhập từ tiếng Anh."),
@@ -79,27 +77,17 @@ export function EditVocabDialog({ vocabulary, topics, onClose }: EditVocabDialog
   };
 
   const onSubmit = async (data: EditVocabFormValues) => {
-    const normalized = {
-      word: data.word.trim(),
-      definition: data.definition.trim(),
-      partOfSpeech: data.partOfSpeech?.trim() ?? "",
-      phonetic: data.phonetic?.trim() ?? "",
-      topicId: data.topicId?.trim() ?? ""
-    };
-
     try {
-      await updateDoc(doc(db, "vocabularies", vocabulary.id), {
-        word: normalized.word,
-        definition: normalized.definition,
-        partOfSpeech: normalized.partOfSpeech,
-        phonetic: normalized.phonetic,
-        topicId: normalized.topicId || null,
-        updatedAt: serverTimestamp()
+      await updateVocabulary(vocabulary.id, {
+        word: data.word,
+        definition: data.definition,
+        partOfSpeech: data.partOfSpeech,
+        phonetic: data.phonetic,
+        topicId: data.topicId
       });
       toast.success("Đã cập nhật từ vựng!");
       onClose();
-    } catch (e) {
-      handleFirestoreError(e, OperationType.UPDATE, `vocabularies/${vocabulary.id}`);
+    } catch {
       toast.error("Lỗi khi cập nhật.");
     }
   };

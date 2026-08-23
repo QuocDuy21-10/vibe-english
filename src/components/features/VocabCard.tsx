@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { deleteDoc, doc } from "firebase/firestore";
 import { Edit3, Trash2, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -7,11 +6,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { db } from "@/lib/firebase";
 import { playAudio } from "@/lib/audio";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
 import { getVocabularyLevel } from "@/lib/srs";
-import { OperationType, Topic, Vocabulary } from "@/types/types";
+import { deleteVocabulary } from "@/services/vocabularyRepository";
+import type { Topic, Vocabulary } from "@/types/types";
 import { EditVocabDialog } from "@/components/features/EditVocabDialog";
 
 type VocabCardProps = {
@@ -27,10 +25,9 @@ export function VocabCard({ vocabulary, topics }: VocabCardProps) {
   const handleDelete = async () => {
     if (confirm(`Xóa từ "${vocabulary.word}"?`)) {
       try {
-        await deleteDoc(doc(db, "vocabularies", vocabulary.id));
+        await deleteVocabulary(vocabulary.id);
         toast.info("Đã xóa từ vựng.");
-      } catch (e) {
-        handleFirestoreError(e, OperationType.DELETE, `vocabularies/${vocabulary.id}`);
+      } catch {
         toast.error("Lỗi khi xóa từ vựng.");
       }
     }

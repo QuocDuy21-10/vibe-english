@@ -1,10 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
-import { collection, onSnapshot, orderBy, query, where } from "firebase/firestore";
 import { toast } from "sonner";
-import { auth, db } from "@/lib/firebase";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { OperationType } from "@/types/types";
+import { auth } from "@/lib/firebase";
+import { subscribeTopics } from "@/services/topicRepository";
+import { subscribeVocabularies } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 
 type AppDataContextValue = {
@@ -51,20 +50,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       return;
     }
     setTopicsLoading(true);
-    const topicsQuery = query(
-      collection(db, "topics"),
-      where("userId", "==", user.uid),
-      orderBy("createdAt", "desc")
-    );
-    return onSnapshot(
-      topicsQuery,
-      (snapshot) => {
-        setTopics(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Topic)));
+    return subscribeTopics(
+      user.uid,
+      (loadedTopics) => {
+        setTopics(loadedTopics);
         setTopicsLoading(false);
       },
-      (error) => {
+      () => {
         setTopicsLoading(false);
-        handleFirestoreError(error, OperationType.LIST, "topics");
         toast.error("Không thể tải danh sách chủ đề.");
       }
     );
@@ -77,20 +70,14 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
       return;
     }
     setVocabulariesLoading(true);
-    const vocabQuery = query(
-      collection(db, "vocabularies"),
-      where("userId", "==", user.uid),
-      orderBy("createdAt", "desc")
-    );
-    return onSnapshot(
-      vocabQuery,
-      (snapshot) => {
-        setVocabularies(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Vocabulary)));
+    return subscribeVocabularies(
+      user.uid,
+      (loadedVocab) => {
+        setVocabularies(loadedVocab);
         setVocabulariesLoading(false);
       },
-      (error) => {
+      () => {
         setVocabulariesLoading(false);
-        handleFirestoreError(error, OperationType.LIST, "vocabularies");
         toast.error("Không thể tải danh sách từ vựng.");
       }
     );

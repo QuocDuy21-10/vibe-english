@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
 import { Brain, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -10,8 +9,6 @@ import { StudyTopicPicker } from "@/components/features/study/StudyTopicPicker";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
-import { db } from "@/lib/firebase";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
 import {
   calculateNextSchedule,
   isDueForReview,
@@ -19,7 +16,7 @@ import {
   requeueAgainOnce,
   type FlashcardRating
 } from "@/lib/srs";
-import { OperationType } from "@/types/types";
+import { updateVocabularyReview } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 
 type StudyAreaProps = {
@@ -243,17 +240,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     const schedule = calculateNextSchedule(normalizeSchedule(current, reviewedAt), rating, reviewedAt);
 
     try {
-      await updateDoc(doc(db, "vocabularies", current.id), {
-        srsVersion: schedule.srsVersion,
-        intervalDays: schedule.intervalDays,
-        easeFactor: schedule.easeFactor,
-        repetitions: schedule.repetitions,
-        lapses: schedule.lapses,
-        level: schedule.level,
-        nextReview: schedule.nextReview,
-        lastReviewedAt: serverTimestamp(),
-        updatedAt: serverTimestamp()
-      });
+      await updateVocabularyReview(current.id, schedule);
 
       setFlashcardAssessments((previousAssessments) => [
         ...previousAssessments,
@@ -270,8 +257,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
       }
 
       next(queueLength);
-    } catch (error) {
-      handleFirestoreError(error, OperationType.UPDATE, `vocabularies/${current.id}`);
+    } catch {
       toast.error("Không thể lưu đánh giá. Vui lòng thử lại.");
     } finally {
       setPendingVocabId((pendingId) => (pendingId === current.id ? null : pendingId));

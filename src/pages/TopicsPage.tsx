@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { deleteDoc, doc } from "firebase/firestore";
 import { Edit3, Plus, SearchIcon, Trash2, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TopicDialog } from "@/components/features/TopicDialog";
@@ -11,11 +10,9 @@ import { Input } from "@/components/ui/input";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
-import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { db } from "@/lib/firebase";
 import { getPaginationModel } from "@/lib/pagination";
 import { useAppData } from "@/routes/AppDataProvider";
-import { OperationType } from "@/types/types";
+import { deleteTopic } from "@/services/topicRepository";
 
 export function TopicsPage() {
   const { topics, user, vocabularies } = useAppData();
@@ -138,10 +135,9 @@ export function TopicsPage() {
                     )
                   ) {
                     try {
-                      await deleteDoc(doc(db, "topics", topic.id));
+                      await deleteTopic(topic.id);
                       toast.success("Đã xóa chủ đề.");
-                    } catch (error) {
-                      handleFirestoreError(error, OperationType.DELETE, `topics/${topic.id}`);
+                    } catch {
                       toast.error("Lỗi khi xóa chủ đề.");
                     }
                   }
