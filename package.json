@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --port=3000 --host=0.0.0.0",
+    "fb": "firebase deploy --only firestore:rules",
     "build": "vite build",
     "preview": "vite preview",
     "clean": "rm -rf dist",
@@ -43,6 +44,7 @@
     "@types/node": "^22.14.0",
     "@types/react": "^19.2.14",
     "autoprefixer": "^10.4.21",
+    "firebase-tools": "^15.28.1",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",

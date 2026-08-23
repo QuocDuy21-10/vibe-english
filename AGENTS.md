@@ -160,6 +160,7 @@ npm test          # Vitest run
 npm run build     # Production Vite build
 npm run preview   # Preview the production build
 npm run clean     # Remove ignored dist output; run only when needed
+npm run fb        # Deploy Firestore rules to the cloud
 ```
 
 - Vitest tests are colocated as `*.test.ts`; current coverage is pure SRS logic in `src/lib/srs.test.ts`.
@@ -184,6 +185,7 @@ npm run clean     # Remove ignored dist output; run only when needed
 - Reuse existing primitives and domain logic.
 - Keep changes within task scope and preserve backward compatibility unless a breaking change is explicitly requested.
 - Keep Firestore writes, shared types, rules, and SRS behavior consistent.
+- Mỗi khi thay đổi file `firestore.rules`, bắt buộc phải chạy script `npm run fb` để deploy và đồng bộ rules lên Firebase console.
 - Preserve authentication, ownership checks, type safety, and responsive behavior.
 - Report verified results separately from unverified runtime assumptions.
 

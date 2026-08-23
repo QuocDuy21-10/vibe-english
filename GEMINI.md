@@ -66,6 +66,7 @@ npm run dev      # start Vite dev server
 npm run build    # production build
 npm run preview  # preview production build
 npm run lint     # typecheck (tsc --noEmit)
+npm run fb       # deploy Firestore rules to the cloud
 ```
 
 Environment
@@ -75,3 +76,4 @@ Environment
 Verification
 - For UI changes: run dev server and check key flows (login, add vocab, AI lookup).
 - For logic/type changes: run npm run lint.
+- For Firestore rules changes: run `npm run fb` to deploy and sync rules with Firebase console.
