@@ -21,6 +21,25 @@ export type VocabularyOverview = {
   levelCounts: number[];
 };
 
+export type VocabularyStatusFilter = "all" | "due" | "new" | "learning" | "mastered";
+
+export type VocabularySortOption =
+  | "newest"
+  | "oldest"
+  | "alpha-asc"
+  | "alpha-desc"
+  | "next-review"
+  | "level-desc"
+  | "level-asc";
+
+export type FilterAndSortOptions = {
+  searchQuery?: string;
+  selectedTopicId?: string;
+  statusFilter?: VocabularyStatusFilter;
+  sortOption?: VocabularySortOption;
+  now?: Date;
+};
+
 export function filterVocabularies(
   vocabularies: Vocabulary[],
   searchQuery: string,
@@ -32,7 +51,8 @@ export function filterVocabularies(
       queryText.length === 0 ||
       vocabulary.word.toLowerCase().includes(queryText) ||
       vocabulary.definition.toLowerCase().includes(queryText) ||
-      vocabulary.partOfSpeech.toLowerCase().includes(queryText);
+      vocabulary.partOfSpeech.toLowerCase().includes(queryText) ||
+      vocabulary.phonetic.toLowerCase().includes(queryText);
     const matchesTopic =
       selectedTopicId === DEFAULT_TOPIC_FILTER ||
       (selectedTopicId === UNASSIGNED_TOPIC_FILTER
@@ -41,6 +61,99 @@ export function filterVocabularies(
 
     return matchesSearch && matchesTopic;
   });
+}
+
+export function sortVocabularies(
+  vocabularies: Vocabulary[],
+  sortOption: VocabularySortOption = "newest"
+): Vocabulary[] {
+  const copy = [...vocabularies];
+
+  switch (sortOption) {
+    case "oldest":
+      return copy.sort((a, b) => {
+        const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toMillis?.() || 0;
+        const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toMillis?.() || 0;
+        return timeA - timeB;
+      });
+
+    case "alpha-asc":
+      return copy.sort((a, b) => a.word.localeCompare(b.word));
+
+    case "alpha-desc":
+      return copy.sort((a, b) => b.word.localeCompare(a.word));
+
+    case "next-review":
+      return copy.sort((a, b) => {
+        const timeA = a.nextReview ? (a.nextReview instanceof Date ? a.nextReview.getTime() : (a.nextReview as any)?.toMillis?.() || 0) : Number.MAX_SAFE_INTEGER;
+        const timeB = b.nextReview ? (b.nextReview instanceof Date ? b.nextReview.getTime() : (b.nextReview as any)?.toMillis?.() || 0) : Number.MAX_SAFE_INTEGER;
+        return timeA - timeB;
+      });
+
+    case "level-desc":
+      return copy.sort((a, b) => {
+        const levelDiff = getVocabularyLevel(b) - getVocabularyLevel(a);
+        if (levelDiff !== 0) return levelDiff;
+        const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toMillis?.() || 0;
+        const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+
+    case "level-asc":
+      return copy.sort((a, b) => {
+        const levelDiff = getVocabularyLevel(a) - getVocabularyLevel(b);
+        if (levelDiff !== 0) return levelDiff;
+        const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toMillis?.() || 0;
+        const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+
+    case "newest":
+    default:
+      return copy.sort((a, b) => {
+        const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : (a.createdAt as any)?.toMillis?.() || 0;
+        const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : (b.createdAt as any)?.toMillis?.() || 0;
+        return timeB - timeA;
+      });
+  }
+}
+
+export function filterAndSortVocabularies(
+  vocabularies: Vocabulary[],
+  options: FilterAndSortOptions
+): Vocabulary[] {
+  const {
+    searchQuery = "",
+    selectedTopicId = DEFAULT_TOPIC_FILTER,
+    statusFilter = "all",
+    sortOption = "newest",
+    now = new Date()
+  } = options;
+
+  // 1. Topic and Search Filter
+  let filtered = filterVocabularies(vocabularies, searchQuery, selectedTopicId);
+
+  // 2. Status Filter
+  if (statusFilter !== "all") {
+    filtered = filtered.filter((vocab) => {
+      const level = getVocabularyLevel(vocab);
+      switch (statusFilter) {
+        case "due":
+          return isDueForReview(vocab, now);
+        case "new":
+          return level === 0;
+        case "learning":
+          return level >= 1 && level <= 3;
+        case "mastered":
+          return level === 4;
+        default:
+          return true;
+      }
+    });
+  }
+
+  // 3. Sort
+  return sortVocabularies(filtered, sortOption);
 }
 
 export function getVocabularyOverview(vocabularies: Vocabulary[]): VocabularyOverview {

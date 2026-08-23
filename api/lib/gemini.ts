@@ -51,3 +51,48 @@ export async function fetchWordDetailsFromGemini(word: string): Promise<ServerWo
   const parsed: unknown = JSON.parse(text);
   return wordDetailsResponseSchema.parse(parsed);
 }
+
+export const batchWordDetailsResponseSchema = z.array(wordDetailsResponseSchema);
+
+export async function fetchBatchWordDetailsFromGemini(
+  words: string[]
+): Promise<ServerWordDetails[]> {
+  if (!words || words.length === 0) {
+    return [];
+  }
+
+  const client = getGeminiClient();
+  const wordListStr = words.map((w, idx) => `${idx + 1}. ${w}`).join("\n");
+  const response = await client.models.generateContent({
+    model: "gemini-2.5-flash",
+    contents: `Translate the following English words into Vietnamese and provide their phonetic transcriptions (IPA) and parts of speech (e.g., noun, verb, adjective, adverb).
+Return a JSON array containing one object for each requested word with keys "word", "definition", "partOfSpeech", and "phonetic".
+
+Words to translate:
+${wordListStr}`,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            word: { type: Type.STRING },
+            definition: { type: Type.STRING, description: "Vietnamese definition" },
+            partOfSpeech: { type: Type.STRING, description: "e.g., noun, verb, adjective" },
+            phonetic: { type: Type.STRING, description: "IPA phonetic transcription" }
+          },
+          required: ["word", "definition", "partOfSpeech", "phonetic"]
+        }
+      }
+    }
+  });
+
+  const text = response.text;
+  if (!text) {
+    throw new Error("Empty response from AI model");
+  }
+
+  const parsed: unknown = JSON.parse(text);
+  return batchWordDetailsResponseSchema.parse(parsed);
+}

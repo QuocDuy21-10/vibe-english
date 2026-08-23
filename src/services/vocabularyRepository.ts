@@ -13,6 +13,7 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
+import { normalizeVocabularyWord } from "@/lib/vocabulary";
 import {
   DEFAULT_EASE_FACTOR,
   SRS_VERSION,
@@ -21,7 +22,7 @@ import {
   type FlashcardRating,
   type ScheduleUpdate
 } from "@/lib/srs";
-import { OperationType, type Vocabulary } from "@/types/types";
+import { OperationType, type BatchCreateResult, type Vocabulary } from "@/types/types";
 
 export type RecordVocabularyReviewInput = {
   vocabulary: Vocabulary;
@@ -53,6 +54,7 @@ export async function createVocabulary(
 ): Promise<string> {
   const normalized = {
     word: input.word.trim(),
+    normalizedWord: normalizeVocabularyWord(input.word),
     definition: input.definition.trim(),
     partOfSpeech: input.partOfSpeech?.trim() ?? "",
     phonetic: input.phonetic?.trim() ?? "",
@@ -62,6 +64,7 @@ export async function createVocabulary(
   try {
     const docRef = await addDoc(collection(db, "vocabularies"), {
       word: normalized.word,
+      normalizedWord: normalized.normalizedWord,
       definition: normalized.definition,
       partOfSpeech: normalized.partOfSpeech,
       phonetic: normalized.phonetic,
@@ -91,6 +94,7 @@ export async function updateVocabulary(
 ): Promise<void> {
   const normalized = {
     word: input.word.trim(),
+    normalizedWord: normalizeVocabularyWord(input.word),
     definition: input.definition.trim(),
     partOfSpeech: input.partOfSpeech?.trim() ?? "",
     phonetic: input.phonetic?.trim() ?? "",
@@ -100,6 +104,7 @@ export async function updateVocabulary(
   try {
     await updateDoc(doc(db, "vocabularies", id), {
       word: normalized.word,
+      normalizedWord: normalized.normalizedWord,
       definition: normalized.definition,
       partOfSpeech: normalized.partOfSpeech,
       phonetic: normalized.phonetic,
@@ -110,6 +115,72 @@ export async function updateVocabulary(
     handleFirestoreError(error, OperationType.UPDATE, `vocabularies/${id}`);
     throw error;
   }
+}
+
+/**
+ * Creates multiple vocabularies using Firestore writeBatch in chunks (up to 200 items/batch).
+ */
+export async function batchCreateVocabularies(
+  userId: string,
+  items: CreateVocabularyInput[]
+): Promise<BatchCreateResult> {
+  if (!items || items.length === 0) {
+    return { totalCount: 0, successCount: 0, failedCount: 0 };
+  }
+
+  const CHUNK_SIZE = 200;
+  let successCount = 0;
+  let failedCount = 0;
+
+  for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+    const chunk = items.slice(i, i + CHUNK_SIZE);
+    const batch = writeBatch(db);
+
+    chunk.forEach((item) => {
+      const vocabRef = doc(collection(db, "vocabularies"));
+      const word = item.word.trim();
+      const normalizedWord = normalizeVocabularyWord(word);
+      const definition = item.definition.trim();
+      const partOfSpeech = item.partOfSpeech?.trim() ?? "";
+      const phonetic = item.phonetic?.trim() ?? "";
+      const topicId = item.topicId?.trim() || null;
+
+      batch.set(vocabRef, {
+        word,
+        normalizedWord,
+        definition,
+        partOfSpeech,
+        phonetic,
+        topicId,
+        userId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        level: 0,
+        nextReview: serverTimestamp(),
+        srsVersion: SRS_VERSION,
+        intervalDays: 0,
+        easeFactor: DEFAULT_EASE_FACTOR,
+        repetitions: 0,
+        lapses: 0,
+        lastReviewedAt: null
+      });
+    });
+
+    try {
+      await batch.commit();
+      successCount += chunk.length;
+    } catch (error) {
+      failedCount += chunk.length;
+      handleFirestoreError(error, OperationType.WRITE, "vocabularies/batch");
+      throw error;
+    }
+  }
+
+  return {
+    totalCount: items.length,
+    successCount,
+    failedCount
+  };
 }
 
 export async function deleteVocabulary(id: string): Promise<void> {

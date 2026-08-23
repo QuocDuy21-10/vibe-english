@@ -11,6 +11,7 @@ export interface Topic {
 export interface Vocabulary {
   id: string;
   word: string;
+  normalizedWord?: string;
   definition: string;
   partOfSpeech: string;
   phonetic: string;
@@ -26,6 +27,38 @@ export interface Vocabulary {
   repetitions?: number;
   lapses?: number;
   lastReviewedAt?: Timestamp | Date | null;
+}
+
+export type BulkRowStatus = "valid" | "duplicate_in_file" | "duplicate_in_db" | "invalid";
+
+export interface ParsedBulkItem {
+  rawId: string;
+  word: string;
+  definition?: string;
+  partOfSpeech?: string;
+  phonetic?: string;
+  topicName?: string;
+  topicId?: string | null;
+}
+
+export interface AnalyzedBulkRow extends ParsedBulkItem {
+  normalizedWord: string;
+  status: BulkRowStatus;
+  errorMessage?: string;
+}
+
+export interface BulkSummary {
+  total: number;
+  valid: number;
+  duplicateInFile: number;
+  duplicateInDb: number;
+  invalid: number;
+}
+
+export interface BatchCreateResult {
+  totalCount: number;
+  successCount: number;
+  failedCount: number;
 }
 
 export interface ReviewEvent {

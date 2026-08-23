@@ -273,11 +273,12 @@ describe("Firestore Security Rules Tests", () => {
   });
 
   // 7. Valid and invalid vocabulary creation
-  it("allows user to create a valid SRS vocabulary with all 16 required fields", async () => {
+  it("allows user to create a valid SRS vocabulary with all 17 required fields", async () => {
     const aliceDb = testEnv.authenticatedContext("alice").firestore();
     await assertSucceeds(
       setDoc(doc(aliceDb, "vocabularies/v1"), {
         word: "serendipity",
+        normalizedWord: "serendipity",
         definition: "sự may mắn tình cờ",
         partOfSpeech: "noun",
         phonetic: "/ˌser.ənˈdɪp.ə.t̬i/",

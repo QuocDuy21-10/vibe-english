@@ -15,26 +15,24 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
+import { findDuplicateVocabulary } from "@/lib/vocabulary";
+import { vocabularyInputSchema, type VocabularyInputFormValues } from "@/lib/vocabularyValidation";
 import { updateVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
-
-const vocabSchema = z.object({
-  word: z.string().trim().min(1, "Vui lòng nhập từ tiếng Anh."),
-  definition: z.string().trim().min(1, "Vui lòng nhập định nghĩa."),
-  phonetic: z.string().trim().optional().or(z.literal("")),
-  partOfSpeech: z.string().trim().optional().or(z.literal("")),
-  topicId: z.string().trim().optional().or(z.literal(""))
-});
-
-type EditVocabFormValues = z.infer<typeof vocabSchema>;
 
 type EditVocabDialogProps = {
   vocabulary: Vocabulary;
   topics: Topic[];
+  vocabularies?: Vocabulary[];
   onClose: () => void;
 };
 
-export function EditVocabDialog({ vocabulary, topics, onClose }: EditVocabDialogProps) {
+export function EditVocabDialog({
+  vocabulary,
+  topics,
+  vocabularies = [],
+  onClose
+}: EditVocabDialogProps) {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const {
     register,
@@ -42,9 +40,10 @@ export function EditVocabDialog({ vocabulary, topics, onClose }: EditVocabDialog
     handleSubmit,
     watch,
     setValue,
+    setError,
     formState: { errors, isSubmitting }
-  } = useForm<EditVocabFormValues>({
-    resolver: zodResolver(vocabSchema),
+  } = useForm<VocabularyInputFormValues>({
+    resolver: zodResolver(vocabularyInputSchema),
     defaultValues: {
       word: vocabulary.word,
       definition: vocabulary.definition,
@@ -76,7 +75,17 @@ export function EditVocabDialog({ vocabulary, topics, onClose }: EditVocabDialog
     }
   };
 
-  const onSubmit = async (data: EditVocabFormValues) => {
+  const onSubmit = async (data: VocabularyInputFormValues) => {
+    // Duplicate detection check (excluding current vocabulary)
+    const duplicate = findDuplicateVocabulary(data.word, vocabularies, vocabulary.id);
+    if (duplicate) {
+      const topicName = topics.find((t) => t.id === duplicate.topicId)?.name || "Chưa phân loại";
+      const errorMsg = `Từ "${duplicate.word}" đã tồn tại ở một mục khác trong từ điển của bạn (thuộc: ${topicName}).`;
+      setError("word", { message: errorMsg });
+      toast.error(errorMsg);
+      return;
+    }
+
     try {
       await updateVocabulary(vocabulary.id, {
         word: data.word,

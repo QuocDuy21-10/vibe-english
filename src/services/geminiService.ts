@@ -48,3 +48,75 @@ export async function getWordDetails(word: string): Promise<WordDetails> {
   const data = await response.json();
   return wordDetailsSchema.parse(data);
 }
+
+export const batchWordDetailsSchema = z.array(wordDetailsSchema);
+
+export async function getBatchWordDetails(
+  words: string[],
+  onProgress?: (processed: number, total: number) => void
+): Promise<WordDetails[]> {
+  const trimmedWords = words.map((w) => w.trim()).filter(Boolean);
+  if (trimmedWords.length === 0) {
+    return [];
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Bạn cần đăng nhập để sử dụng tính năng tra từ AI.");
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const BATCH_CHUNK_SIZE = 20;
+  const results: WordDetails[] = [];
+  let processed = 0;
+
+  for (let i = 0; i < trimmedWords.length; i += BATCH_CHUNK_SIZE) {
+    const chunk = trimmedWords.slice(i, i + BATCH_CHUNK_SIZE);
+
+    try {
+      const response = await fetch("/api/ai/batch-details", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`
+        },
+        body: JSON.stringify({ words: chunk })
+      });
+
+      if (!response.ok) {
+        let errorMessage = "Không thể lấy thông tin từ AI hàng loạt.";
+        try {
+          const errorJson = await response.json();
+          if (errorJson?.error) {
+            errorMessage = errorJson.error;
+          }
+        } catch {
+          // Fall back
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      const parsedChunk = batchWordDetailsSchema.parse(data);
+      results.push(...parsedChunk);
+    } catch (chunkError) {
+      console.error("Batch AI chunk error:", chunkError);
+      // Fallback: fill dummy or partial items if chunk fails so user doesn't lose all progress
+      chunk.forEach((word) => {
+        results.push({
+          word,
+          definition: "",
+          partOfSpeech: "",
+          phonetic: ""
+        });
+      });
+    }
+
+    processed += chunk.length;
+    if (onProgress) {
+      onProgress(Math.min(processed, trimmedWords.length), trimmedWords.length);
+    }
+  }
+
+  return results;
+}

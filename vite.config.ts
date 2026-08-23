@@ -9,7 +9,10 @@ function devApiServerPlugin(): Plugin {
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const url = req.url || '';
-        if (url === '/api/ai/word-details' || url.startsWith('/api/ai/word-details?')) {
+        const isWordDetails = url === '/api/ai/word-details' || url.startsWith('/api/ai/word-details?');
+        const isBatchDetails = url === '/api/ai/batch-details' || url.startsWith('/api/ai/batch-details?');
+
+        if (isWordDetails || isBatchDetails) {
           try {
             let body = '';
             for await (const chunk of req) {
@@ -48,8 +51,13 @@ function devApiServerPlugin(): Plugin {
               }
             };
 
-            const { default: handler } = await import('./api/ai/word-details.ts');
-            await handler(fakeReq, fakeRes);
+            if (isWordDetails) {
+              const { default: handler } = await import('./api/ai/word-details.ts');
+              await handler(fakeReq, fakeRes);
+            } else {
+              const { default: handler } = await import('./api/ai/batch-details.ts');
+              await handler(fakeReq, fakeRes);
+            }
           } catch (err: any) {
             console.error('Dev API Error:', err);
             res.statusCode = 500;

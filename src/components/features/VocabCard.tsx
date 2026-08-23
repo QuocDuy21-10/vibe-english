@@ -15,9 +15,10 @@ import { EditVocabDialog } from "@/components/features/EditVocabDialog";
 type VocabCardProps = {
   vocabulary: Vocabulary;
   topics: Topic[];
+  vocabularies?: Vocabulary[];
 };
 
-export function VocabCard({ vocabulary, topics }: VocabCardProps) {
+export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
   const level = getVocabularyLevel(vocabulary);
@@ -78,7 +79,12 @@ export function VocabCard({ vocabulary, topics }: VocabCardProps) {
             <DialogTrigger render={<Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-[#006c49] hover:bg-[#ECFDF5]/50 border-none" />}>
               <Edit3 className="w-4 h-4" />
             </DialogTrigger>
-            <EditVocabDialog vocabulary={vocabulary} topics={topics} onClose={() => setIsEditing(false)} />
+            <EditVocabDialog
+              vocabulary={vocabulary}
+              topics={topics}
+              vocabularies={vocabularies}
+              onClose={() => setIsEditing(false)}
+            />
           </Dialog>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-destructive hover:bg-rose-50" onClick={handleDelete}>
             <Trash2 className="w-4 h-4" />

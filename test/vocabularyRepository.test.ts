@@ -5,6 +5,7 @@ import {
   deleteVocabulary,
   updateVocabularyReview,
   recordVocabularyReview,
+  batchCreateVocabularies,
   subscribeVocabularies
 } from "@/services/vocabularyRepository";
 import { addDoc, updateDoc, deleteDoc, onSnapshot, writeBatch } from "firebase/firestore";
@@ -69,6 +70,7 @@ describe("vocabularyRepository", () => {
 
       expect(addDoc).toHaveBeenCalledWith("collection:vocabularies", {
         word: "ubiquitous",
+        normalizedWord: "ubiquitous",
         definition: "phổ biến, có mặt ở khắp nơi",
         partOfSpeech: "adjective",
         phonetic: "/juːˈbɪk.wə.təs/",
@@ -100,6 +102,7 @@ describe("vocabularyRepository", () => {
       expect(addDoc).toHaveBeenCalledWith(
         "collection:vocabularies",
         expect.objectContaining({
+          normalizedWord: "hello",
           topicId: null,
           partOfSpeech: "",
           phonetic: ""
@@ -136,6 +139,7 @@ describe("vocabularyRepository", () => {
 
       expect(updateDoc).toHaveBeenCalledWith("doc:vocabularies/vocab-1", {
         word: "diligent",
+        normalizedWord: "diligent",
         definition: "chăm chỉ",
         partOfSpeech: "adj",
         phonetic: "/ˈdɪl.ə.dʒənt/",
@@ -153,6 +157,26 @@ describe("vocabularyRepository", () => {
       ).rejects.toThrow("Update error");
 
       expect(handleFirestoreError).toHaveBeenCalledWith(error, "update", "vocabularies/vocab-1");
+    });
+  });
+
+  describe("batchCreateVocabularies", () => {
+    it("returns 0 counts when empty items passed", async () => {
+      const res = await batchCreateVocabularies("user-123", []);
+      expect(res).toEqual({ totalCount: 0, successCount: 0, failedCount: 0 });
+    });
+
+    it("batches creation of items and commits batch", async () => {
+      const items = [
+        { word: "apple", definition: "quả táo" },
+        { word: "banana", definition: "quả chuối", topicId: "food-topic" }
+      ];
+
+      const res = await batchCreateVocabularies("user-123", items);
+
+      expect(mockBatch.set).toHaveBeenCalledTimes(2);
+      expect(mockBatch.commit).toHaveBeenCalled();
+      expect(res).toEqual({ totalCount: 2, successCount: 2, failedCount: 0 });
     });
   });
 
