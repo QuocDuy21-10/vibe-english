@@ -7,7 +7,8 @@ import {
   getDueCount,
   getDueVocabularies,
   getVocabularyOverview,
-  sortTopicsByName
+  sortTopicsByName,
+  sortTopicsByNewest
 } from "@/lib/vocabularySelectors";
 import type { Topic, Vocabulary } from "@/types/types";
 
@@ -80,6 +81,28 @@ describe("topic selectors", () => {
 
     expect(sortTopicsByName(topics).map((topic) => topic.name)).toEqual(["Travel", "Work"]);
     expect(topics.map((topic) => topic.name)).toEqual(["Work", "Travel"]);
+  });
+
+  it("sorts topics by newest createdAt first, handling pending createdAt and equal dates", () => {
+    const older = new Date("2026-08-01T00:00:00.000Z");
+    const newer = new Date("2026-08-10T00:00:00.000Z");
+
+    const topics: Topic[] = [
+      { id: "1", name: "Old Topic", userId: "user", createdAt: older },
+      { id: "2", name: "New Topic", userId: "user", createdAt: newer },
+      { id: "3", name: "Brand New Topic (Pending)", userId: "user", createdAt: null as any },
+      { id: "4", name: "A Same Date", userId: "user", createdAt: newer },
+      { id: "5", name: "B Same Date", userId: "user", createdAt: newer }
+    ];
+
+    const sorted = sortTopicsByNewest(topics);
+    expect(sorted.map((t) => t.name)).toEqual([
+      "Brand New Topic (Pending)",
+      "A Same Date",
+      "B Same Date",
+      "New Topic",
+      "Old Topic"
+    ]);
   });
 });
 

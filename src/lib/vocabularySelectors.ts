@@ -190,6 +190,41 @@ export function countVocabulariesByTopic(vocabularies: Vocabulary[]) {
   return counts;
 }
 
+export function getTopicTimestamp(topic: Topic): number {
+  const createdAt = topic.createdAt as any;
+  if (!createdAt) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+  if (createdAt instanceof Date) {
+    return createdAt.getTime();
+  }
+  if (typeof createdAt.toMillis === "function") {
+    return createdAt.toMillis();
+  }
+  if (typeof createdAt.seconds === "number") {
+    return createdAt.seconds * 1000;
+  }
+  if (typeof createdAt === "number") {
+    return createdAt;
+  }
+  if (typeof createdAt === "string") {
+    const parsed = Date.parse(createdAt);
+    if (!Number.isNaN(parsed)) return parsed;
+  }
+  return 0;
+}
+
+export function sortTopicsByNewest(topics: Topic[]) {
+  return topics.slice().sort((a, b) => {
+    const timeA = getTopicTimestamp(a);
+    const timeB = getTopicTimestamp(b);
+    if (timeB !== timeA) {
+      return timeB - timeA;
+    }
+    return a.name.localeCompare(b.name);
+  });
+}
+
 export function sortTopicsByName(topics: Topic[]) {
   return topics.slice().sort((first, second) => first.name.localeCompare(second.name));
 }

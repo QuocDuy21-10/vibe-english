@@ -23,6 +23,7 @@ export type TopicFilterSelectProps = {
   unassignedLabel?: string;
   variant?: "filter" | "form";
   disabled?: boolean;
+  sortBy?: "newest" | "name";
 };
 
 export function TopicFilterSelect({
@@ -39,12 +40,13 @@ export function TopicFilterSelect({
   unassignedValue = UNASSIGNED_TOPIC_FILTER,
   unassignedLabel = "Chưa phân loại",
   variant = "filter",
-  disabled = false
+  disabled = false,
+  sortBy = "newest"
 }: TopicFilterSelectProps) {
   const [open, setOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  const sortedTopics = useSortedTopics(topics);
+  const sortedTopics = useSortedTopics(topics, sortBy);
   const hasVocabularies = vocabularies.length > 0;
   const topicCounts = useTopicVocabularyCounts(vocabularies);
 

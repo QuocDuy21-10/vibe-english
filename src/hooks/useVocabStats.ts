@@ -6,6 +6,7 @@ import {
   filterVocabularies,
   getVocabularyOverview,
   sortTopicsByName,
+  sortTopicsByNewest,
   type FilterAndSortOptions
 } from "@/lib/vocabularySelectors";
 import type { Topic, Vocabulary } from "@/types/types";
@@ -40,6 +41,11 @@ export function useTopicVocabularyCounts(vocabularies: Vocabulary[]) {
   return useMemo(() => countVocabulariesByTopic(vocabularies), [vocabularies]);
 }
 
-export function useSortedTopics(topics: Topic[]) {
-  return useMemo(() => sortTopicsByName(topics), [topics]);
+export function useSortedTopics(topics: Topic[], sortBy: "newest" | "name" = "newest") {
+  return useMemo(() => {
+    if (sortBy === "name") {
+      return sortTopicsByName(topics);
+    }
+    return sortTopicsByNewest(topics);
+  }, [topics, sortBy]);
 }
