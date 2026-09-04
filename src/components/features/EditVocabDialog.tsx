@@ -103,7 +103,7 @@ export function EditVocabDialog({
 
   return (
     <DialogContent className="sm:max-w-lg rounded-3xl overflow-hidden p-0 border-none shadow-2xl max-h-[90dvh] flex flex-col">
-      <div className="bg-[#006c49] p-5 sm:p-6 text-white text-center shrink-0">
+      <div className="bg-[#10b981] p-5 sm:p-6 text-white text-center shrink-0">
         <DialogTitle className="text-2xl sm:text-3xl font-bold tracking-tight">Chỉnh sửa từ vựng</DialogTitle>
         <p className="text-white/80 text-xs sm:text-sm font-medium mt-1">Cập nhật và hoàn thiện thông tin từ vựng</p>
       </div>
@@ -117,17 +117,17 @@ export function EditVocabDialog({
                 placeholder="Ví dụ: resilient, comprehensive..."
                 aria-invalid={!!errors.word}
                 {...register("word")}
-                className="rounded-xl h-11 sm:h-12 text-base border-slate-200 focus:ring-[#006c49]"
+                className="rounded-xl h-11 sm:h-12 text-base border-slate-200 focus:ring-[#10b981]"
               />
             </div>
             <Button
               type="button"
               variant="outline"
-              className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border-emerald-200 text-[#006c49] bg-[#ECFDF5] hover:bg-[#ECFDF5]/80 font-semibold text-xs sm:text-sm shrink-0 min-h-[44px] cursor-pointer"
+              className="h-11 sm:h-12 px-3.5 sm:px-4 rounded-xl border-emerald-200 text-[#10b981] bg-[#ECFDF5] hover:bg-[#ECFDF5]/80 font-semibold text-xs sm:text-sm shrink-0 min-h-[44px] cursor-pointer"
               onClick={handleAiLookup}
               disabled={isAiLoading || !wordValue.trim()}
             >
-              {isAiLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4 sm:mr-1.5 text-[#006c49]" />}
+              {isAiLoading ? <Loader2 className="animate-spin w-4 h-4" /> : <Sparkles className="w-4 h-4 sm:mr-1.5 text-[#10b981]" />}
               <span>AI Tra</span>
             </Button>
           </div>
@@ -175,7 +175,7 @@ export function EditVocabDialog({
               placeholder="Nghĩa tiếng Việt..."
               aria-invalid={!!errors.definition}
               {...register("definition")}
-              className="rounded-xl h-11 border-slate-200 font-semibold text-[#006c49] text-sm sm:text-base"
+              className="rounded-xl h-11 border-slate-200 font-semibold text-[#10b981] text-sm sm:text-base"
             />
             {errors.definition && <p className="text-xs text-rose-500 font-medium">{errors.definition.message}</p>}
           </div>
@@ -208,7 +208,7 @@ export function EditVocabDialog({
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-[#006c49] hover:bg-[#006c49]/90 text-white h-11 sm:h-12 px-6 rounded-xl shadow-md shadow-[#006c49]/20 font-semibold text-sm border-none transition-all cursor-pointer min-h-[44px]"
+            className="bg-[#10b981] hover:bg-[#10b981]/90 text-white h-11 sm:h-12 px-6 rounded-xl shadow-md shadow-[#10b981]/20 font-semibold text-sm border-none transition-all cursor-pointer min-h-[44px]"
           >
             {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : "Lưu thay đổi"}
           </Button>

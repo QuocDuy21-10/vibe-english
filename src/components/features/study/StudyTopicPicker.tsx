@@ -64,7 +64,7 @@ export function StudyTopicPicker({
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Tìm kiếm chủ đề ôn tập..."
-            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#006c49] transition-all shadow-sm h-11 text-sm"
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#10b981] transition-all shadow-sm h-11 text-sm"
             value={searchQuery}
             onChange={(event) => onSearchChange(event.target.value)}
           />
@@ -102,7 +102,7 @@ export function StudyTopicPicker({
                 className={cn(
                   "h-full border-none shadow-lg transition-all overflow-hidden rounded-2xl sm:rounded-3xl border-b-8",
                   dueCount > 0
-                    ? "bg-[#006c49] border-[#00422b] shadow-emerald-950/10 hover:shadow-emerald-950/20"
+                    ? "bg-[#10b981] border-[#059669] shadow-emerald-950/10 hover:shadow-emerald-950/20"
                     : "bg-slate-800 border-slate-950 shadow-slate-200/50 hover:shadow-emerald-900/30"
                 )}
               >
@@ -158,7 +158,7 @@ export function StudyTopicPicker({
             className="cursor-pointer group text-left w-full touch-manipulation"
             onClick={() => onSelectTopic(DEFAULT_TOPIC_FILTER)}
           >
-            <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-950/20 transition-all overflow-hidden rounded-2xl sm:rounded-3xl bg-[#006c49] border-b-8 border-[#00422b]">
+            <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-950/20 transition-all overflow-hidden rounded-2xl sm:rounded-3xl bg-[#10b981] border-b-8 border-[#059669]">
               <CardHeader className="p-5 sm:p-6 text-center">
                 <div className="w-12 h-12 sm:w-14 sm:h-14 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-white group-hover:scale-105 transition-transform">
                   <BookOpen className="w-6 h-6 sm:w-7 sm:h-7" />
@@ -179,10 +179,10 @@ export function StudyTopicPicker({
           >
             <Card className="h-full border border-slate-100 bg-white shadow-md shadow-slate-200/50 hover:shadow-emerald-950/5 transition-all overflow-hidden rounded-2xl sm:rounded-3xl border-b-8 border-b-[#ECFDF5] relative group-hover:border-[#10b981]/30">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-                <Brain className="w-24 h-24 text-[#006c49]" />
+                <Brain className="w-24 h-24 text-[#10b981]" />
               </div>
               <CardHeader className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-[#ECFDF5] rounded-xl flex items-center justify-center mb-3 text-[#006c49]">
+                <div className="w-12 h-12 bg-[#ECFDF5] rounded-xl flex items-center justify-center mb-3 text-[#10b981]">
                   <Layers className="w-6 h-6" />
                 </div>
                 <CardTitle className="text-lg font-bold text-slate-800 line-clamp-1">Chưa phân loại</CardTitle>
@@ -204,10 +204,10 @@ export function StudyTopicPicker({
           >
             <Card className="h-full border border-slate-100 bg-white shadow-md shadow-slate-200/50 hover:shadow-emerald-950/5 transition-all overflow-hidden rounded-2xl sm:rounded-3xl border-b-8 border-b-[#ECFDF5] relative group-hover:border-[#10b981]/30">
               <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity pointer-events-none">
-                <Brain className="w-24 h-24 text-[#006c49]" />
+                <Brain className="w-24 h-24 text-[#10b981]" />
               </div>
               <CardHeader className="p-5 sm:p-6">
-                <div className="w-12 h-12 bg-[#ECFDF5] rounded-xl flex items-center justify-center mb-3 text-[#006c49]">
+                <div className="w-12 h-12 bg-[#ECFDF5] rounded-xl flex items-center justify-center mb-3 text-[#10b981]">
                   <Layers className="w-6 h-6" />
                 </div>
                 <CardTitle className="text-lg font-bold text-slate-800 line-clamp-2 break-words">{topic.name}</CardTitle>
@@ -222,7 +222,7 @@ export function StudyTopicPicker({
 
       {filteredTopics.length === 0 && selectedTopicFilter !== UNASSIGNED_TOPIC_FILTER && (
         <div className="py-12 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
-          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#006c49]">
+          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#10b981]">
             <Search className="w-8 h-8" />
           </div>
           <p className="text-slate-600 text-sm font-medium">Không tìm thấy chủ đề ôn tập nào phù hợp.</p>

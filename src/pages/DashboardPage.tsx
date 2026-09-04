@@ -14,13 +14,13 @@ export function DashboardPage() {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
       <Card className="md:col-span-2 rounded-3xl border-none shadow-xl shadow-emerald-950/5 bg-gradient-to-br from-white to-[#ECFDF5]/60 overflow-hidden p-5 sm:p-8 flex flex-col md:flex-row items-center gap-6 sm:gap-8">
         <div className="flex-1 space-y-3 sm:space-y-4 text-center md:text-left">
-          <div className="flex items-center justify-center md:justify-start gap-1.5 text-[#006c49] font-bold uppercase tracking-wider text-xs">
-            <Award className="w-4 h-4 text-[#006c49]" />
+          <div className="flex items-center justify-center md:justify-start gap-1.5 text-[#10b981] font-bold uppercase tracking-wider text-xs">
+            <Award className="w-4 h-4 text-[#10b981]" />
             Trạng thái thành thạo
           </div>
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 tracking-tight leading-tight">
             Bạn đã chinh phục được{" "}
-            <span className="text-[#006c49] underline decoration-[#10b981] decoration-4 sm:decoration-8 underline-offset-4">
+            <span className="text-[#10b981] underline decoration-[#10b981] decoration-4 sm:decoration-8 underline-offset-4">
               {stats.learnedVocab}
             </span>{" "}
             từ vựng!
@@ -34,7 +34,7 @@ export function DashboardPage() {
             <PieChart>
               <Pie
                 data={[
-                  { name: "Mastered", value: stats.learnedVocab, color: "#006c49" },
+                  { name: "Mastered", value: stats.learnedVocab, color: "#10b981" },
                   { name: "Learning", value: Math.max(0, stats.totalVocab - stats.learnedVocab), color: "#e2e8f0" },
                 ]}
                 innerRadius="65%"
@@ -42,7 +42,7 @@ export function DashboardPage() {
                 paddingAngle={4}
                 dataKey="value"
               >
-                <Cell key="cell-0" fill="#006c49" />
+                <Cell key="cell-0" fill="#10b981" />
                 <Cell key="cell-1" fill="#e2e8f0" />
               </Pie>
               <RechartsTooltip />
@@ -90,7 +90,7 @@ export function DashboardPage() {
             key={lvl}
             className="rounded-2xl sm:rounded-3xl border-slate-100 shadow-sm bg-white p-3.5 sm:p-4 text-center space-y-1 group hover:bg-[#ECFDF5]/60 hover:shadow-emerald-950/5 transition-all cursor-default text-inherit"
           >
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-[#006c49]">
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider group-hover:text-[#10b981]">
               Level {lvl}
             </p>
             <div className="text-2xl sm:text-3xl font-black text-slate-800">{levelCounts[index]}</div>
@@ -112,7 +112,7 @@ export function DashboardPage() {
       {/* Overview Totals */}
       <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 text-inherit">
         <div className="bg-white rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-sm border border-slate-100 flex items-center gap-4 sm:gap-6">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#ECFDF5] rounded-2xl flex items-center justify-center text-[#006c49] shrink-0">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-[#ECFDF5] rounded-2xl flex items-center justify-center text-[#10b981] shrink-0">
             <Zap className="w-6 h-6 sm:w-7 sm:h-7" />
           </div>
           <div className="space-y-0.5">

@@ -52,7 +52,7 @@ export function StudySummary({
         className="bg-white rounded-3xl p-6 sm:p-10 shadow-xl shadow-emerald-950/5 border border-emerald-100/60 space-y-6 sm:space-y-8"
       >
         <div className="relative">
-          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#006c49] rounded-full flex items-center justify-center mx-auto shadow-lg shadow-[#006c49]/20 relative z-10">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-[#10b981] rounded-full flex items-center justify-center mx-auto shadow-lg shadow-[#10b981]/20 relative z-10">
             <Trophy className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
           </div>
           {isPerfect && (
@@ -114,7 +114,7 @@ export function StudySummary({
         )}
 
         {studyMode === "flashcard" && (
-          <div className="py-3.5 px-6 bg-[#006c49] rounded-2xl text-white text-center shadow-sm">
+          <div className="py-3.5 px-6 bg-[#10b981] rounded-2xl text-white text-center shadow-sm">
             <p className="text-xs font-bold uppercase tracking-widest text-emerald-100 mb-0.5">Thống kê Flashcard</p>
             <div className="text-base sm:text-lg font-bold">{displayRatedCount} lượt đánh giá đã hoàn thành</div>
           </div>
@@ -123,14 +123,14 @@ export function StudySummary({
         <div className="pt-2 sm:pt-4 space-y-2.5">
           <Button
             onClick={onReturnToTopics}
-            className="w-full h-12 sm:h-14 rounded-full bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-base shadow-md shadow-[#006c49]/20 border-none cursor-pointer min-h-[48px]"
+            className="w-full h-12 sm:h-14 rounded-full bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold text-base shadow-md shadow-[#10b981]/20 border-none cursor-pointer min-h-[48px]"
           >
             Quay lại trang chủ học tập
           </Button>
           <Button
             variant="ghost"
             onClick={onRestart}
-            className="w-full h-11 text-[#006c49] font-bold hover:bg-[#ECFDF5] rounded-full cursor-pointer"
+            className="w-full h-11 text-[#10b981] font-bold hover:bg-[#ECFDF5] rounded-full cursor-pointer"
           >
             Học lại ngay
           </Button>

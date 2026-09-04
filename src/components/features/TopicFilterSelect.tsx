@@ -106,23 +106,23 @@ export function TopicFilterSelect({
       <PopoverTrigger
         disabled={disabled}
         className={cn(
-          "flex items-center justify-between gap-2 h-11 px-4 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#006c49]/20 cursor-pointer select-none",
+          "flex items-center justify-between gap-2 h-11 px-4 text-sm shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-[#10b981]/20 cursor-pointer select-none",
           isFormVariant
             ? "w-full rounded-xl border border-slate-200 bg-white font-normal text-slate-700 hover:border-slate-300"
-            : "rounded-full border border-slate-200 bg-white font-medium text-slate-800 hover:border-[#006c49] min-w-48",
+            : "rounded-full border border-slate-200 bg-white font-medium text-slate-800 hover:border-[#10b981] min-w-48",
           disabled && "opacity-50 cursor-not-allowed",
           className
         )}
         aria-label="Chọn chủ đề"
       >
         <div className="flex items-center gap-2 truncate">
-          <Layers className={cn("w-4 h-4 shrink-0", isFormVariant ? "text-slate-400" : "text-[#006c49]")} />
+          <Layers className={cn("w-4 h-4 shrink-0", isFormVariant ? "text-slate-400" : "text-[#10b981]")} />
           <span className="truncate">{selectedLabel}</span>
         </div>
         <ChevronDown
           className={cn(
             "w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200",
-            open && (isFormVariant ? "rotate-180 text-slate-600" : "rotate-180 text-[#006c49]")
+            open && (isFormVariant ? "rotate-180 text-slate-600" : "rotate-180 text-[#10b981]")
           )}
         />
       </PopoverTrigger>
@@ -141,7 +141,7 @@ export function TopicFilterSelect({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             autoFocus
-            className="w-full h-9.5 pl-9 pr-8 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#006c49]/30 focus:border-[#006c49] transition-all"
+            className="w-full h-9.5 pl-9 pr-8 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#10b981]/30 focus:border-[#10b981] transition-all"
           />
           {searchQuery && (
             <button
@@ -167,7 +167,7 @@ export function TopicFilterSelect({
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-left cursor-pointer",
                     value === allValue
-                      ? "bg-[#ECFDF5] text-[#006c49] font-semibold"
+                      ? "bg-[#ECFDF5] text-[#10b981] font-semibold"
                       : "text-slate-700 hover:bg-slate-50"
                   )}
                 >
@@ -175,7 +175,7 @@ export function TopicFilterSelect({
                     <Layers
                       className={cn(
                         "w-4 h-4 shrink-0",
-                        value === allValue ? "text-[#006c49]" : "text-slate-400"
+                        value === allValue ? "text-[#10b981]" : "text-slate-400"
                       )}
                     />
                     <span className="truncate">{allLabel}</span>
@@ -187,7 +187,7 @@ export function TopicFilterSelect({
                       </Badge>
                     )}
                     {value === allValue && (
-                      <Check className="w-4 h-4 text-[#006c49] ml-1" />
+                      <Check className="w-4 h-4 text-[#10b981] ml-1" />
                     )}
                   </div>
                 </button>
@@ -200,7 +200,7 @@ export function TopicFilterSelect({
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-left cursor-pointer",
                     value === unassignedValue || (unassignedValue === "" && value === "") || value === UNASSIGNED_TOPIC_FILTER
-                      ? "bg-[#ECFDF5] text-[#006c49] font-semibold"
+                      ? "bg-[#ECFDF5] text-[#10b981] font-semibold"
                       : "text-slate-700 hover:bg-slate-50"
                   )}
                 >
@@ -209,7 +209,7 @@ export function TopicFilterSelect({
                       className={cn(
                         "w-4 h-4 shrink-0",
                         value === unassignedValue || (unassignedValue === "" && value === "") || value === UNASSIGNED_TOPIC_FILTER
-                          ? "text-[#006c49]"
+                          ? "text-[#10b981]"
                           : "text-slate-400"
                       )}
                     />
@@ -222,7 +222,7 @@ export function TopicFilterSelect({
                       </Badge>
                     )}
                     {(value === unassignedValue || (unassignedValue === "" && value === "") || value === UNASSIGNED_TOPIC_FILTER) && (
-                      <Check className="w-4 h-4 text-[#006c49] ml-1" />
+                      <Check className="w-4 h-4 text-[#10b981] ml-1" />
                     )}
                   </div>
                 </button>
@@ -244,7 +244,7 @@ export function TopicFilterSelect({
                   className={cn(
                     "w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm transition-colors text-left cursor-pointer",
                     isSelected
-                      ? "bg-[#ECFDF5] text-[#006c49] font-semibold"
+                      ? "bg-[#ECFDF5] text-[#10b981] font-semibold"
                       : "text-slate-700 hover:bg-slate-50"
                   )}
                 >
@@ -252,7 +252,7 @@ export function TopicFilterSelect({
                     <Folder
                       className={cn(
                         "w-4 h-4 shrink-0",
-                        isSelected ? "text-[#006c49]" : "text-slate-400"
+                        isSelected ? "text-[#10b981]" : "text-slate-400"
                       )}
                     />
                     <span className="truncate">{topic.name}</span>
@@ -264,7 +264,7 @@ export function TopicFilterSelect({
                         className={cn(
                           "text-[11px] px-2 py-0.5 font-normal",
                           isSelected
-                            ? "bg-[#ECFDF5] text-[#006c49]"
+                            ? "bg-[#ECFDF5] text-[#10b981]"
                             : "bg-slate-100 text-slate-600"
                         )}
                       >
@@ -272,7 +272,7 @@ export function TopicFilterSelect({
                       </Badge>
                     )}
                     {isSelected && (
-                      <Check className="w-4 h-4 text-[#006c49] ml-1" />
+                      <Check className="w-4 h-4 text-[#10b981] ml-1" />
                     )}
                   </div>
                 </button>

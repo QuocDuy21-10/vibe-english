@@ -23,8 +23,8 @@ export function AppLayout() {
     cn(
       "flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all",
       isActive
-        ? "bg-[#006c49] text-white shadow-sm"
-        : "text-slate-600 hover:text-[#006c49] hover:bg-[#ECFDF5]"
+        ? "bg-[#10b981] text-white shadow-sm"
+        : "text-slate-600 hover:text-[#10b981] hover:bg-[#ECFDF5]"
     );
 
   return (
@@ -33,15 +33,15 @@ export function AppLayout() {
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white">
         <div className="container max-w-5xl mx-auto h-16 flex items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#006c49] rounded-lg flex items-center justify-center shadow-md shadow-[#006c49]/10 shrink-0">
+            <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center shadow-md shadow-[#10b981]/10 shrink-0">
               <BookOpen className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-[#006c49]">Vibe English</span>
+            <span className="text-xl font-bold tracking-tight text-[#10b981]">Vibe English</span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="hidden md:flex bg-[#10b981]/15 px-3 py-1 rounded-full items-center gap-1">
-              <span className="text-[#006c49] font-bold text-xs uppercase tracking-wider">{totalVocab} TỪ VỰNG</span>
+              <span className="text-[#10b981] font-bold text-xs uppercase tracking-wider">{totalVocab} TỪ VỰNG</span>
             </div>
 
             <img
@@ -82,7 +82,7 @@ export function AppLayout() {
 
           {dataLoading ? (
             <div className="flex min-h-64 flex-1 items-center justify-center" role="status" aria-label="Đang tải dữ liệu">
-              <Loader2 className="h-8 w-8 animate-spin text-[#006c49]" />
+              <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
             </div>
           ) : (
             <Outlet />
@@ -105,8 +105,8 @@ export function AppLayout() {
                 cn(
                   "flex flex-col items-center justify-center min-h-[48px] min-w-[60px] px-2 py-1 rounded-2xl transition-all duration-200 touch-manipulation",
                   isActive
-                    ? "bg-[#006c49] text-white shadow-sm font-bold scale-[1.02]"
-                    : "text-slate-600 hover:text-[#006c49] hover:bg-slate-50 font-medium"
+                    ? "bg-[#10b981] text-white shadow-sm font-bold scale-[1.02]"
+                    : "text-slate-600 hover:text-[#10b981] hover:bg-slate-50 font-medium"
                 )
               }
             >

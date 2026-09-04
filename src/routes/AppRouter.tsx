@@ -24,7 +24,7 @@ const TopicsPage = lazy(() =>
 function RouteLoader() {
   return (
     <div className="flex min-h-dvh w-full items-center justify-center bg-[#ECFDF5]" role="status" aria-label="Đang tải trang">
-      <Loader2 className="h-8 w-8 animate-spin text-[#006c49]" />
+      <Loader2 className="h-8 w-8 animate-spin text-[#10b981]" />
     </div>
   );
 }

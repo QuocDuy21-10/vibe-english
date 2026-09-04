@@ -59,7 +59,7 @@ export function StudySessionView({
             variant="ghost"
             size="sm"
             onClick={onReturnToTopics}
-            className="text-[#006c49] hover:bg-[#ECFDF5] hover:text-[#006c49] p-2 rounded-full h-auto flex items-center group font-semibold text-sm border-none"
+            className="text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] p-2 rounded-full h-auto flex items-center group font-semibold text-sm border-none"
           >
             <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
             Danh sách chủ đề
@@ -72,7 +72,7 @@ export function StudySessionView({
               className={cn(
                 "rounded-full px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer",
                 studyMode === "flashcard"
-                  ? "bg-[#006c49] text-white hover:bg-[#006c49]/90 hover:text-white shadow-sm"
+                  ? "bg-[#10b981] text-white hover:bg-[#10b981]/90 hover:text-white shadow-sm"
                   : "text-slate-500 hover:bg-[#ECFDF5]"
               )}
               onClick={() => onModeChange("flashcard")}
@@ -85,7 +85,7 @@ export function StudySessionView({
               className={cn(
                 "rounded-full px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer",
                 studyMode === "quiz"
-                  ? "bg-[#006c49] text-white hover:bg-[#006c49]/90 hover:text-white shadow-sm"
+                  ? "bg-[#10b981] text-white hover:bg-[#10b981]/90 hover:text-white shadow-sm"
                   : "text-slate-500 hover:bg-[#ECFDF5]"
               )}
               onClick={() => onModeChange("quiz")}
@@ -100,7 +100,7 @@ export function StudySessionView({
             <h2 className="text-xl sm:text-2xl font-bold text-slate-900 leading-tight">{title}</h2>
             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">{subtitle}</span>
           </div>
-          <div className="bg-[#10b981]/25 text-[#006c49] px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
+          <div className="bg-[#10b981]/25 text-[#10b981] px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap">
             {currentIndex + 1} / {itemCount} {studyMode === "flashcard" ? "THẺ" : "CÂU"}
           </div>
         </div>
@@ -118,7 +118,7 @@ export function StudySessionView({
         <Button
           variant="outline"
           size="icon"
-          className="hidden md:flex absolute -left-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
+          className="hidden md:flex absolute -left-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#10b981] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
           onClick={onPrevious}
           disabled={currentIndex === 0 || isPending}
           aria-label="Câu trước"
@@ -153,7 +153,7 @@ export function StudySessionView({
         <Button
           variant="outline"
           size="icon"
-          className="hidden md:flex absolute -right-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#006c49] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
+          className="hidden md:flex absolute -right-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#10b981] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
           onClick={onNext}
           disabled={isPending}
           aria-label={isLastItem ? "Hoàn thành" : "Câu tiếp theo"}
@@ -165,7 +165,7 @@ export function StudySessionView({
       <div className="flex md:hidden items-center gap-3 mt-6 w-full">
         <Button
           variant="outline"
-          className="flex-1 h-12 rounded-full border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-[#ECFDF5] hover:text-[#006c49] active:scale-[0.98] transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-1.5"
+          className="flex-1 h-12 rounded-full border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-[#ECFDF5] hover:text-[#10b981] active:scale-[0.98] transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-1.5"
           onClick={onPrevious}
           disabled={currentIndex === 0 || isPending}
           aria-label="Câu trước"
@@ -174,7 +174,7 @@ export function StudySessionView({
           <span>Quay lại</span>
         </Button>
         <Button
-          className="flex-[1.5] h-12 rounded-full bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-sm shadow-md shadow-[#006c49]/15 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 border-none"
+          className="flex-[1.5] h-12 rounded-full bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold text-sm shadow-md shadow-[#10b981]/15 active:scale-[0.98] transition-all flex items-center justify-center gap-1.5 border-none"
           onClick={onNext}
           disabled={isPending}
           aria-label={isLastItem ? "Hoàn thành" : "Câu tiếp theo"}

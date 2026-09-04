@@ -48,11 +48,11 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
         <CardHeader className="pb-2 pr-12">
           <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
             <div className="flex items-center gap-1.5">
-              <Badge variant="secondary" className="bg-[#ECFDF5] text-[#006c49] text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border-none">
+              <Badge variant="secondary" className="bg-[#ECFDF5] text-[#10b981] text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border-none">
                 {vocabulary.partOfSpeech || "n/a"}
               </Badge>
               {level > 0 && (
-                <Badge variant="outline" className="border-[#10b981]/40 text-[#006c49] text-[10px] font-bold px-1.5 py-0 rounded-md">
+                <Badge variant="outline" className="border-[#10b981]/40 text-[#10b981] text-[10px] font-bold px-1.5 py-0 rounded-md">
                   Lvl {level}
                 </Badge>
               )}
@@ -61,13 +61,13 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
           </div>
 
           <div className="flex items-center gap-2 mb-1 min-w-0">
-            <CardTitle className="text-xl sm:text-2xl font-bold text-[#006c49] tracking-tight break-words min-w-0 flex-1">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-[#10b981] tracking-tight break-words min-w-0 flex-1">
               {vocabulary.word}
             </CardTitle>
             <Button
               variant="ghost"
               size="icon"
-              className="w-9 h-9 min-w-[36px] rounded-full text-[#006c49] hover:bg-[#ECFDF5] hover:text-[#006c49] border-none shrink-0"
+              className="w-9 h-9 min-w-[36px] rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] border-none shrink-0"
               onClick={() => playAudio(vocabulary.word)}
               aria-label={`Phát âm ${vocabulary.word}`}
             >
@@ -88,7 +88,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#006c49] hover:bg-[#ECFDF5] border-none cursor-pointer"
+                  className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
                   aria-label={`Chỉnh sửa từ ${vocabulary.word}`}
                 />
               }

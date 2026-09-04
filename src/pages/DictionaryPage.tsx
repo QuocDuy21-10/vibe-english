@@ -85,7 +85,7 @@ export function DictionaryPage() {
             <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <Input
               placeholder="Tìm kiếm từ vựng, định nghĩa hoặc phiên âm..."
-              className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#006c49] transition-all shadow-sm h-11 text-sm"
+              className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#10b981] transition-all shadow-sm h-11 text-sm"
               value={searchQuery}
               onChange={(event) => {
                 setSearchQuery(event.target.value);
@@ -117,11 +117,11 @@ export function DictionaryPage() {
                     render={
                       <Button
                         variant="outline"
-                        className="flex-1 sm:flex-none rounded-full px-3.5 sm:px-4 border-slate-200 hover:border-[#006c49] hover:bg-[#ECFDF5] text-slate-700 hover:text-[#006c49] transition-all h-11 font-medium cursor-pointer shadow-sm min-h-[44px]"
+                        className="flex-1 sm:flex-none rounded-full px-3.5 sm:px-4 border-slate-200 hover:border-[#10b981] hover:bg-[#ECFDF5] text-slate-700 hover:text-[#10b981] transition-all h-11 font-medium cursor-pointer shadow-sm min-h-[44px]"
                       />
                     }
                   >
-                    <UploadCloud className="w-4 h-4 mr-1.5 text-[#006c49] shrink-0" />
+                    <UploadCloud className="w-4 h-4 mr-1.5 text-[#10b981] shrink-0" />
                     <span className="hidden sm:inline">Nhập nhiều từ</span>
                     <span className="sm:hidden text-xs font-semibold">Nhập từ</span>
                   </DialogTrigger>
@@ -138,7 +138,7 @@ export function DictionaryPage() {
                   <DialogTrigger
                     render={
                       <Button
-                        className="flex-1 sm:flex-none bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-4 shadow-sm shadow-[#006c49]/20 border-none transition-all h-11 font-medium cursor-pointer min-h-[44px]"
+                        className="flex-1 sm:flex-none bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/20 border-none transition-all h-11 font-medium cursor-pointer min-h-[44px]"
                       />
                     }
                   >
@@ -226,9 +226,9 @@ export function DictionaryPage() {
           {hasActiveFilter && (
             <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-xs">
               <div className="flex items-center gap-1.5 text-slate-500 font-medium">
-                <Filter className="w-3.5 h-3.5 text-[#006c49]" />
+                <Filter className="w-3.5 h-3.5 text-[#10b981]" />
                 <span>Đang lọc:</span>
-                <Badge variant="secondary" className="bg-[#ECFDF5] text-[#006c49] font-semibold text-[11px] px-2 py-0.5 rounded-full">
+                <Badge variant="secondary" className="bg-[#ECFDF5] text-[#10b981] font-semibold text-[11px] px-2 py-0.5 rounded-full">
                   {activeFilterCount} tiêu chí
                 </Badge>
               </div>
@@ -262,7 +262,7 @@ export function DictionaryPage() {
       {/* Empty State or Pagination Controls */}
       {filteredVocab.length === 0 ? (
         <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
-          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#006c49]">
+          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#10b981]">
             <Search className="w-8 h-8" />
           </div>
           <div className="space-y-1.5">
@@ -279,7 +279,7 @@ export function DictionaryPage() {
             <Dialog open={isAddingVocab} onOpenChange={setIsAddingVocab}>
               <DialogTrigger
                 render={
-                  <Button className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
+                  <Button className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
                 }
               >
                 <Plus className="w-4 h-4 mr-1.5" />
@@ -298,7 +298,7 @@ export function DictionaryPage() {
             <Button
               variant="outline"
               onClick={resetAllFilters}
-              className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-[#ECFDF5] hover:text-[#006c49] hover:border-emerald-300"
+              className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-[#ECFDF5] hover:text-[#10b981] hover:border-emerald-300"
             >
               Xóa bộ lọc tìm kiếm
             </Button>

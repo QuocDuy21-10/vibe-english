@@ -13,7 +13,7 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl shadow-xl shadow-emerald-900/5 border border-emerald-100/60 space-y-6"
       >
-        <div className="w-20 h-20 bg-[#006c49] rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-[#006c49]/20">
+        <div className="w-20 h-20 bg-[#10b981] rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-[#10b981]/20">
           <BookOpen className="w-10 h-10 text-white" />
         </div>
         <div className="space-y-2">
@@ -24,7 +24,7 @@ export function LoginPage() {
         </div>
         <Button
           onClick={login}
-          className="w-full bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-xl h-12 text-base font-semibold shadow-md shadow-[#006c49]/20 border-none transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer"
+          className="w-full bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-xl h-12 text-base font-semibold shadow-md shadow-[#10b981]/20 border-none transition-all active:scale-[0.98] flex items-center justify-center gap-3 cursor-pointer"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path

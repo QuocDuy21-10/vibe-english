@@ -50,7 +50,7 @@ export function TopicsPage() {
           <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Tìm kiếm chủ đề..."
-            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#006c49] transition-all shadow-sm h-11 text-sm"
+            className="pl-10 pr-10 rounded-full border-slate-200 bg-white focus:ring-2 focus:ring-[#10b981] transition-all shadow-sm h-11 text-sm"
             value={topicSearchQuery}
             onChange={(event) => {
               setTopicSearchQuery(event.target.value);
@@ -89,7 +89,7 @@ export function TopicsPage() {
             <DialogTrigger
               render={
                 <Button
-                  className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-4 shadow-sm shadow-[#006c49]/20 border-none transition-all h-11 shrink-0 font-medium cursor-pointer min-h-[44px]"
+                  className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/20 border-none transition-all h-11 shrink-0 font-medium cursor-pointer min-h-[44px]"
                 />
               }
             >
@@ -113,7 +113,7 @@ export function TopicsPage() {
               <CardTitle className="text-xl font-bold text-slate-800 tracking-tight break-words line-clamp-2">
                 {topic.name}
               </CardTitle>
-              <CardDescription className="text-xs font-bold text-[#006c49] uppercase tracking-wider mt-1">
+              <CardDescription className="text-xs font-bold text-[#10b981] uppercase tracking-wider mt-1">
                 {topicVocabCounts.get(topic.id) ?? 0} TỪ VỰNG
               </CardDescription>
             </CardHeader>
@@ -124,7 +124,7 @@ export function TopicsPage() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="text-slate-400 hover:text-[#006c49] hover:bg-[#ECFDF5] w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
+                      className="text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
                       aria-label={`Chỉnh sửa chủ đề ${topic.name}`}
                     />
                   }
@@ -163,7 +163,7 @@ export function TopicsPage() {
 
       {topics.length === 0 && (
         <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
-          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#006c49]">
+          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#10b981]">
             <Plus className="w-8 h-8" />
           </div>
           <div className="space-y-1.5">
@@ -173,7 +173,7 @@ export function TopicsPage() {
           <Dialog open={isAddingTopic} onOpenChange={setIsAddingTopic}>
             <DialogTrigger
               render={
-                <Button className="bg-[#006c49] hover:bg-[#006c49]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
+                <Button className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
               }
             >
               <Plus className="w-4 h-4 mr-1.5" />
@@ -186,7 +186,7 @@ export function TopicsPage() {
 
       {filteredTopics.length === 0 && topics.length > 0 && (
         <div className="py-16 sm:py-20 text-center space-y-4 bg-white rounded-3xl p-6 border border-slate-100 shadow-sm max-w-md mx-auto">
-          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#006c49]">
+          <div className="w-16 h-16 bg-[#ECFDF5] rounded-full flex items-center justify-center mx-auto text-[#10b981]">
             <Search className="w-8 h-8" />
           </div>
           <div className="space-y-1.5">
@@ -196,7 +196,7 @@ export function TopicsPage() {
           <Button
             variant="outline"
             onClick={resetFilters}
-            className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-[#ECFDF5] hover:text-[#006c49] hover:border-emerald-300"
+            className="rounded-full px-5 h-10 text-xs font-semibold border-slate-200 text-slate-700 hover:bg-[#ECFDF5] hover:text-[#10b981] hover:border-emerald-300"
           >
             Xóa tìm kiếm
           </Button>

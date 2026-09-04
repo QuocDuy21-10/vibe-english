@@ -240,7 +240,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   if (filtered.length === 0) {
     return (
       <div className="py-20 text-center space-y-6">
-        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-[#006c49]">
+        <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto shadow-sm text-[#10b981]">
           <Brain className="w-10 h-10" />
         </div>
         <div className="space-y-4">
@@ -248,7 +248,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
             <p className="text-xl font-bold text-slate-900">Chủ đề này chưa có từ vựng</p>
             <p className="text-slate-400 text-sm italic">Hãy thêm từ vựng vào chủ đề để bắt đầu học với Flashcard.</p>
           </div>
-          <Button variant="ghost" onClick={returnToTopics} className="text-[#006c49] hover:text-[#006c49]/80 font-bold">
+          <Button variant="ghost" onClick={returnToTopics} className="text-[#10b981] hover:text-[#10b981]/80 font-bold">
             <ChevronLeft className="w-4 h-4 mr-2" /> Quay lại chọn chủ đề
           </Button>
         </div>

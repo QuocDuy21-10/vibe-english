@@ -61,7 +61,7 @@ export function TopicDialog({ onClose, userId, topic }: TopicDialogProps) {
             aria-invalid={!!errors.name}
             {...register("name")}
             autoFocus
-            className="rounded-xl h-11 border-slate-200 focus:ring-[#006c49] text-sm"
+            className="rounded-xl h-11 border-slate-200 focus:ring-[#10b981] text-sm"
           />
           {errors.name && <p className="text-xs text-rose-500 font-medium">{errors.name.message}</p>}
         </div>
@@ -75,7 +75,7 @@ export function TopicDialog({ onClose, userId, topic }: TopicDialogProps) {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-[#006c49] hover:bg-[#006c49]/90 rounded-xl border-none text-white h-11 px-5 font-semibold text-sm cursor-pointer min-h-[44px]"
+            className="bg-[#10b981] hover:bg-[#10b981]/90 rounded-xl border-none text-white h-11 px-5 font-semibold text-sm cursor-pointer min-h-[44px]"
           >
             {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : topic ? "Cập nhật" : "Thêm chủ đề"}
           </Button>

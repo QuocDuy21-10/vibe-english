@@ -60,7 +60,7 @@ export function QuizPanel({
       <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">ĐIỀN TỪ VÀO CHỖ TRỐNG</span>
 
       <div className="text-center mb-4 sm:mb-6 max-w-full">
-        <p className="text-xs font-bold text-[#006c49] mb-1.5 uppercase tracking-wide">NGHĨA TIẾNG VIỆT</p>
+        <p className="text-xs font-bold text-[#10b981] mb-1.5 uppercase tracking-wide">NGHĨA TIẾNG VIỆT</p>
         <h3 className="text-xl sm:text-3xl font-bold text-slate-900 leading-snug break-words px-2">{vocabulary.definition}</h3>
       </div>
 
@@ -127,11 +127,11 @@ export function QuizPanel({
                     className={cn(
                       "w-7 sm:w-8 h-10 sm:h-12 border-b-2 flex items-center justify-center transition-all duration-150 rounded-xs",
                       feedback === "correct"
-                        ? "border-[#006c49] text-[#006c49] bg-[#ECFDF5]"
+                        ? "border-[#10b981] text-[#10b981] bg-[#ECFDF5]"
                         : feedback === "incorrect"
                           ? "border-rose-500 text-rose-700 bg-rose-50/30"
                           : isActive
-                            ? "border-[#006c49] bg-[#ECFDF5]"
+                            ? "border-[#10b981] bg-[#ECFDF5]"
                             : isFilled
                               ? "border-slate-800"
                               : "border-slate-300"
@@ -142,7 +142,7 @@ export function QuizPanel({
                         className={cn(
                           "text-xl sm:text-2xl font-bold",
                           feedback === "correct"
-                            ? "text-[#006c49]"
+                            ? "text-[#10b981]"
                             : feedback === "incorrect"
                               ? "text-rose-600"
                               : "text-slate-800"
@@ -151,7 +151,7 @@ export function QuizPanel({
                         {character}
                       </span>
                     ) : isActive && !feedback ? (
-                      <div className="h-5 sm:h-6 w-[2px] bg-[#006c49] cursor-blink-anim" />
+                      <div className="h-5 sm:h-6 w-[2px] bg-[#10b981] cursor-blink-anim" />
                     ) : null}
                   </div>
                 );
@@ -180,14 +180,14 @@ export function QuizPanel({
             <Button
               type="button"
               onClick={onNext}
-              className="w-full h-12 bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-sm rounded-full shadow-md active:scale-95 transition-all duration-200 border-none cursor-pointer min-h-[48px]"
+              className="w-full h-12 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold text-sm rounded-full shadow-md active:scale-95 transition-all duration-200 border-none cursor-pointer min-h-[48px]"
             >
               Làm tiếp câu khác
             </Button>
           ) : (
             <Button
               type="submit"
-              className="w-full h-12 bg-[#006c49] hover:bg-[#006c49]/90 text-white font-bold text-sm rounded-full shadow-md active:scale-95 transition-all duration-200 border-none cursor-pointer disabled:opacity-50 min-h-[48px]"
+              className="w-full h-12 bg-[#10b981] hover:bg-[#10b981]/90 text-white font-bold text-sm rounded-full shadow-md active:scale-95 transition-all duration-200 border-none cursor-pointer disabled:opacity-50 min-h-[48px]"
             >
               Kiểm tra kết quả
             </Button>
@@ -196,7 +196,7 @@ export function QuizPanel({
           <Button
             type="button"
             variant="ghost"
-            className="w-full h-9 text-slate-400 hover:text-[#006c49] font-bold text-xs uppercase tracking-widest hover:bg-transparent cursor-pointer border-none"
+            className="w-full h-9 text-slate-400 hover:text-[#10b981] font-bold text-xs uppercase tracking-widest hover:bg-transparent cursor-pointer border-none"
             onClick={() => {
               setValue("userAnswer", vocabulary.word, { shouldDirty: true, shouldValidate: true });
               onRevealAnswer();
