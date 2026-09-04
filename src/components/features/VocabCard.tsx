@@ -47,7 +47,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
       <Card className="h-full rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-[#10b981]/40 hover:bg-[#ECFDF5]/20 transition-all overflow-hidden relative flex flex-col justify-between">
         <CardHeader className="pb-2 pr-12">
           <div className="flex items-center justify-between gap-2 mb-1.5 flex-wrap">
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 shrink-0">
               <Badge variant="secondary" className="bg-[#ECFDF5] text-[#10b981] text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border-none">
                 {vocabulary.partOfSpeech || "n/a"}
               </Badge>
@@ -57,7 +57,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
                 </Badge>
               )}
             </div>
-            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider truncate max-w-[120px]">{topicName}</span>
+            <span className="text-[11px] text-slate-400 font-bold uppercase tracking-wider ml-auto text-right break-words">{topicName}</span>
           </div>
 
           <div className="flex items-center gap-2 mb-1 min-w-0">
