@@ -187,7 +187,7 @@ export function BulkImportDialog({
         </div>
       </DialogHeader>
 
-      <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1 overflow-y-auto flex flex-col bg-white">
+      <div className="p-4 sm:p-6 space-y-4 sm:space-y-5 flex-1 min-h-0 overflow-y-auto flex flex-col bg-white">
         {/* Topic Selector Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 bg-slate-50 p-3 sm:p-3.5 rounded-2xl border border-slate-100">
           <div className="flex items-center gap-2">

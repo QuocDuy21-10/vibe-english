@@ -32,6 +32,7 @@ import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/constants/vocab";
 import { analyzeBulkItems, parseBulkText } from "@/lib/bulkParser";
 import { parseAndValidateExcelFile } from "@/lib/excelParser";
 import { downloadVocabularyTemplate } from "@/lib/excelTemplate";
+import { cn } from "@/lib/utils";
 import { batchCreateVocabularies } from "@/services/vocabularyRepository";
 import type {
   AnalyzedBulkRow,
@@ -373,7 +374,12 @@ export function ImportVocabDialog({
   };
 
   return (
-    <DialogContent className="sm:max-w-4xl max-h-[92dvh] flex flex-col p-0 rounded-3xl overflow-hidden border-none shadow-2xl">
+    <DialogContent
+      className={cn(
+        "sm:max-w-4xl max-h-[92dvh] flex flex-col p-0 rounded-3xl overflow-hidden border-none shadow-2xl transition-all",
+        activeDataset ? "h-[90dvh]" : "h-auto"
+      )}
+    >
       {/* Header */}
       <DialogHeader className="bg-[#10b981] p-5 sm:p-6 text-white shrink-0">
         <div className="flex items-center justify-between">
@@ -393,8 +399,8 @@ export function ImportVocabDialog({
       </DialogHeader>
 
       {/* Main Body */}
-      <div className="p-4 sm:p-6 space-y-4 flex-1 overflow-y-auto flex flex-col bg-white">
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1 flex flex-col">
+      <div className="p-4 sm:p-6 space-y-4 flex-1 min-h-0 overflow-y-auto flex flex-col bg-white">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="shrink-0 flex flex-col">
           <TabsList className="grid grid-cols-2 bg-slate-100 p-1 rounded-2xl shrink-0 h-11 mb-3">
             <TabsTrigger
               value="excel"
@@ -413,7 +419,7 @@ export function ImportVocabDialog({
           </TabsList>
 
           {/* TAB 1: EXCEL TEMPLATE */}
-          <TabsContent value="excel" className="space-y-4 m-0 flex-1 flex flex-col">
+          <TabsContent value="excel" className="space-y-4 m-0 shrink-0 flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
               {/* Step 1: Download Template */}
               <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 flex flex-col justify-between space-y-2.5">
@@ -565,7 +571,7 @@ export function ImportVocabDialog({
           </TabsContent>
 
           {/* TAB 2: PASTE TEXT */}
-          <TabsContent value="paste" className="space-y-3.5 m-0 flex-1 flex flex-col">
+          <TabsContent value="paste" className="space-y-3.5 m-0 shrink-0 flex flex-col">
             {/* Topic Selector Row */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 p-3 rounded-2xl border border-slate-200/80 shrink-0">
               <div className="flex items-center gap-1.5">
@@ -644,7 +650,7 @@ export function ImportVocabDialog({
 
         {/* COMMON PREVIEW & ANALYSIS SECTION */}
         {activeDataset && (
-          <div className="flex-1 flex flex-col space-y-2.5 overflow-hidden pt-2 border-t border-slate-100">
+          <div className="flex-1 min-h-0 flex flex-col space-y-2.5 pt-2 border-t border-slate-100">
             {/* Summary Counters & Filter Bar */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 p-2.5 rounded-2xl border border-slate-200/80 shrink-0">
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
@@ -714,7 +720,7 @@ export function ImportVocabDialog({
             </div>
 
             {/* Preview Table Container */}
-            <div className="flex-1 overflow-hidden border border-slate-200 rounded-2xl bg-white flex flex-col min-h-[150px] max-h-[220px] sm:max-h-[260px]">
+            <div className="flex-1 min-h-[160px] border border-slate-200 rounded-2xl bg-white flex flex-col overflow-hidden">
               {/* Table Header */}
               <div className="bg-slate-100/90 px-3 sm:px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-slate-600 grid grid-cols-12 gap-2 shrink-0 border-b border-slate-200">
                 <span className="col-span-1 text-center">#</span>
@@ -725,7 +731,7 @@ export function ImportVocabDialog({
               </div>
 
               {/* Table Rows */}
-              <ScrollArea className="flex-1">
+              <ScrollArea className="flex-1 min-h-0">
                 <div className="divide-y divide-slate-100 text-xs">
                   {filteredRows.length === 0 ? (
                     <div className="py-8 text-center text-slate-400 text-xs">
