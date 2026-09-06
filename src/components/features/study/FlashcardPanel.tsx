@@ -87,7 +87,7 @@ export function FlashcardPanel({
           </div>
 
           <p className="text-base sm:text-lg font-medium text-slate-400 italic mb-6 sm:mb-8 break-words">
-            / {vocabulary.phonetic || "—"} /
+            {vocabulary.phonetic || "—"}
           </p>
 
           <div className="flex items-center gap-2 text-slate-400/90 animate-pulse mt-2">

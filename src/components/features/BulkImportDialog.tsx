@@ -370,7 +370,7 @@ export function BulkImportDialog({
                       {row.definition || <span className="text-slate-300 italic">Chưa có nghĩa</span>}
                     </div>
                     <div className="hidden sm:inline sm:col-span-2 text-slate-400 font-mono text-[11px] truncate">
-                      {row.phonetic ? `/${row.phonetic}/` : "—"}
+                      {row.phonetic || "—"}
                     </div>
                     <div className="col-span-4 sm:col-span-3">
                       {row.status === "valid" ? (

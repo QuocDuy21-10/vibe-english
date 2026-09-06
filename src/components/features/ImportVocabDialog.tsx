@@ -759,7 +759,7 @@ export function ImportVocabDialog({
                           <span>{row.word || <span className="text-rose-400 italic">(Trống)</span>}</span>
                           {row.phonetic && (
                             <span className="block text-[10px] text-slate-400 font-mono font-normal truncate">
-                              /{row.phonetic}/
+                              {row.phonetic}
                             </span>
                           )}
                         </div>

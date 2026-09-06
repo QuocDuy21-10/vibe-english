@@ -74,7 +74,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
               <Volume2 className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-xs sm:text-sm text-slate-400 font-medium italic break-words">/ {vocabulary.phonetic || "—"} /</p>
+          <p className="text-xs sm:text-sm text-slate-400 font-medium italic break-words">{vocabulary.phonetic || "—"}</p>
         </CardHeader>
 
         <CardContent className="pb-4 pt-1 flex-grow">
