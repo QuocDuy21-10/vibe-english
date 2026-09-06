@@ -13,6 +13,8 @@ import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
 import { getPaginationModel } from "@/lib/pagination";
 import { useAppData } from "@/routes/AppDataProvider";
 import { deleteTopic } from "@/services/topicRepository";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import type { Topic } from "@/types/types";
 
 export function TopicsPage() {
   const { topics, user, vocabularies } = useAppData();
@@ -21,6 +23,7 @@ export function TopicsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(12);
   const [isAddingTopic, setIsAddingTopic] = useState(false);
+  const [deletingTopic, setDeletingTopic] = useState<Topic | null>(null);
 
   const topicVocabCounts = useTopicVocabularyCounts(vocabularies);
 
@@ -139,20 +142,7 @@ export function TopicsPage() {
                 size="icon"
                 className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
                 aria-label={`Xóa chủ đề ${topic.name}`}
-                onClick={async () => {
-                  if (
-                    confirm(
-                      "Xóa chủ đề này sẽ không xóa từ vựng, chúng sẽ được chuyển sang 'Chưa phân loại'. Bạn có chắc chắn?"
-                    )
-                  ) {
-                    try {
-                      await deleteTopic(topic.id);
-                      toast.success("Đã xóa chủ đề.");
-                    } catch {
-                      toast.error("Lỗi khi xóa chủ đề.");
-                    }
-                  }
-                }}
+                onClick={() => setDeletingTopic(topic)}
               >
                 <Trash2 className="w-4 h-4" />
               </Button>
@@ -218,6 +208,38 @@ export function TopicsPage() {
           }}
         />
       )}
+
+      <ConfirmDialog
+        open={Boolean(deletingTopic)}
+        onOpenChange={(open) => !open && setDeletingTopic(null)}
+        title="Xóa chủ đề?"
+        description={
+          <span>
+            Xóa chủ đề{" "}
+            <strong className="font-semibold text-slate-900">
+              "{deletingTopic?.name}"
+            </strong>{" "}
+            sẽ không xóa từ vựng, các từ vựng này sẽ được chuyển sang danh mục{" "}
+            <strong className="font-semibold text-slate-900">
+              'Chưa phân loại'
+            </strong>
+            . Bạn có chắc chắn muốn tiếp tục?
+          </span>
+        }
+        confirmText="Xóa chủ đề"
+        cancelText="Hủy"
+        variant="destructive"
+        onConfirm={async () => {
+          if (!deletingTopic) return;
+          try {
+            await deleteTopic(deletingTopic.id);
+            toast.success("Đã xóa chủ đề.");
+            setDeletingTopic(null);
+          } catch {
+            toast.error("Lỗi khi xóa chủ đề.");
+          }
+        }}
+      />
     </div>
   );
 }

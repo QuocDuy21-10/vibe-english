@@ -10,6 +10,7 @@ import { playAudio } from "@/lib/audio";
 import { getVocabularyLevel } from "@/lib/srs";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
+import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { EditVocabDialog } from "@/components/features/EditVocabDialog";
 
 type VocabCardProps = {
@@ -20,17 +21,17 @@ type VocabCardProps = {
 
 export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
   const level = getVocabularyLevel(vocabulary);
 
   const handleDelete = async () => {
-    if (confirm(`Xóa từ "${vocabulary.word}"?`)) {
-      try {
-        await deleteVocabulary(vocabulary.id);
-        toast.info("Đã xóa từ vựng.");
-      } catch {
-        toast.error("Lỗi khi xóa từ vựng.");
-      }
+    try {
+      await deleteVocabulary(vocabulary.id);
+      toast.info("Đã xóa từ vựng.");
+      setShowDeleteConfirm(false);
+    } catch {
+      toast.error("Lỗi khi xóa từ vựng.");
     }
   };
 
@@ -107,12 +108,31 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
             variant="ghost"
             size="icon"
             className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-destructive hover:bg-rose-50 border-none cursor-pointer"
-            onClick={handleDelete}
+            onClick={() => setShowDeleteConfirm(true)}
             aria-label={`Xóa từ ${vocabulary.word}`}
           >
             <Trash2 className="w-4 h-4" />
           </Button>
         </div>
+
+        <ConfirmDialog
+          open={showDeleteConfirm}
+          onOpenChange={setShowDeleteConfirm}
+          title="Xóa từ vựng?"
+          description={
+            <span>
+              Bạn có chắc chắn muốn xóa từ{" "}
+              <strong className="font-semibold text-slate-900">
+                "{vocabulary.word}"
+              </strong>
+              ? Hành động này không thể hoàn tác.
+            </span>
+          }
+          confirmText="Xóa từ"
+          cancelText="Hủy"
+          variant="destructive"
+          onConfirm={handleDelete}
+        />
       </Card>
     </motion.div>
   );
