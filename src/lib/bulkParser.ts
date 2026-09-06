@@ -1,4 +1,4 @@
-import { normalizeVocabularyWord } from "@/lib/vocabulary";
+import { getVocabularyKey, normalizeVocabularyWord } from "@/lib/vocabulary";
 import { bulkRowSchema } from "@/lib/vocabularyValidation";
 import type {
   AnalyzedBulkRow,
@@ -190,14 +190,19 @@ export function analyzeBulkItems(
   items: ParsedBulkItem[],
   existingVocabularies: Vocabulary[]
 ): { rows: AnalyzedBulkRow[]; summary: BulkSummary } {
-  // Pre-index existing normalized words in DB
-  const existingSet = new Set<string>();
+  // Pre-index existing normalized words in DB by composite key (word#pos) and word-only
+  const existingKeySet = new Set<string>();
+  const existingWordSet = new Set<string>();
   existingVocabularies.forEach((v) => {
-    const norm = v.normalizedWord || normalizeVocabularyWord(v.word);
-    if (norm) existingSet.add(norm);
+    const key = getVocabularyKey(v.word, v.partOfSpeech);
+    if (key) existingKeySet.add(key);
+    const wordNorm = normalizeVocabularyWord(v.word);
+    if (wordNorm) existingWordSet.add(wordNorm);
   });
 
-  const seenInBatch = new Set<string>();
+  const seenInBatchKeys = new Set<string>();
+  const seenInBatchWords = new Set<string>();
+  const seenInBatchUntypedWords = new Set<string>();
   const rows: AnalyzedBulkRow[] = [];
 
   let valid = 0;
@@ -207,6 +212,8 @@ export function analyzeBulkItems(
 
   items.forEach((item) => {
     const normalized = normalizeVocabularyWord(item.word);
+    const itemPos = item.partOfSpeech?.trim() || "";
+    const itemKey = getVocabularyKey(item.word, itemPos);
 
     // 1. Check validation using Zod
     const validationResult = bulkRowSchema.safeParse(item);
@@ -224,7 +231,11 @@ export function analyzeBulkItems(
     }
 
     // 2. Check intra-batch duplicates
-    if (seenInBatch.has(normalized)) {
+    const isDuplicateInFile = itemPos
+      ? seenInBatchKeys.has(itemKey) || seenInBatchUntypedWords.has(normalized)
+      : seenInBatchWords.has(normalized);
+
+    if (isDuplicateInFile) {
       duplicateInFile++;
       rows.push({
         ...item,
@@ -234,10 +245,19 @@ export function analyzeBulkItems(
       });
       return;
     }
-    seenInBatch.add(normalized);
+
+    seenInBatchKeys.add(itemKey);
+    seenInBatchWords.add(normalized);
+    if (!itemPos) {
+      seenInBatchUntypedWords.add(normalized);
+    }
 
     // 3. Check DB duplicates
-    if (existingSet.has(normalized)) {
+    const isDuplicateInDb = itemPos
+      ? existingKeySet.has(itemKey) || existingKeySet.has(`${normalized}#`)
+      : existingWordSet.has(normalized);
+
+    if (isDuplicateInDb) {
       duplicateInDb++;
       rows.push({
         ...item,

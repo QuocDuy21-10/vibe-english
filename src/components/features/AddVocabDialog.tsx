@@ -2,9 +2,10 @@ import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 import { 
+  Dialog,
   DialogContent, 
   DialogTitle, 
   DialogFooter 
@@ -15,11 +16,11 @@ import {
   Select, 
   SelectContent, 
   SelectItem, 
-  SelectTrigger, 
+  SelectTrigger,
   SelectValue 
 } from "@/components/ui/select";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
-import { findDuplicateVocabulary } from "@/lib/vocabulary";
+import { checkDuplicateVocabulary } from "@/lib/vocabulary";
 import { vocabularyInputSchema, type VocabularyInputFormValues } from "@/lib/vocabularyValidation";
 import { createVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
@@ -36,6 +37,14 @@ export function AddVocabDialog({
   vocabularies?: Vocabulary[];
 }) {
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [crossTopicConfirm, setCrossTopicConfirm] = useState<{
+    data: VocabularyInputFormValues;
+    oldTopicName: string;
+    newTopicName: string;
+    word: string;
+    partOfSpeech?: string;
+  } | null>(null);
+
   const {
     register,
     control,
@@ -77,17 +86,7 @@ export function AddVocabDialog({
     }
   };
 
-  const onSubmit = async (data: VocabularyInputFormValues) => {
-    // Duplicate detection check
-    const duplicate = findDuplicateVocabulary(data.word, vocabularies);
-    if (duplicate) {
-      const topicName = topics.find((t) => t.id === duplicate.topicId)?.name || "Chưa phân loại";
-      const errorMsg = `Từ "${duplicate.word}" đã có trong từ điển của bạn (thuộc: ${topicName}).`;
-      setError("word", { message: errorMsg });
-      toast.error(errorMsg);
-      return;
-    }
-
+  const saveVocab = async (data: VocabularyInputFormValues) => {
     try {
       await createVocabulary(userId, {
         word: data.word,
@@ -101,6 +100,48 @@ export function AddVocabDialog({
     } catch {
       toast.error("Lỗi khi thêm từ vựng.");
     }
+  };
+
+  const onSubmit = async (data: VocabularyInputFormValues) => {
+    // Duplicate detection check
+    const checkResult = checkDuplicateVocabulary(data.word, vocabularies, {
+      partOfSpeech: data.partOfSpeech,
+      topicId: data.topicId
+    });
+
+    if (checkResult.isDuplicate && checkResult.existingVocab) {
+      const duplicate = checkResult.existingVocab;
+      const oldTopicName = topics.find((t) => t.id === duplicate.topicId)?.name || "Chưa phân loại";
+      const newTopicName = topics.find((t) => t.id === data.topicId)?.name || "Chưa phân loại";
+
+      if (checkResult.duplicateType === "exact") {
+        const posDisplay = data.partOfSpeech
+          ? ` (${data.partOfSpeech})`
+          : duplicate.partOfSpeech
+          ? ` (loại từ: ${duplicate.partOfSpeech})`
+          : "";
+        const hint = !data.partOfSpeech && duplicate.partOfSpeech
+          ? " Nếu đây là từ loại khác, vui lòng chọn loại từ."
+          : "";
+        const errorMsg = `Từ "${duplicate.word}"${posDisplay} đã có trong chủ đề "${oldTopicName}".${hint}`;
+        setError("word", { message: errorMsg });
+        toast.error(errorMsg);
+        return;
+      }
+
+      if (checkResult.duplicateType === "cross_topic") {
+        setCrossTopicConfirm({
+          data,
+          oldTopicName,
+          newTopicName,
+          word: duplicate.word,
+          partOfSpeech: data.partOfSpeech || duplicate.partOfSpeech || ""
+        });
+        return;
+      }
+    }
+
+    await saveVocab(data);
   };
 
   return (
@@ -202,6 +243,48 @@ export function AddVocabDialog({
             />
           </div>
         </div>
+
+        {crossTopicConfirm && (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+              <div className="space-y-1 text-sm text-amber-950">
+                <p className="font-bold">Từ vựng đã có trong chủ đề khác</p>
+                <p className="text-xs text-amber-800 leading-relaxed">
+                  Từ <span className="font-semibold text-slate-900">"{crossTopicConfirm.word}"</span>
+                  {crossTopicConfirm.partOfSpeech ? ` (${crossTopicConfirm.partOfSpeech})` : ""} đã tồn tại trong chủ đề{" "}
+                  <span className="font-semibold text-slate-900">"{crossTopicConfirm.oldTopicName}"</span>.
+                  Bạn có muốn tiếp tục lưu vào chủ đề{" "}
+                  <span className="font-semibold text-[#10b981]">"{crossTopicConfirm.newTopicName}"</span> không?
+                </p>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setCrossTopicConfirm(null)}
+                className="h-8 text-xs font-semibold text-slate-600 hover:bg-amber-100"
+              >
+                Hủy
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                disabled={isSubmitting}
+                onClick={async () => {
+                  const pending = crossTopicConfirm.data;
+                  setCrossTopicConfirm(null);
+                  await saveVocab(pending);
+                }}
+                className="h-8 text-xs font-semibold bg-[#10b981] hover:bg-[#059669] text-white border-none shadow-xs"
+              >
+                Vẫn lưu từ này
+              </Button>
+            </div>
+          </div>
+        )}
 
         <DialogFooter className="pt-3 flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2.5 shrink-0 border-t border-slate-100 bg-transparent p-0 -mx-0 -mb-0">
           <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl text-slate-500 h-11">

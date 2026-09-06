@@ -6,7 +6,7 @@ import {
   VOCAB_IMPORT_COLUMNS,
   VOCAB_SHEET_NAME
 } from "@/constants/vocab";
-import { normalizeVocabularyWord } from "@/lib/vocabulary";
+import { getVocabularyKey, normalizeVocabularyWord } from "@/lib/vocabulary";
 import type {
   ImportAnalysisResult,
   ImportRowStatus,
@@ -29,6 +29,8 @@ export function normalizePartOfSpeech(pos: string): PartOfSpeech | null {
   // Common aliases
   if (clean === "adj") return "adjective";
   if (clean === "adv") return "adverb";
+  if (clean === "n") return "noun";
+  if (clean === "v") return "verb";
   return null;
 }
 
@@ -288,15 +290,20 @@ export function parseAndValidateExcelFile(
     topicMap.set(t.name.trim().toLowerCase(), t.id);
   });
 
-  // DB existing vocabularies normalized word lookup
+  // DB existing vocabularies composite key and word-only lookup
+  const existingDbKeys = new Set<string>();
   const existingDbWords = new Set<string>();
   existingVocabularies.forEach((v) => {
-    const norm = v.normalizedWord || normalizeVocabularyWord(v.word);
-    if (norm) existingDbWords.add(norm);
+    const key = getVocabularyKey(v.word, v.partOfSpeech);
+    if (key) existingDbKeys.add(key);
+    const wordNorm = v.normalizedWord || normalizeVocabularyWord(v.word);
+    if (wordNorm) existingDbWords.add(wordNorm);
   });
 
-  // Intra-file duplicate tracking: normalizedWord -> first seen Excel row number
+  // Intra-file duplicate tracking
   const seenInFileMap = new Map<string, number>();
+  const seenInFileWordMap = new Map<string, number>();
+  const seenInFileUntypedMap = new Map<string, number>();
 
   const processedRows: ProcessedImportRow[] = [];
   let validCount = 0;
@@ -352,26 +359,40 @@ export function parseAndValidateExcelFile(
       }
     }
 
-    // Determine row status & duplicates
+    // Determine row status & duplicates using composite key
     let status: ImportRowStatus = "valid";
+    const rowKey = getVocabularyKey(row.word, cleanPartOfSpeech);
+
+    const duplicateInFileRow = cleanPartOfSpeech
+      ? seenInFileMap.get(rowKey) ?? seenInFileUntypedMap.get(normalized)
+      : seenInFileWordMap.get(normalized);
+
+    const isDuplicateExisting = cleanPartOfSpeech
+      ? existingDbKeys.has(rowKey) || existingDbKeys.has(`${normalized}#`)
+      : existingDbWords.has(normalized);
 
     if (errors.length > 0) {
       status = "invalid";
       invalidCount++;
-    } else if (normalized && seenInFileMap.has(normalized)) {
+    } else if (duplicateInFileRow) {
       status = "duplicate-in-file";
-      const previousRow = seenInFileMap.get(normalized);
-      errors.push(`Trùng với dòng ${previousRow} trong file`);
+      errors.push(`Trùng với dòng ${duplicateInFileRow} trong file`);
       duplicateInFileCount++;
-    } else if (normalized && existingDbWords.has(normalized)) {
+    } else if (isDuplicateExisting) {
       status = "duplicate-existing";
       errors.push("Từ này đã có trong từ điển của bạn");
       duplicateExistingCount++;
     } else {
       status = "valid";
       validCount++;
+      if (rowKey) {
+        seenInFileMap.set(rowKey, row.excelRowNumber);
+      }
       if (normalized) {
-        seenInFileMap.set(normalized, row.excelRowNumber);
+        seenInFileWordMap.set(normalized, row.excelRowNumber);
+        if (!cleanPartOfSpeech) {
+          seenInFileUntypedMap.set(normalized, row.excelRowNumber);
+        }
       }
     }
 

@@ -269,6 +269,23 @@ describe("Full Excel File Parser & Validator", () => {
     expect(result.rows[3].errors).toContain("Trùng với dòng 2 trong file");
   });
 
+  it("allows the same word with different parts of speech in the same file (e.g. trip [noun] and trip [verb])", () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet([
+      [...VOCAB_IMPORT_COLUMNS],
+      ["trip", "chuyến đi", "noun", "/trɪp/", ""],
+      ["trip", "vấp ngã", "verb", "/trɪp/", ""]
+    ]);
+    XLSX.utils.book_append_sheet(wb, ws, VOCAB_SHEET_NAME);
+
+    const result = parseAndValidateExcelFile(workbookToArrayBuffer(wb), mockVocabularies, mockTopics);
+    expect(result.summary.total).toBe(2);
+    expect(result.summary.valid).toBe(2);
+    expect(result.summary.duplicateInFile).toBe(0);
+    expect(result.rows[0].status).toBe("valid");
+    expect(result.rows[1].status).toBe("valid");
+  });
+
   it("detects duplicate words with user existing database records", () => {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.aoa_to_sheet([

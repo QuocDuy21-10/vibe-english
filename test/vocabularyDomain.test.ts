@@ -6,8 +6,11 @@ import {
   parseCsvRows
 } from "@/lib/bulkParser";
 import {
+  checkDuplicateVocabulary,
   findDuplicateVocabulary,
+  getVocabularyKey,
   isDuplicateWord,
+  normalizePartOfSpeech,
   normalizeVocabularyWord
 } from "@/lib/vocabulary";
 import {
@@ -36,6 +39,36 @@ describe("vocabulary domain logic", () => {
     it("handles empty or falsy strings gracefully", () => {
       expect(normalizeVocabularyWord("")).toBe("");
       expect(normalizeVocabularyWord("   ")).toBe("");
+    });
+  });
+
+  describe("normalizePartOfSpeech", () => {
+    it("normalizes standard parts of speech", () => {
+      expect(normalizePartOfSpeech("noun")).toBe("noun");
+      expect(normalizePartOfSpeech(" VERB ")).toBe("verb");
+      expect(normalizePartOfSpeech("Adjective")).toBe("adjective");
+    });
+
+    it("maps common abbreviations", () => {
+      expect(normalizePartOfSpeech("n")).toBe("noun");
+      expect(normalizePartOfSpeech("v")).toBe("verb");
+      expect(normalizePartOfSpeech("adj")).toBe("adjective");
+      expect(normalizePartOfSpeech("adv")).toBe("adverb");
+    });
+
+    it("handles empty or null gracefully", () => {
+      expect(normalizePartOfSpeech("")).toBe("");
+      expect(normalizePartOfSpeech(null)).toBe("");
+      expect(normalizePartOfSpeech(undefined)).toBe("");
+    });
+  });
+
+  describe("getVocabularyKey", () => {
+    it("generates composite key combining word and part of speech", () => {
+      expect(getVocabularyKey("trip", "noun")).toBe("trip#noun");
+      expect(getVocabularyKey("TRIP", "verb")).toBe("trip#verb");
+      expect(getVocabularyKey("  trip  ", "v")).toBe("trip#verb");
+      expect(getVocabularyKey("apple")).toBe("apple#");
     });
   });
 
@@ -68,6 +101,20 @@ describe("vocabulary domain logic", () => {
         updatedAt: new Date(),
         level: 1,
         nextReview: new Date()
+      },
+      {
+        id: "v3",
+        word: "trip",
+        normalizedWord: "trip",
+        definition: "Chuyến đi",
+        partOfSpeech: "noun",
+        phonetic: "/trɪp/",
+        topicId: "t1",
+        userId: "u1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        level: 0,
+        nextReview: new Date()
       }
     ];
 
@@ -79,6 +126,35 @@ describe("vocabulary domain logic", () => {
       expect(isDuplicateWord("orange", mockVocabs)).toBe(false);
     });
 
+    it("allows the same word with different parts of speech (e.g. trip [noun] vs trip [verb])", () => {
+      // "trip" (noun) exists, but "trip" (verb) should NOT be considered a duplicate
+      const resultVerb = checkDuplicateVocabulary("trip", mockVocabs, {
+        partOfSpeech: "verb",
+        topicId: "t1"
+      });
+      expect(resultVerb.isDuplicate).toBe(false);
+      expect(resultVerb.existingVocab).toBeUndefined();
+
+      // "trip" (noun) in the same topic SHOULD be an exact duplicate
+      const resultNoun = checkDuplicateVocabulary("trip", mockVocabs, {
+        partOfSpeech: "noun",
+        topicId: "t1"
+      });
+      expect(resultNoun.isDuplicate).toBe(true);
+      expect(resultNoun.duplicateType).toBe("exact");
+      expect(resultNoun.existingVocab?.id).toBe("v3");
+    });
+
+    it("identifies cross-topic duplicates when word and POS match in different topics", () => {
+      const result = checkDuplicateVocabulary("trip", mockVocabs, {
+        partOfSpeech: "noun",
+        topicId: "t2" // Different from v3's topic "t1"
+      });
+      expect(result.isDuplicate).toBe(true);
+      expect(result.duplicateType).toBe("cross_topic");
+      expect(result.existingVocab?.id).toBe("v3");
+    });
+
     it("returns the duplicate record when found", () => {
       const result = findDuplicateVocabulary("  APPLE ", mockVocabs);
       expect(result).toBeDefined();
@@ -88,11 +164,11 @@ describe("vocabulary domain logic", () => {
 
     it("excludes the given vocab ID during edit checks", () => {
       // Editing v1 to "apple" (same word) should NOT trigger duplicate error on itself
-      expect(isDuplicateWord("apple", mockVocabs, "v1")).toBe(false);
+      expect(isDuplicateWord("apple", mockVocabs, { excludeVocabId: "v1" })).toBe(false);
       expect(findDuplicateVocabulary("apple", mockVocabs, "v1")).toBeUndefined();
 
       // Editing v2 to "apple" (clashes with v1) SHOULD trigger duplicate error
-      expect(isDuplicateWord("apple", mockVocabs, "v2")).toBe(true);
+      expect(isDuplicateWord("apple", mockVocabs, { excludeVocabId: "v2" })).toBe(true);
     });
   });
 
