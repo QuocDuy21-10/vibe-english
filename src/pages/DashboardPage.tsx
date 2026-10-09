@@ -1,10 +1,64 @@
 import { Award, Target, Trophy, Zap } from "lucide-react";
 import { motion } from "motion/react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip as RechartsTooltip } from "recharts";
 import { Card } from "@/components/ui/card";
 import { LEVELS } from "@/constants/vocab";
 import { useVocabularyOverview } from "@/hooks/useVocabStats";
 import { useAppData } from "@/routes/AppDataProvider";
+
+// Geometry mirrors the previous Recharts pie (5px chart margin, 65%/85% radii, 4° padding,
+// counter-clockwise from 3 o'clock) in a 100x100 viewBox, without loading the charting library.
+const DONUT_BASE_RADIUS = 47;
+const DONUT_RADIUS = DONUT_BASE_RADIUS * 0.75;
+const DONUT_STROKE_WIDTH = DONUT_BASE_RADIUS * 0.2;
+const DONUT_CIRCUMFERENCE = 2 * Math.PI * DONUT_RADIUS;
+const DONUT_PADDING_ANGLE = 4;
+
+type DonutSegment = { name: string; value: number; color: string };
+
+function getDonutArcs(segments: DonutSegment[]) {
+  const total = segments.reduce((sum, segment) => sum + segment.value, 0);
+  if (total <= 0) return [];
+
+  const nonZeroCount = segments.filter((segment) => segment.value !== 0).length;
+  const availableAngle = 360 - nonZeroCount * DONUT_PADDING_ANGLE;
+  let previousEndAngle: number | null = null;
+
+  return segments.flatMap((segment) => {
+    const startAngle =
+      previousEndAngle === null ? 0 : previousEndAngle + (segment.value !== 0 ? DONUT_PADDING_ANGLE : 0);
+    const sweepAngle = (segment.value / total) * availableAngle;
+    previousEndAngle = startAngle + sweepAngle;
+    return segment.value === 0 ? [] : [{ ...segment, startAngle, sweepAngle }];
+  });
+}
+
+function angleToArcLength(angle: number) {
+  return (angle / 360) * DONUT_CIRCUMFERENCE;
+}
+
+function MasteryDonut({ segments }: { segments: DonutSegment[] }) {
+  return (
+    <svg viewBox="0 0 100 100" className="h-full w-full">
+      <g transform="matrix(1 0 0 -1 0 100)">
+        {getDonutArcs(segments).map((arc) => (
+          <circle
+            key={arc.name}
+            cx="50"
+            cy="50"
+            r={DONUT_RADIUS}
+            fill="none"
+            stroke={arc.color}
+            strokeWidth={DONUT_STROKE_WIDTH}
+            strokeDasharray={`${angleToArcLength(arc.sweepAngle)} ${DONUT_CIRCUMFERENCE}`}
+            strokeDashoffset={-angleToArcLength(arc.startAngle)}
+          >
+            <title>{`${arc.name}: ${arc.value}`}</title>
+          </circle>
+        ))}
+      </g>
+    </svg>
+  );
+}
 
 export function DashboardPage() {
   const { vocabularies, topics } = useAppData();
@@ -30,24 +84,12 @@ export function DashboardPage() {
           </p>
         </div>
         <div className="w-36 h-36 sm:w-44 sm:h-44 md:w-48 md:h-48 shrink-0 relative flex items-center justify-center">
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={[
-                  { name: "Mastered", value: stats.learnedVocab, color: "#10b981" },
-                  { name: "Learning", value: Math.max(0, stats.totalVocab - stats.learnedVocab), color: "#e2e8f0" },
-                ]}
-                innerRadius="65%"
-                outerRadius="85%"
-                paddingAngle={4}
-                dataKey="value"
-              >
-                <Cell key="cell-0" fill="#10b981" />
-                <Cell key="cell-1" fill="#e2e8f0" />
-              </Pie>
-              <RechartsTooltip />
-            </PieChart>
-          </ResponsiveContainer>
+          <MasteryDonut
+            segments={[
+              { name: "Mastered", value: stats.learnedVocab, color: "#10b981" },
+              { name: "Learning", value: Math.max(0, stats.totalVocab - stats.learnedVocab), color: "#e2e8f0" },
+            ]}
+          />
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
             <span className="text-2xl sm:text-3xl font-black text-slate-800">{stats.progress}%</span>
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Tiến độ</span>

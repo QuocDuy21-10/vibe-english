@@ -30,8 +30,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/constants/vocab";
 import { analyzeBulkItems, parseBulkText } from "@/lib/bulkParser";
-import { parseAndValidateExcelFile } from "@/lib/excelParser";
-import { downloadVocabularyTemplate } from "@/lib/excelTemplate";
 import { cn } from "@/lib/utils";
 import { batchCreateVocabularies } from "@/services/vocabularyRepository";
 import type {
@@ -106,8 +104,9 @@ export function ImportVocabDialog({
   };
 
   // Download template
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
     try {
+      const { downloadVocabularyTemplate } = await import("@/lib/excelTemplate");
       downloadVocabularyTemplate();
       toast.success("Đã tải file mẫu! Hãy điền từ vựng vào sheet 'Vocabulary'.");
     } catch {
@@ -127,7 +126,10 @@ export function ImportVocabDialog({
     setExcelResult(null);
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
+      const [arrayBuffer, { parseAndValidateExcelFile }] = await Promise.all([
+        file.arrayBuffer(),
+        import("@/lib/excelParser")
+      ]);
       const result = parseAndValidateExcelFile(arrayBuffer, vocabularies, topics);
       setExcelResult(result);
 

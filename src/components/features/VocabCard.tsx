@@ -21,6 +21,8 @@ type VocabCardProps = {
 
 export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
   const [isEditing, setIsEditing] = useState(false);
+  // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
+  const [isEditDialogMounted, setIsEditDialogMounted] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
   const level = getVocabularyLevel(vocabulary);
@@ -83,7 +85,16 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
         </CardContent>
 
         <div className="absolute top-3.5 right-3 flex flex-col gap-1">
-          <Dialog open={isEditing} onOpenChange={setIsEditing}>
+          <Dialog
+            open={isEditing}
+            onOpenChange={(open) => {
+              if (open) setIsEditDialogMounted(true);
+              setIsEditing(open);
+            }}
+            onOpenChangeComplete={(open) => {
+              if (!open) setIsEditDialogMounted(false);
+            }}
+          >
             <DialogTrigger
               render={
                 <Button
@@ -96,12 +107,14 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
             >
               <Edit3 className="w-4 h-4" />
             </DialogTrigger>
-            <EditVocabDialog
-              vocabulary={vocabulary}
-              topics={topics}
-              vocabularies={vocabularies}
-              onClose={() => setIsEditing(false)}
-            />
+            {isEditDialogMounted && (
+              <EditVocabDialog
+                vocabulary={vocabulary}
+                topics={topics}
+                vocabularies={vocabularies}
+                onClose={() => setIsEditing(false)}
+              />
+            )}
           </Dialog>
 
           <Button
