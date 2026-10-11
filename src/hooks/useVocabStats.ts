@@ -26,10 +26,25 @@ export function useFilteredAndSortedVocabularies(
   vocabularies: Vocabulary[],
   options: FilterAndSortOptions
 ) {
-  const { searchQuery, selectedTopicId, statusFilter, sortOption } = options;
+  const {
+    searchQuery,
+    searchMode,
+    caseSensitive,
+    selectedTopicId,
+    statusFilter,
+    sortOption
+  } = options;
   return useMemo(
     () => filterAndSortVocabularies(vocabularies, options),
-    [vocabularies, searchQuery, selectedTopicId, statusFilter, sortOption]
+    [
+      vocabularies,
+      searchQuery,
+      searchMode,
+      caseSensitive,
+      selectedTopicId,
+      statusFilter,
+      sortOption
+    ]
   );
 }
 

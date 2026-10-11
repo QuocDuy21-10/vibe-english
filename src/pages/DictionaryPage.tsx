@@ -33,12 +33,18 @@ import {
 import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
 import { useFilteredAndSortedVocabularies } from "@/hooks/useVocabStats";
 import { getPaginationModel } from "@/lib/pagination";
-import type { VocabularySortOption, VocabularyStatusFilter } from "@/lib/vocabularySelectors";
+import type {
+  VocabularySearchMode,
+  VocabularySortOption,
+  VocabularyStatusFilter
+} from "@/lib/vocabularySelectors";
 import { useAppData } from "@/routes/AppDataProvider";
 
 export function DictionaryPage() {
   const { vocabularies, topics, user } = useAppData();
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchMode, setSearchMode] = useState<VocabularySearchMode>("contains");
+  const [caseSensitive, setCaseSensitive] = useState(false);
   const [selectedTopicId, setSelectedTopicId] = useState<string>(DEFAULT_TOPIC_FILTER);
   const [statusFilter, setStatusFilter] = useState<VocabularyStatusFilter>("all");
   const [sortOption, setSortOption] = useState<VocabularySortOption>("newest");
@@ -49,6 +55,8 @@ export function DictionaryPage() {
 
   const filteredVocab = useFilteredAndSortedVocabularies(vocabularies, {
     searchQuery,
+    searchMode,
+    caseSensitive,
     selectedTopicId,
     statusFilter,
     sortOption
@@ -57,18 +65,20 @@ export function DictionaryPage() {
   const pagination = getPaginationModel(filteredVocab.length, pageSize, currentPage);
   const paginatedVocab = filteredVocab.slice(pagination.startIndex, pagination.endIndex);
 
-  const hasActiveFilter =
-    selectedTopicId !== DEFAULT_TOPIC_FILTER ||
-    statusFilter !== "all" ||
-    searchQuery.trim().length > 0;
+  const hasSearchQuery = searchQuery.trim().length > 0;
 
   const activeFilterCount =
     (selectedTopicId !== DEFAULT_TOPIC_FILTER ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
-    (searchQuery.trim().length > 0 ? 1 : 0);
+    (hasSearchQuery ? 1 : 0) +
+    (hasSearchQuery && searchMode !== "contains" ? 1 : 0) +
+    (hasSearchQuery && caseSensitive ? 1 : 0);
+  const hasActiveFilter = activeFilterCount > 0;
 
   const resetAllFilters = () => {
     setSearchQuery("");
+    setSearchMode("contains");
+    setCaseSensitive(false);
     setSelectedTopicId(DEFAULT_TOPIC_FILTER);
     setStatusFilter("all");
     setSortOption("newest");
@@ -160,9 +170,9 @@ export function DictionaryPage() {
 
         {/* Filter & Sort Bar */}
         <div className="bg-white p-3 rounded-2xl border border-slate-100 shadow-sm space-y-2.5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center lg:justify-between gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
             {/* Topic Filter */}
-            <div className="w-full lg:w-56">
+            <div className="w-full">
               <TopicFilterSelect
                 value={selectedTopicId}
                 onValueChange={(value) => {
@@ -171,12 +181,12 @@ export function DictionaryPage() {
                 }}
                 topics={topics}
                 vocabularies={vocabularies}
-                className="w-full h-10"
+                className="w-full h-11"
               />
             </div>
 
             {/* Status Filter */}
-            <div className="w-full sm:w-auto lg:w-48">
+            <div className="w-full">
               <Select
                 value={statusFilter}
                 onValueChange={(val) => {
@@ -184,7 +194,7 @@ export function DictionaryPage() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="w-full rounded-full h-10 border-slate-200 bg-white text-xs font-medium px-3.5">
+                <SelectTrigger className="w-full rounded-full h-11 border-slate-200 bg-white text-xs font-medium px-3.5">
                   <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
@@ -197,8 +207,47 @@ export function DictionaryPage() {
               </Select>
             </div>
 
+            {/* Search Match Mode */}
+            <div className="w-full">
+              <Select
+                value={searchMode}
+                onValueChange={(value) => {
+                  setSearchMode(value as VocabularySearchMode);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  aria-label="Kiểu khớp tìm kiếm"
+                  className="w-full rounded-full h-11 border-slate-200 bg-white text-xs font-medium px-3.5"
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="contains">Có chứa</SelectItem>
+                  <SelectItem value="exact">Chính xác</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Case-Sensitive Search */}
+            <Button
+              type="button"
+              variant="outline"
+              aria-pressed={caseSensitive}
+              onClick={() => {
+                setCaseSensitive((current) => !current);
+                setCurrentPage(1);
+              }}
+              className={`w-full h-11 min-h-[44px] min-w-[44px] rounded-full px-3.5 text-xs font-medium ${
+                caseSensitive ? "border-[#10b981] bg-[#ECFDF5] text-[#10b981]" : ""
+              }`}
+            >
+              <span className="font-bold">Aa</span>
+              <span>Phân biệt hoa thường</span>
+            </Button>
+
             {/* Sort Option */}
-            <div className="w-full sm:w-auto lg:w-52 sm:col-span-2 lg:col-span-1">
+            <div className="w-full sm:col-span-2 lg:col-span-1">
               <Select
                 value={sortOption}
                 onValueChange={(val) => {
@@ -206,7 +255,7 @@ export function DictionaryPage() {
                   setCurrentPage(1);
                 }}
               >
-                <SelectTrigger className="w-full rounded-full h-10 border-slate-200 bg-white text-xs font-medium px-3.5">
+                <SelectTrigger className="w-full rounded-full h-11 border-slate-200 bg-white text-xs font-medium px-3.5">
                   <SelectValue placeholder="Sắp xếp" />
                 </SelectTrigger>
                 <SelectContent>
