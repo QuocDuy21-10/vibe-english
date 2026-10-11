@@ -23,6 +23,13 @@ export type VocabularyOverview = {
 
 export type VocabularyStatusFilter = "all" | "due" | "new" | "learning" | "mastered";
 
+export type VocabularySearchMode = "contains" | "exact";
+
+export type VocabularySearchOptions = {
+  searchMode?: VocabularySearchMode;
+  caseSensitive?: boolean;
+};
+
 export type VocabularySortOption =
   | "newest"
   | "oldest"
@@ -34,25 +41,39 @@ export type VocabularySortOption =
 
 export type FilterAndSortOptions = {
   searchQuery?: string;
+  searchMode?: VocabularySearchMode;
+  caseSensitive?: boolean;
   selectedTopicId?: string;
   statusFilter?: VocabularyStatusFilter;
   sortOption?: VocabularySortOption;
   now?: Date;
 };
 
+function normalizeSearchText(value: string, caseSensitive: boolean): string {
+  const normalized = value.trim().normalize("NFC");
+  return caseSensitive ? normalized : normalized.toLowerCase();
+}
+
 export function filterVocabularies(
   vocabularies: Vocabulary[],
   searchQuery: string,
-  selectedTopicId: string
-) {
-  const queryText = searchQuery.trim().toLowerCase();
+  selectedTopicId: string,
+  searchOptions: VocabularySearchOptions = {}
+): Vocabulary[] {
+  const { searchMode = "contains", caseSensitive = false } = searchOptions;
+  const queryText = normalizeSearchText(searchQuery, caseSensitive);
   return vocabularies.filter((vocabulary) => {
     const matchesSearch =
       queryText.length === 0 ||
-      vocabulary.word.toLowerCase().includes(queryText) ||
-      vocabulary.definition.toLowerCase().includes(queryText) ||
-      vocabulary.partOfSpeech.toLowerCase().includes(queryText) ||
-      vocabulary.phonetic.toLowerCase().includes(queryText);
+      [
+        vocabulary.word,
+        vocabulary.definition,
+        vocabulary.partOfSpeech,
+        vocabulary.phonetic
+      ].some((field) => {
+        const candidate = normalizeSearchText(field, caseSensitive);
+        return searchMode === "exact" ? candidate === queryText : candidate.includes(queryText);
+      });
     const matchesTopic =
       selectedTopicId === DEFAULT_TOPIC_FILTER ||
       (selectedTopicId === UNASSIGNED_TOPIC_FILTER
@@ -124,6 +145,8 @@ export function filterAndSortVocabularies(
 ): Vocabulary[] {
   const {
     searchQuery = "",
+    searchMode = "contains",
+    caseSensitive = false,
     selectedTopicId = DEFAULT_TOPIC_FILTER,
     statusFilter = "all",
     sortOption = "newest",
@@ -131,7 +154,10 @@ export function filterAndSortVocabularies(
   } = options;
 
   // 1. Topic and Search Filter
-  let filtered = filterVocabularies(vocabularies, searchQuery, selectedTopicId);
+  let filtered = filterVocabularies(vocabularies, searchQuery, selectedTopicId, {
+    searchMode,
+    caseSensitive
+  });
 
   // 2. Status Filter
   if (statusFilter !== "all") {

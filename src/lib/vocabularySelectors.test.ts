@@ -3,12 +3,14 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_TOPIC_FILTER, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
 import {
   countVocabulariesByTopic,
+  filterAndSortVocabularies,
   filterVocabularies,
   getDueCount,
   getDueVocabularies,
   getVocabularyOverview,
   sortTopicsByName,
-  sortTopicsByNewest
+  sortTopicsByNewest,
+  type VocabularySearchOptions
 } from "@/lib/vocabularySelectors";
 import type { Topic, Vocabulary } from "@/types/types";
 
@@ -46,6 +48,141 @@ describe("filterVocabularies", () => {
   it("supports assigned and unassigned topic filters", () => {
     expect(filterVocabularies(items, "", "topic-a")).toEqual([items[0]]);
     expect(filterVocabularies(items, "", UNASSIGNED_TOPIC_FILTER)).toEqual([items[1]]);
+  });
+
+  const matchingItems = [
+    vocabulary("upper", { word: "Apple", definition: "quả táo" }),
+    vocabulary("lower", { word: "apple", definition: "trái táo" }),
+    vocabulary("compound", { word: "pineapple", definition: "quả dứa" }),
+    vocabulary("phrase", { word: "apple pie", definition: "bánh táo" })
+  ];
+
+  const matchingCases: Array<{
+    name: string;
+    options?: VocabularySearchOptions;
+    expected: string[];
+  }> = [
+    {
+      name: "contains text without case sensitivity by default",
+      options: undefined,
+      expected: ["Apple", "apple", "pineapple", "apple pie"]
+    },
+    {
+      name: "matches complete fields without case sensitivity",
+      options: { searchMode: "exact" },
+      expected: ["Apple", "apple"]
+    },
+    {
+      name: "contains text with case sensitivity",
+      options: { caseSensitive: true },
+      expected: ["apple", "pineapple", "apple pie"]
+    },
+    {
+      name: "matches complete fields with case sensitivity",
+      options: { searchMode: "exact", caseSensitive: true },
+      expected: ["apple"]
+    }
+  ];
+
+  it.each(matchingCases)("$name", ({ options, expected }) => {
+    expect(
+      filterVocabularies(matchingItems, "apple", DEFAULT_TOPIC_FILTER, options).map(
+        ({ word }) => word
+      )
+    ).toEqual(expected);
+  });
+
+  it("treats a whitespace-only query as inactive in every mode", () => {
+    expect(
+      filterVocabularies(matchingItems, "   ", DEFAULT_TOPIC_FILTER, {
+        searchMode: "exact",
+        caseSensitive: true
+      })
+    ).toEqual(matchingItems);
+  });
+
+  it("trims outer whitespace without collapsing internal whitespace", () => {
+    expect(
+      filterVocabularies(matchingItems, "  apple  ", DEFAULT_TOPIC_FILTER, {
+        searchMode: "exact",
+        caseSensitive: true
+      }).map(({ word }) => word)
+    ).toEqual(["apple"]);
+    expect(
+      filterVocabularies(matchingItems, "apple  pie", DEFAULT_TOPIC_FILTER, {
+        searchMode: "exact"
+      })
+    ).toEqual([]);
+  });
+
+  it("normalizes canonically equivalent Unicode without removing diacritics", () => {
+    const accented = vocabulary("accented", { word: "Từ" });
+
+    expect(
+      filterVocabularies([accented], "Tu\u031B\u0300", DEFAULT_TOPIC_FILTER, {
+        searchMode: "exact"
+      })
+    ).toEqual([accented]);
+    expect(
+      filterVocabularies([accented], "Tu", DEFAULT_TOPIC_FILTER, {
+        searchMode: "exact"
+      })
+    ).toEqual([]);
+  });
+
+  it("applies exact matching to every existing searchable field", () => {
+    const travel = vocabulary("travel", {
+      word: "Travel",
+      definition: "du lịch",
+      partOfSpeech: "noun",
+      phonetic: "/ˈtræv.əl/"
+    });
+
+    ["Travel", "du lịch", "noun", "/ˈtræv.əl/"].forEach((query) => {
+      expect(
+        filterVocabularies([travel], query, DEFAULT_TOPIC_FILTER, {
+          searchMode: "exact",
+          caseSensitive: true
+        })
+      ).toEqual([travel]);
+    });
+    expect(
+      filterVocabularies([travel], "du", DEFAULT_TOPIC_FILTER, {
+        searchMode: "exact"
+      })
+    ).toEqual([]);
+  });
+
+  it("combines exact and case-sensitive matching with topic filters", () => {
+    const assigned = vocabulary("assigned", { word: "apple", topicId: "topic-a" });
+    const unassigned = vocabulary("unassigned", { word: "apple", topicId: null });
+    const searchOptions: VocabularySearchOptions = {
+      searchMode: "exact",
+      caseSensitive: true
+    };
+
+    expect(filterVocabularies([assigned, unassigned], "apple", "topic-a", searchOptions)).toEqual([
+      assigned
+    ]);
+    expect(
+      filterVocabularies(
+        [assigned, unassigned],
+        "apple",
+        UNASSIGNED_TOPIC_FILTER,
+        searchOptions
+      )
+    ).toEqual([unassigned]);
+  });
+
+  it("forwards search options through filterAndSortVocabularies", () => {
+    expect(
+      filterAndSortVocabularies(matchingItems, {
+        searchQuery: "apple",
+        searchMode: "exact",
+        caseSensitive: true,
+        sortOption: "alpha-asc"
+      }).map(({ word }) => word)
+    ).toEqual(["apple"]);
   });
 });
 
