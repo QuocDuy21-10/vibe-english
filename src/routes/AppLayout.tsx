@@ -33,10 +33,8 @@ export function AppLayout() {
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/60 bg-white">
         <div className="container max-w-5xl mx-auto h-16 flex items-center justify-between px-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-[#10b981] rounded-lg flex items-center justify-center shadow-md shadow-[#10b981]/10 shrink-0">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-[#10b981]">Vibe English</span>
+            <img src="/favicon.svg" alt="" width="32" height="32" className="h-8 w-8 shrink-0 rounded-lg shadow-md shadow-[#10b981]/10" />
+            <span className="text-xl font-bold tracking-tight text-[#10b981]">Vocabloom</span>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">

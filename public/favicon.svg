@@ -1,8 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Vibe English favicon">
-  <rect width="64" height="64" rx="14" fill="#10b981" />
-  <rect x="16" y="18" width="14" height="28" rx="2" fill="#ecfdf5" />
-  <rect x="30" y="18" width="18" height="28" rx="2" fill="#ffffff" />
-  <path d="M30 20v24" stroke="#0f766e" stroke-width="2" />
-  <path d="M22 24h6" stroke="#a7f3d0" stroke-width="2" stroke-linecap="round" />
-  <path d="M34 24h10" stroke="#d1fae5" stroke-width="2" stroke-linecap="round" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Biểu tượng Vocabloom">
+  <rect width="512" height="512" rx="112" fill="#10b981" />
+  <path d="M132 154 256 374 380 154" fill="none" stroke="#ffffff" stroke-width="58" stroke-linecap="round" stroke-linejoin="round" />
+  <path d="M261 278c13-83 64-137 143-155-3 78-51 136-143 155Z" fill="#a7f3d0" />
+  <path d="M267 271c29-55 69-94 123-132" fill="none" stroke="#047857" stroke-width="15" stroke-linecap="round" />
 </svg>

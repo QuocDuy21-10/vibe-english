@@ -433,7 +433,7 @@ export function ImportVocabDialog({
                     <h3 className="font-bold text-slate-800 text-sm">Tải file mẫu chuẩn</h3>
                   </div>
                   <p className="text-xs text-slate-500 leading-relaxed">
-                    Tải file mẫu của Vibe English, điền từ vựng vào sheet{" "}
+                    Tải file mẫu của Vocabloom, điền từ vựng vào sheet{" "}
                     <code className="bg-white px-1 py-0.5 rounded border border-slate-200 text-slate-700 font-semibold text-[11px]">
                       Vocabulary
                     </code>
@@ -531,7 +531,7 @@ export function ImportVocabDialog({
                     </h4>
                     <p className="text-xs text-rose-700 leading-relaxed">
                       {excelResult.structureError.customMessage ||
-                        "Cấu trúc các cột trong file không khớp với file mẫu của Vibe English."}
+                        "Cấu trúc các cột trong file không khớp với file mẫu của Vocabloom."}
                     </p>
 
                     {excelResult.structureError.missingColumns &&

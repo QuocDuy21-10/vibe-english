@@ -28,7 +28,7 @@ export type VocabImportColumn = (typeof VOCAB_IMPORT_COLUMNS)[number];
 
 export const MAX_IMPORT_ROWS = 500;
 export const MAX_IMPORT_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
-export const TEMPLATE_FILE_NAME = "vibe-english-vocabulary-template.xlsx";
+export const TEMPLATE_FILE_NAME = "vocabloom-vocabulary-template.xlsx";
 export const VOCAB_SHEET_NAME = "Vocabulary";
 export const GUIDE_SHEET_NAME = "HuongDan";
 

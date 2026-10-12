@@ -1,4 +1,3 @@
-import { BookOpen } from "lucide-react";
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { useAppData } from "@/routes/AppDataProvider";
@@ -13,11 +12,15 @@ export function LoginPage() {
         animate={{ opacity: 1, y: 0 }}
         className="max-w-md w-full bg-white p-8 sm:p-10 rounded-3xl shadow-xl shadow-emerald-900/5 border border-emerald-100/60 space-y-6"
       >
-        <div className="w-20 h-20 bg-[#10b981] rounded-2xl flex items-center justify-center mx-auto shadow-lg shadow-[#10b981]/20">
-          <BookOpen className="w-10 h-10 text-white" />
-        </div>
+        <img
+          src="/favicon.svg"
+          alt=""
+          width="80"
+          height="80"
+          className="mx-auto h-20 w-20 rounded-2xl shadow-lg shadow-[#10b981]/20"
+        />
         <div className="space-y-2">
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">Vibe English</h1>
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-slate-900">Vocabloom</h1>
           <p className="text-slate-600 text-sm sm:text-base font-medium">
             Xây dựng vốn từ vựng của riêng bạn một cách tinh tế và hiệu quả.
           </p>

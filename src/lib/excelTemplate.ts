@@ -46,7 +46,7 @@ export function generateVocabularyTemplateWorkbook(): XLSX.WorkBook {
     ["definition", "CÓ", "Định nghĩa / Nghĩa tiếng Việt (tối đa 500 ký tự)."],
     ["partOfSpeech", "KHÔNG", `Loại từ. Chỉ chấp nhận các giá trị: ${PART_OF_SPEECH_OPTIONS.join(", ")}`],
     ["phonetic", "KHÔNG", "Phiên âm IPA (ví dụ: /ˈæp.əl/)."],
-    ["topic", "KHÔNG", "Tên chủ đề đã có trong Vibe English của bạn (ví dụ: Food, Work). Để trống = Chưa phân loại."],
+    ["topic", "KHÔNG", "Tên chủ đề đã có trong Vocabloom của bạn (ví dụ: Food, Work). Để trống = Chưa phân loại."],
     [],
     ["3. VÍ DỤ MINH HỌA (Xem mẫu, không copy vào sheet Vocabulary):"],
     ["word", "definition", "partOfSpeech", "phonetic", "topic"],

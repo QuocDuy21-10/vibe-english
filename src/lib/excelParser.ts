@@ -177,7 +177,7 @@ export function parseAndValidateExcelFile(
         invalidSheet: true,
         missingColumns: [],
         extraColumns: [],
-        customMessage: `Không tìm thấy sheet "${VOCAB_SHEET_NAME}". Vui lòng sử dụng file mẫu được tải từ Vibe English.`
+        customMessage: `Không tìm thấy sheet "${VOCAB_SHEET_NAME}". Vui lòng sử dụng file mẫu được tải từ Vocabloom.`
       },
       rows: [],
       summary: { total: 0, valid: 0, duplicateInFile: 0, duplicateExisting: 0, invalid: 0 }

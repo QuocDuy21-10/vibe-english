@@ -1,5 +1,5 @@
 ---
-name: Vibe English Core
+name: Vocabloom Core
 colors:
   surface: '#f8f9ff'
   surface-dim: '#cbdbf5'

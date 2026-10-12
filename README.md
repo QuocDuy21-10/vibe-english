@@ -1,4 +1,4 @@
-# Vibe English
+# Vocabloom
 
 <p align="center">
   <strong>A modern, AI-powered personal English vocabulary trainer featuring Spaced Repetition (SM-2), interactive flashcards, quizzes, and real-time cloud synchronization.</strong>
@@ -18,7 +18,7 @@
 
 ## Table of Contents
 
-1. [What is Vibe English](#1-what-is-vibe-english)
+1. [What is Vocabloom](#1-what-is-vocabloom)
 2. [Architecture & System Design](#2-architecture--system-design)
 3. [Environment Variables](#3-environment-variables)
 4. [Firebase Project Setup](#4-firebase-project-setup)
@@ -31,9 +31,9 @@
 
 ---
 
-## 1. What is Vibe English
+## 1. What is Vocabloom
 
-**Vibe English** is a single-page web application designed for personal English vocabulary learning and long-term retention. It combines the power of **Google Gemini AI** for automatic word lookups with a scientific **Spaced Repetition System (SRS)** inspired by SuperMemo SM-2.
+**Vocabloom** is a single-page web application designed for personal English vocabulary learning and long-term retention. It combines the power of **Google Gemini AI** for automatic word lookups with a scientific **Spaced Repetition System (SRS)** inspired by SuperMemo SM-2.
 
 ### Key Features
 
@@ -51,7 +51,7 @@
 
 ## 2. Architecture & System Design
 
-Vibe English is built as a single-page application (SPA) with a serverless API backend for secure AI operations.
+Vocabloom is built as a single-page application (SPA) with a serverless API backend for secure AI operations.
 
 ### High-Level Architecture Diagram
 
@@ -353,7 +353,7 @@ Stores individual vocabulary words along with Spaced Repetition System (SRS v1) 
 
 ## 7. Vercel Deployment
 
-Vibe English is preconfigured for zero-friction deployment on [Vercel](https://vercel.com).
+Vocabloom is preconfigured for zero-friction deployment on [Vercel](https://vercel.com).
 
 ### Deployment Configuration
 
@@ -445,7 +445,7 @@ npm run fb
 
 ## 10. AI Architecture & Security Pipeline
 
-To guarantee enterprise-grade security and prevent abuse, Vibe English implements a **Server-Side Proxy Architecture** for AI operations.
+To guarantee enterprise-grade security and prevent abuse, Vocabloom implements a **Server-Side Proxy Architecture** for AI operations.
 
 ```text
 [Client UI]
