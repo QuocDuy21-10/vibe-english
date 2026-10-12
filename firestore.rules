@@ -21,8 +21,22 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    function hasValidSynonyms(data) {
+      return (!('synonymIds' in data)
+          || (data.synonymIds is map && data.synonymIds.size() <= 10))
+        && (!('customSynonyms' in data)
+          || (data.customSynonyms is map && data.customSynonyms.size() <= 10))
+        && (!('synonymIds' in data) || !('customSynonyms' in data)
+          || data.synonymIds.size() + data.customSynonyms.size() <= 10);
+    }
+
+    function preservesLegacySynonyms(data, previousData) {
+      return data.keys().hasAny(['synonymIds']) == previousData.keys().hasAny(['synonymIds'])
+        && data.keys().hasAny(['customSynonyms']) == previousData.keys().hasAny(['customSynonyms'])
+        && (!('synonymIds' in data)
+          || (data.synonymIds is list && data.synonymIds == previousData.synonymIds))
+        && (!('customSynonyms' in data)
+          || (data.customSynonyms is list && data.customSynonyms == previousData.customSynonyms));
     }
 
     function incoming() {
@@ -76,6 +90,12 @@ service cloud.firestore {
         && data.level is int && data.level >= 0 && data.level <= 4;
     }
 
+    function isValidVocabulary(data) {
+      return 'srsVersion' in data
+        ? isValidSrsVocabulary(data)
+        : isValidLegacyVocabulary(data);
+    }
+
     function isValidReviewEvent(data) {
       return data.keys().hasAll([
         'userId', 'vocabularyId', 'rating', 'previousLevel', 'newLevel',
@@ -113,20 +133,27 @@ service cloud.firestore {
       allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
 
       allow create: if isSignedIn() && isValidSrsVocabulary(incoming())
-        && incoming().keys().size() == 17
+        && hasValidSynonyms(incoming())
+        && incoming().keys().hasOnly([
+          'word', 'normalizedWord', 'definition', 'partOfSpeech', 'phonetic', 'topicId',
+          'userId', 'createdAt', 'updatedAt', 'level', 'nextReview', 'srsVersion',
+          'intervalDays', 'easeFactor', 'repetitions', 'lapses', 'lastReviewedAt',
+          'synonymIds', 'customSynonyms'
+        ])
         && incoming().createdAt == request.time
         && incoming().updatedAt == request.time
         && incoming().nextReview == request.time
         && incoming().lastReviewedAt == null;
 
       allow update: if isOwner(existing().userId)
-        && (isValidLegacyVocabulary(incoming()) || isValidSrsVocabulary(incoming()))
+        && isValidVocabulary(incoming())
+        && (hasValidSynonyms(incoming()) || preservesLegacySynonyms(incoming(), existing()))
         && incoming().createdAt == existing().createdAt
         && incoming().updatedAt == request.time
         && incoming().diff(existing()).affectedKeys().hasOnly([
           'word', 'normalizedWord', 'definition', 'partOfSpeech', 'phonetic', 'topicId', 'updatedAt',
           'level', 'nextReview', 'srsVersion', 'intervalDays', 'easeFactor',
-          'repetitions', 'lapses', 'lastReviewedAt'
+          'repetitions', 'lapses', 'lastReviewedAt', 'synonymIds', 'customSynonyms'
         ]);
     }
 

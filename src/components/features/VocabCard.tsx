@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Edit3, Trash2, Volume2 } from "lucide-react";
+import { Edit3, Tags, Trash2, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { playAudio } from "@/lib/audio";
 import { getVocabularyLevel } from "@/lib/srs";
+import { getVocabularySynonymLabels } from "@/lib/vocabulary";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -26,6 +27,7 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
   const level = getVocabularyLevel(vocabulary);
+  const synonymLabels = getVocabularySynonymLabels(vocabulary, vocabularies);
 
   const handleDelete = async () => {
     try {
@@ -80,8 +82,27 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
           <p className="text-xs sm:text-sm text-slate-400 font-medium italic break-words">{vocabulary.phonetic || "—"}</p>
         </CardHeader>
 
-        <CardContent className="pb-4 pt-1 flex-grow">
+        <CardContent className="pb-4 pt-1 flex-grow space-y-3">
           <p className="text-base sm:text-lg font-bold text-slate-800 leading-snug break-words">{vocabulary.definition}</p>
+          {synonymLabels.length > 0 && (
+            <div className="space-y-1.5 border-t border-slate-100 pt-3">
+              <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                <Tags className="size-3.5 text-[#10b981]" aria-hidden="true" />
+                <span>Từ đồng nghĩa</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {synonymLabels.map((word) => (
+                  <Badge
+                    key={word.toLocaleLowerCase()}
+                    variant="secondary"
+                    className="max-w-full bg-[#ECFDF5] px-2 py-1 text-[11px] font-semibold text-[#065F46]"
+                  >
+                    <span className="truncate">{word}</span>
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
 
         <div className="absolute top-3.5 right-3 flex flex-col gap-1">

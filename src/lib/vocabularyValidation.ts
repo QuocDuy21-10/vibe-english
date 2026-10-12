@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { MAX_VOCABULARY_SYNONYMS } from "@/lib/vocabulary";
 
 export const vocabularyInputSchema = z.object({
   word: z
@@ -23,7 +24,11 @@ export const vocabularyInputSchema = z.object({
     .max(50, "Loại từ không được vượt quá 50 ký tự.")
     .optional()
     .or(z.literal("")),
-  topicId: z.string().trim().optional().or(z.literal(""))
+  topicId: z.string().trim().optional().or(z.literal("")),
+  synonymIds: z.array(z.string().trim().min(1)).max(MAX_VOCABULARY_SYNONYMS).optional(),
+  customSynonyms: z.array(
+    z.string().trim().min(1).max(100, "Từ đồng nghĩa không được vượt quá 100 ký tự.")
+  ).max(MAX_VOCABULARY_SYNONYMS).optional()
 });
 
 export type VocabularyInputFormValues = z.infer<typeof vocabularyInputSchema>;

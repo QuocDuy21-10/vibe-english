@@ -298,6 +298,133 @@ describe("Firestore Security Rules Tests", () => {
     );
   });
 
+  it("allows synonym lists on vocabulary create and update", async () => {
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const vocabularyRef = doc(aliceDb, "vocabularies/v_synonyms");
+
+    await assertSucceeds(
+      setDoc(vocabularyRef, {
+        word: "happy",
+        normalizedWord: "happy",
+        definition: "vui vẻ",
+        partOfSpeech: "adjective",
+        phonetic: "/ˈhæp.i/",
+        topicId: null,
+        userId: "alice",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        level: 0,
+        nextReview: serverTimestamp(),
+        srsVersion: 1,
+        intervalDays: 0,
+        easeFactor: 2.5,
+        repetitions: 0,
+        lapses: 0,
+        lastReviewedAt: null,
+        synonymIds: { v2: true },
+        customSynonyms: { cheerful: true }
+      })
+    );
+
+    await assertSucceeds(
+      updateDoc(vocabularyRef, {
+        synonymIds: { v2: true, v3: true },
+        customSynonyms: { cheerful: true, glad: true },
+        updatedAt: serverTimestamp()
+      })
+    );
+
+    await assertSucceeds(
+      updateDoc(vocabularyRef, {
+        synonymIds: Object.fromEntries(
+          Array.from({ length: 5 }, (_, index) => [`linked-${index}`, true])
+        ),
+        customSynonyms: Object.fromEntries(
+          Array.from({ length: 5 }, (_, index) => [`custom-${index}`, true])
+        ),
+        updatedAt: serverTimestamp()
+      })
+    );
+  });
+
+  it("denies synonym fields with invalid persisted types", async () => {
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+
+    await assertFails(
+      setDoc(doc(aliceDb, "vocabularies/v_invalid_synonyms"), {
+        word: "happy",
+        normalizedWord: "happy",
+        definition: "vui vẻ",
+        partOfSpeech: "adjective",
+        phonetic: "/ˈhæp.i/",
+        topicId: null,
+        userId: "alice",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        level: 0,
+        nextReview: serverTimestamp(),
+        srsVersion: 1,
+        intervalDays: 0,
+        easeFactor: 2.5,
+        repetitions: 0,
+        lapses: 0,
+        lastReviewedAt: null,
+        synonymIds: "v2",
+        customSynonyms: { cheerful: true }
+      })
+    );
+
+    await assertFails(
+      setDoc(doc(aliceDb, "vocabularies/v_invalid_synonym_items"), {
+        word: "happy",
+        normalizedWord: "happy",
+        definition: "vui vẻ",
+        partOfSpeech: "adjective",
+        phonetic: "/ˈhæp.i/",
+        topicId: null,
+        userId: "alice",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        level: 0,
+        nextReview: serverTimestamp(),
+        srsVersion: 1,
+        intervalDays: 0,
+        easeFactor: 2.5,
+        repetitions: 0,
+        lapses: 0,
+        lastReviewedAt: null,
+        synonymIds: ["v2"],
+        customSynonyms: ["cheerful"]
+      })
+    );
+
+    await assertFails(
+      setDoc(doc(aliceDb, "vocabularies/v_too_many_synonyms"), {
+        word: "happy",
+        normalizedWord: "happy",
+        definition: "vui vẻ",
+        partOfSpeech: "adjective",
+        phonetic: "/ˈhæp.i/",
+        topicId: null,
+        userId: "alice",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        level: 0,
+        nextReview: serverTimestamp(),
+        srsVersion: 1,
+        intervalDays: 0,
+        easeFactor: 2.5,
+        repetitions: 0,
+        lapses: 0,
+        lastReviewedAt: null,
+        synonymIds: {},
+        customSynonyms: Object.fromEntries(
+          Array.from({ length: 11 }, (_, index) => [`synonym-${index}`, true])
+        )
+      })
+    );
+  });
+
   it("denies creating vocabulary with invalid easeFactor (< 1.3 or > 3.0)", async () => {
     const aliceDb = testEnv.authenticatedContext("alice").firestore();
     // easeFactor too low
@@ -416,6 +543,7 @@ describe("Firestore Security Rules Tests", () => {
     const now = Timestamp.now();
     await seedDocument("vocabularies/v_review", {
       word: "apple",
+      normalizedWord: "apple",
       definition: "quả táo",
       partOfSpeech: "noun",
       phonetic: "/ˈæp.əl/",
@@ -442,6 +570,52 @@ describe("Firestore Security Rules Tests", () => {
         easeFactor: 2.5,
         lastReviewedAt: serverTimestamp(),
         nextReview: Timestamp.fromDate(new Date(Date.now() + 86400000)),
+        updatedAt: serverTimestamp()
+      })
+    );
+  });
+
+  it("allows reviews to preserve legacy array synonyms but denies changing them as arrays", async () => {
+    const now = Timestamp.now();
+    await seedDocument("vocabularies/v_legacy_synonyms", {
+      word: "happy",
+      normalizedWord: "happy",
+      definition: "vui vẻ",
+      partOfSpeech: "adjective",
+      phonetic: "/ˈhæp.i/",
+      topicId: null,
+      userId: "alice",
+      createdAt: now,
+      updatedAt: now,
+      level: 0,
+      nextReview: now,
+      srsVersion: 1,
+      intervalDays: 0,
+      easeFactor: 2.5,
+      repetitions: 0,
+      lapses: 0,
+      lastReviewedAt: null,
+      synonymIds: ["v2"],
+      customSynonyms: ["cheerful"]
+    });
+
+    const aliceDb = testEnv.authenticatedContext("alice").firestore();
+    const vocabularyRef = doc(aliceDb, "vocabularies/v_legacy_synonyms");
+
+    await assertSucceeds(
+      updateDoc(vocabularyRef, {
+        level: 1,
+        intervalDays: 1,
+        repetitions: 1,
+        lastReviewedAt: serverTimestamp(),
+        nextReview: Timestamp.fromDate(new Date(Date.now() + 86400000)),
+        updatedAt: serverTimestamp()
+      })
+    );
+
+    await assertFails(
+      updateDoc(vocabularyRef, {
+        customSynonyms: ["cheerful", "glad"],
         updatedAt: serverTimestamp()
       })
     );

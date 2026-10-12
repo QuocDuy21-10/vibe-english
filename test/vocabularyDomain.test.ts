@@ -6,10 +6,15 @@ import {
   parseCsvRows
 } from "@/lib/bulkParser";
 import {
+  addVocabularySynonym,
   checkDuplicateVocabulary,
+  encodeSynonymMapKey,
   findDuplicateVocabulary,
+  getVocabularySynonymLabels,
   getVocabularyKey,
+  hasSelfSynonym,
   isDuplicateWord,
+  normalizeSynonymSelection,
   normalizePartOfSpeech,
   normalizeVocabularyWord
 } from "@/lib/vocabulary";
@@ -169,6 +174,183 @@ describe("vocabulary domain logic", () => {
 
       // Editing v2 to "apple" (clashes with v1) SHOULD trigger duplicate error
       expect(isDuplicateWord("apple", mockVocabs, { excludeVocabId: "v2" })).toBe(true);
+    });
+  });
+
+  describe("synonym selection", () => {
+    const vocabularies: Vocabulary[] = [
+      {
+        id: "v1",
+        word: "Happy",
+        normalizedWord: "happy",
+        definition: "vui vẻ",
+        partOfSpeech: "adjective",
+        phonetic: "/ˈhæp.i/",
+        topicId: null,
+        userId: "u1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        level: 0,
+        nextReview: new Date()
+      },
+      {
+        id: "v2",
+        word: "Joyful",
+        normalizedWord: "joyful",
+        definition: "vui sướng",
+        partOfSpeech: "adjective",
+        phonetic: "/ˈdʒɔɪ.fəl/",
+        topicId: null,
+        userId: "u1",
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        level: 0,
+        nextReview: new Date()
+      }
+    ];
+
+    it("links an existing vocabulary by id instead of storing a duplicate custom word", () => {
+      const result = addVocabularySynonym(
+        "  JOYFUL ",
+        { synonymIds: [], customSynonyms: [] },
+        vocabularies,
+        { currentVocabularyId: "v1", currentWord: "Happy" }
+      );
+
+      expect(result.status).toBe("added_existing");
+      expect(result.selection).toEqual({
+        synonymIds: ["v2"],
+        customSynonyms: []
+      });
+    });
+
+    it("stores a normalized display word when the synonym is not in the vocabulary collection", () => {
+      const result = addVocabularySynonym(
+        "  in   high spirits  ",
+        { synonymIds: [], customSynonyms: [] },
+        vocabularies,
+        { currentVocabularyId: "v1", currentWord: "Happy" }
+      );
+
+      expect(result.status).toBe("added_custom");
+      expect(result.selection.customSynonyms).toEqual(["in high spirits"]);
+    });
+
+    it("rejects the current word and case-insensitive duplicates across linked and custom synonyms", () => {
+      const selection = {
+        synonymIds: ["v2"],
+        customSynonyms: ["Cheerful"]
+      };
+
+      expect(
+        addVocabularySynonym("happy", selection, vocabularies, {
+          currentVocabularyId: "v1",
+          currentWord: "Happy"
+        }).status
+      ).toBe("self");
+      expect(
+        addVocabularySynonym("JOYFUL", selection, vocabularies, {
+          currentVocabularyId: "v1",
+          currentWord: "Happy"
+        }).status
+      ).toBe("duplicate");
+      expect(
+        addVocabularySynonym(" cheerful ", selection, vocabularies, {
+          currentVocabularyId: "v1",
+          currentWord: "Happy"
+        }).status
+      ).toBe("duplicate");
+    });
+
+    it("normalizes persisted selections and resolves readable card labels", () => {
+      const normalized = normalizeSynonymSelection({
+        synonymIds: [" v2 ", "v2", "", "missing"],
+        customSynonyms: [" Cheerful ", "cheerful", "  in   high spirits ", ""]
+      });
+
+      expect(normalized).toEqual({
+        synonymIds: ["v2", "missing"],
+        customSynonyms: ["Cheerful", "in high spirits"]
+      });
+      expect(
+        getVocabularySynonymLabels(
+          {
+            ...vocabularies[0],
+            synonymIds: normalized.synonymIds,
+            customSynonyms: normalized.customSynonyms
+          },
+          vocabularies
+        )
+      ).toEqual(["Joyful", "Cheerful", "in high spirits"]);
+    });
+
+    it("detects self-synonyms after the main word changes", () => {
+      expect(
+        hasSelfSynonym(
+          "joyful",
+          { synonymIds: ["v2"], customSynonyms: [] },
+          vocabularies
+        )
+      ).toBe(true);
+      expect(
+        hasSelfSynonym(
+          "cheerful",
+          { synonymIds: [], customSynonyms: [" Cheerful "] },
+          vocabularies
+        )
+      ).toBe(true);
+      expect(
+        hasSelfSynonym(
+          "happy",
+          { synonymIds: ["v2"], customSynonyms: ["Cheerful"] },
+          vocabularies
+        )
+      ).toBe(false);
+    });
+
+    it("defensively ignores malformed persisted synonym values", () => {
+      const malformedSelection: { synonymIds?: unknown; customSynonyms?: unknown } = {
+        synonymIds: ["v2", 123, null],
+        customSynonyms: ["Cheerful", { word: "glad" }, false]
+      };
+
+      expect(normalizeSynonymSelection(malformedSelection)).toEqual({
+        synonymIds: ["v2"],
+        customSynonyms: ["Cheerful"]
+      });
+
+      expect(
+        normalizeSynonymSelection({
+          synonymIds: { [encodeSynonymMapKey("__linked__")]: "__linked__" },
+          customSynonyms: {
+            [encodeSynonymMapKey("in high spirits")]: "in high spirits"
+          }
+        })
+      ).toEqual({
+        synonymIds: ["__linked__"],
+        customSynonyms: ["in high spirits"]
+      });
+
+      expect(
+        normalizeSynonymSelection({ customSynonyms: { value_happy: true } })
+      ).toEqual({
+        synonymIds: [],
+        customSynonyms: ["value_happy"]
+      });
+    });
+
+    it("refuses to add more than 10 synonyms", () => {
+      const result = addVocabularySynonym(
+        "another synonym",
+        {
+          synonymIds: [],
+          customSynonyms: Array.from({ length: 10 }, (_, index) => `synonym ${index}`)
+        },
+        vocabularies
+      );
+
+      expect(result.status).toBe("limit");
+      expect(result.selection.customSynonyms).toHaveLength(10);
     });
   });
 

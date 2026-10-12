@@ -65,7 +65,9 @@ describe("vocabularyRepository", () => {
         definition: "  phổ biến, có mặt ở khắp nơi  ",
         partOfSpeech: "  adjective  ",
         phonetic: "  /juːˈbɪk.wə.təs/  ",
-        topicId: "  topic-123  "
+        topicId: "  topic-123  ",
+        synonymIds: [" vocab-2 ", "vocab-2", "vocab-3"],
+        customSynonyms: ["  universal  ", "Universal", " ever-present "]
       });
 
       expect(addDoc).toHaveBeenCalledWith("collection:vocabularies", {
@@ -85,7 +87,12 @@ describe("vocabularyRepository", () => {
         easeFactor: 2.5,
         repetitions: 0,
         lapses: 0,
-        lastReviewedAt: null
+        lastReviewedAt: null,
+        synonymIds: { "value_vocab-2": "vocab-2", "value_vocab-3": "vocab-3" },
+        customSynonyms: {
+          value_universal: "universal",
+          "value_ever-present": "ever-present"
+        }
       });
       expect(result).toBe("vocab-1");
     });
@@ -134,7 +141,9 @@ describe("vocabularyRepository", () => {
         definition: "  chăm chỉ  ",
         partOfSpeech: "  adj  ",
         phonetic: "  /ˈdɪl.ə.dʒənt/  ",
-        topicId: "  "
+        topicId: "  ",
+        synonymIds: [" vocab-2 ", "vocab-2"],
+        customSynonyms: ["  Industrious  ", "industrious"]
       });
 
       expect(updateDoc).toHaveBeenCalledWith("doc:vocabularies/vocab-1", {
@@ -144,6 +153,8 @@ describe("vocabularyRepository", () => {
         partOfSpeech: "adj",
         phonetic: "/ˈdɪl.ə.dʒənt/",
         topicId: null,
+        synonymIds: { "value_vocab-2": "vocab-2" },
+        customSynonyms: { value_Industrious: "Industrious" },
         updatedAt: "SERVER_TIMESTAMP"
       });
     });
@@ -384,13 +395,40 @@ describe("vocabularyRepository", () => {
         docs: [
           {
             id: "v1",
-            data: () => ({ word: "hello", definition: "xin chào" })
+            data: () => ({
+              word: "hello",
+              definition: "xin chào",
+              synonymIds: { value_v2: "v2" },
+              customSynonyms: { value_hi: "hi" }
+            })
+          },
+          {
+            id: "v-legacy-malformed",
+            data: () => ({
+              word: "legacy",
+              definition: "cũ",
+              synonymIds: ["v3", 123, null],
+              customSynonyms: ["old", { word: "dated" }]
+            })
           }
         ]
       });
 
       expect(onNext).toHaveBeenCalledWith([
-        { id: "v1", word: "hello", definition: "xin chào" }
+        {
+          id: "v1",
+          word: "hello",
+          definition: "xin chào",
+          synonymIds: ["v2"],
+          customSynonyms: ["hi"]
+        },
+        {
+          id: "v-legacy-malformed",
+          word: "legacy",
+          definition: "cũ",
+          synonymIds: ["v3"],
+          customSynonyms: ["old"]
+        }
       ]);
 
       unsubscribe();

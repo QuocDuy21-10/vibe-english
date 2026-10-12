@@ -27,6 +27,8 @@ export interface Vocabulary {
   repetitions?: number;
   lapses?: number;
   lastReviewedAt?: Timestamp | Date | null;
+  synonymIds?: string[];
+  customSynonyms?: string[];
 }
 
 export type BulkRowStatus = "valid" | "duplicate_in_file" | "duplicate_in_db" | "invalid";

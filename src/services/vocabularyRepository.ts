@@ -13,7 +13,11 @@ import {
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
-import { normalizeVocabularyWord } from "@/lib/vocabulary";
+import {
+  encodeSynonymMapKey,
+  normalizeSynonymSelection,
+  normalizeVocabularyWord
+} from "@/lib/vocabulary";
 import {
   DEFAULT_EASE_FACTOR,
   SRS_VERSION,
@@ -38,6 +42,8 @@ export type CreateVocabularyInput = {
   partOfSpeech?: string | null;
   phonetic?: string | null;
   topicId?: string | null;
+  synonymIds?: string[];
+  customSynonyms?: string[];
 };
 
 export type UpdateVocabularyInput = {
@@ -46,19 +52,27 @@ export type UpdateVocabularyInput = {
   partOfSpeech?: string | null;
   phonetic?: string | null;
   topicId?: string | null;
+  synonymIds?: string[];
+  customSynonyms?: string[];
 };
+
+function toPersistedSynonymMap(values: string[]): Record<string, string> {
+  return Object.fromEntries(values.map((value) => [encodeSynonymMapKey(value), value]));
+}
 
 export async function createVocabulary(
   userId: string,
   input: CreateVocabularyInput
 ): Promise<string> {
+  const synonyms = normalizeSynonymSelection(input);
   const normalized = {
     word: input.word.trim(),
     normalizedWord: normalizeVocabularyWord(input.word),
     definition: input.definition.trim(),
     partOfSpeech: input.partOfSpeech?.trim() ?? "",
     phonetic: input.phonetic?.trim() ?? "",
-    topicId: input.topicId?.trim() || null
+    topicId: input.topicId?.trim() || null,
+    ...synonyms
   };
 
   try {
@@ -79,7 +93,9 @@ export async function createVocabulary(
       easeFactor: DEFAULT_EASE_FACTOR,
       repetitions: 0,
       lapses: 0,
-      lastReviewedAt: null
+      lastReviewedAt: null,
+      synonymIds: toPersistedSynonymMap(normalized.synonymIds),
+      customSynonyms: toPersistedSynonymMap(normalized.customSynonyms)
     });
     return docRef.id;
   } catch (error) {
@@ -92,13 +108,15 @@ export async function updateVocabulary(
   id: string,
   input: UpdateVocabularyInput
 ): Promise<void> {
+  const synonyms = normalizeSynonymSelection(input);
   const normalized = {
     word: input.word.trim(),
     normalizedWord: normalizeVocabularyWord(input.word),
     definition: input.definition.trim(),
     partOfSpeech: input.partOfSpeech?.trim() ?? "",
     phonetic: input.phonetic?.trim() ?? "",
-    topicId: input.topicId?.trim() || null
+    topicId: input.topicId?.trim() || null,
+    ...synonyms
   };
 
   try {
@@ -109,6 +127,8 @@ export async function updateVocabulary(
       partOfSpeech: normalized.partOfSpeech,
       phonetic: normalized.phonetic,
       topicId: normalized.topicId,
+      synonymIds: toPersistedSynonymMap(normalized.synonymIds),
+      customSynonyms: toPersistedSynonymMap(normalized.customSynonyms),
       updatedAt: serverTimestamp()
     });
   } catch (error) {
@@ -144,6 +164,7 @@ export async function batchCreateVocabularies(
       const partOfSpeech = item.partOfSpeech?.trim() ?? "";
       const phonetic = item.phonetic?.trim() ?? "";
       const topicId = item.topicId?.trim() || null;
+      const synonyms = normalizeSynonymSelection(item);
 
       batch.set(vocabRef, {
         word,
@@ -162,7 +183,9 @@ export async function batchCreateVocabularies(
         easeFactor: DEFAULT_EASE_FACTOR,
         repetitions: 0,
         lapses: 0,
-        lastReviewedAt: null
+        lastReviewedAt: null,
+        synonymIds: toPersistedSynonymMap(synonyms.synonymIds),
+        customSynonyms: toPersistedSynonymMap(synonyms.customSynonyms)
       });
     });
 
@@ -273,7 +296,14 @@ export function subscribeVocabularies(
   return onSnapshot(
     vocabQuery,
     (snapshot) => {
-      const vocabularies = snapshot.docs.map((item) => ({ id: item.id, ...item.data() }) as Vocabulary);
+      const vocabularies = snapshot.docs.map((item) => {
+        const data = item.data();
+        return {
+          id: item.id,
+          ...data,
+          ...normalizeSynonymSelection(data)
+        } as Vocabulary;
+      });
       onNext(vocabularies);
     },
     (error) => {

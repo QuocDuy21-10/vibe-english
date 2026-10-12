@@ -15,7 +15,8 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
-import { checkDuplicateVocabulary } from "@/lib/vocabulary";
+import { SynonymField } from "@/components/features/SynonymField";
+import { checkDuplicateVocabulary, hasSelfSynonym } from "@/lib/vocabulary";
 import { vocabularyInputSchema, type VocabularyInputFormValues } from "@/lib/vocabularyValidation";
 import { updateVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
@@ -57,11 +58,15 @@ export function EditVocabDialog({
       definition: vocabulary.definition,
       partOfSpeech: vocabulary.partOfSpeech || "",
       phonetic: vocabulary.phonetic || "",
-      topicId: vocabulary.topicId || ""
+      topicId: vocabulary.topicId || "",
+      synonymIds: vocabulary.synonymIds ?? [],
+      customSynonyms: vocabulary.customSynonyms ?? []
     }
   });
 
   const wordValue = watch("word") ?? "";
+  const synonymIds = watch("synonymIds") ?? [];
+  const customSynonyms = watch("customSynonyms") ?? [];
 
   const handleAiLookup = async () => {
     const trimmedWord = wordValue.trim();
@@ -90,7 +95,9 @@ export function EditVocabDialog({
         definition: data.definition,
         partOfSpeech: data.partOfSpeech,
         phonetic: data.phonetic,
-        topicId: data.topicId
+        topicId: data.topicId,
+        synonymIds: data.synonymIds,
+        customSynonyms: data.customSynonyms
       });
       toast.success("Đã cập nhật từ vựng!");
       onClose();
@@ -100,6 +107,22 @@ export function EditVocabDialog({
   };
 
   const onSubmit = async (data: VocabularyInputFormValues) => {
+    if (
+      hasSelfSynonym(
+        data.word,
+        {
+          synonymIds: data.synonymIds ?? [],
+          customSynonyms: data.customSynonyms ?? []
+        },
+        vocabularies
+      )
+    ) {
+      const errorMsg = "Từ đang chỉnh sửa không thể đồng thời nằm trong danh sách từ đồng nghĩa.";
+      setError("word", { message: errorMsg });
+      toast.error(errorMsg);
+      return;
+    }
+
     // Duplicate detection check (excluding current vocabulary)
     const checkResult = checkDuplicateVocabulary(data.word, vocabularies, {
       partOfSpeech: data.partOfSpeech,
@@ -240,6 +263,20 @@ export function EditVocabDialog({
               )}
             />
           </div>
+
+          <SynonymField
+            value={{ synonymIds, customSynonyms }}
+            onChange={(selection) => {
+              setValue("synonymIds", selection.synonymIds, { shouldDirty: true });
+              setValue("customSynonyms", selection.customSynonyms, {
+                shouldDirty: true,
+                shouldValidate: true
+              });
+            }}
+            vocabularies={vocabularies}
+            currentVocabularyId={vocabulary.id}
+            currentWord={wordValue}
+          />
         </div>
 
         {crossTopicConfirm && (
