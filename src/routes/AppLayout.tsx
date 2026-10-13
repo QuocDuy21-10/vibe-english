@@ -1,7 +1,10 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { BookOpen, Brain, LayoutDashboard, Layers, Loader2, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { subscribeToForegroundVocabularyMessages } from "@/services/notificationService";
 import { useAppData } from "./AppDataProvider";
 
 const navItems = [
@@ -13,6 +16,35 @@ const navItems = [
 
 export function AppLayout() {
   const { user, dataLoading, vocabularies, logout } = useAppData();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!user) return;
+
+    let active = true;
+    let unsubscribe: (() => void) | undefined;
+    subscribeToForegroundVocabularyMessages((message) => {
+      toast.info(message.title, {
+        description: message.body,
+        action: {
+          label: "Mở từ điển",
+          onClick: () => navigate(message.url)
+        }
+      });
+    })
+      .then((listenerCleanup) => {
+        if (active) unsubscribe = listenerCleanup;
+        else listenerCleanup();
+      })
+      .catch((error) => {
+        console.error("Unable to subscribe to foreground notifications", error);
+      });
+
+    return () => {
+      active = false;
+      unsubscribe?.();
+    };
+  }, [navigate, user]);
 
   if (!user) {
     return null;

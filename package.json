@@ -12,7 +12,10 @@
     "lint": "tsc --noEmit",
     "test": "vitest run --exclude '**/firestore.rules.test.ts'",
     "test:rules": "firebase emulators:exec --only firestore 'vitest run test/firestore.rules.test.ts'",
-    "test:all": "npm test && npm run test:rules"
+    "test:all": "npm test && npm run test:rules",
+    "lint:functions": "npm --prefix functions run lint",
+    "test:functions": "npm --prefix functions test",
+    "build:functions": "npm --prefix functions run build"
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
@@ -55,6 +58,7 @@
     "tsx": "^4.21.0",
     "typescript": "~5.8.2",
     "vite": "^6.2.0",
+    "vite-plugin-pwa": "^2.0.0",
     "vitest": "^3.2.4"
   }
 }

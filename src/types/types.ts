@@ -31,6 +31,14 @@ export interface Vocabulary {
   customSynonyms?: string[];
 }
 
+export interface NotificationDevice {
+  userId: string;
+  token: string;
+  platform: string;
+  createdAt: Timestamp | Date;
+  updatedAt: Timestamp | Date;
+}
+
 export type BulkRowStatus = "valid" | "duplicate_in_file" | "duplicate_in_db" | "invalid";
 
 export type ImportRowStatus = "valid" | "duplicate-in-file" | "duplicate-existing" | "invalid";

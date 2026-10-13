@@ -114,6 +114,16 @@ service cloud.firestore {
         && data.reviewedAt is timestamp;
     }
 
+    function isValidNotificationDevice(data, userId) {
+      return data.keys().hasAll(['userId', 'token', 'platform', 'createdAt', 'updatedAt'])
+        && data.keys().size() == 5
+        && data.userId == userId
+        && data.token is string && data.token.size() > 0 && data.token.size() <= 4096
+        && data.platform is string && data.platform.size() > 0 && data.platform.size() <= 300
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     // --- Rules ---
 
     match /topics/{topicId} {
@@ -165,6 +175,28 @@ service cloud.firestore {
         && incoming().reviewedAt == request.time;
 
       allow update, delete: if false;
+    }
+
+    match /notificationUsers/{userId}/devices/{installationId} {
+      allow get, list: if isOwner(userId);
+
+      allow create: if isOwner(userId)
+        && isValidNotificationDevice(incoming(), userId)
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+
+      allow update: if isOwner(userId)
+        && existing().userId == userId
+        && isValidNotificationDevice(incoming(), userId)
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly(['token', 'platform', 'updatedAt']);
+
+      allow delete: if isOwner(userId) && existing().userId == userId;
+    }
+
+    match /notificationDispatchStates/{userId} {
+      allow read, write: if false;
     }
   }
 }

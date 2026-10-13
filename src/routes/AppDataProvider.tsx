@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
 import { toast } from "sonner";
 import { auth } from "@/lib/firebase";
+import { revokeVocabularyNotificationsForLogout } from "@/services/notificationService";
 import { subscribeTopics } from "@/services/topicRepository";
 import { subscribeVocabularies } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
@@ -95,14 +96,27 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    let notificationCleanupFailed = false;
     try {
+      if (user) {
+        try {
+          await revokeVocabularyNotificationsForLogout(user.uid);
+        } catch (error) {
+          notificationCleanupFailed = true;
+          console.warn("Notification cleanup was incomplete during logout", error);
+        }
+      }
       await signOut(auth);
-      toast.info("Đã đăng xuất.");
+      toast.info(
+        notificationCleanupFailed
+          ? "Đã đăng xuất. Hãy kiểm tra lại quyền thông báo của trình duyệt."
+          : "Đã đăng xuất."
+      );
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Đăng xuất thất bại.");
     }
-  }, []);
+  }, [user]);
 
   const dataLoading = topicsLoading || vocabulariesLoading;
 

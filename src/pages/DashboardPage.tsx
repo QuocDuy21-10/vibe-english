@@ -1,6 +1,7 @@
 import { Award, Target, Trophy, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { Card } from "@/components/ui/card";
+import { VocabularyNotificationCard } from "@/components/features/VocabularyNotificationCard";
 import { LEVELS } from "@/constants/vocab";
 import { useVocabularyOverview } from "@/hooks/useVocabStats";
 import { useAppData } from "@/routes/AppDataProvider";
@@ -61,7 +62,7 @@ function MasteryDonut({ segments }: { segments: DonutSegment[] }) {
 }
 
 export function DashboardPage() {
-  const { vocabularies, topics } = useAppData();
+  const { user, vocabularies, topics } = useAppData();
   const { stats, levelCounts } = useVocabularyOverview(vocabularies);
 
   return (
@@ -172,6 +173,12 @@ export function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {user && (
+        <div className="md:col-span-3">
+          <VocabularyNotificationCard userId={user.uid} vocabularyCount={vocabularies.length} />
+        </div>
+      )}
     </div>
   );
 }

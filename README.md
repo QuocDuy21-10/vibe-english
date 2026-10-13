@@ -204,6 +204,16 @@ GEMINI_API_KEY="your_gemini_api_key_here"
 > [!IMPORTANT]
 > Never prefix `GEMINI_API_KEY` with `VITE_`. The API key is consumed only by the serverless function `/api/ai/word-details` and must never be exposed to the browser bundle.
 
+### Public Web Push Configuration
+
+Web/PWA vocabulary reminders require the public Web Push certificate generated in **Firebase Console → Project settings → Cloud Messaging → Web Push certificates**:
+
+```ini
+VITE_FIREBASE_VAPID_KEY="your_public_web_push_vapid_key_here"
+```
+
+This VAPID public key is intentionally available to the browser. Never place the private VAPID material, Firebase service-account credentials, or other server secrets in a `VITE_` variable.
+
 ### Client Configuration (`firebase-applet-config.json`)
 
 The client Firebase SDK reads its connection configuration from `firebase-applet-config.json` at the project root:
@@ -230,6 +240,8 @@ The client Firebase SDK reads its connection configuration from `firebase-applet
 2. Enable **Authentication** and activate the **Google** sign-in provider.
 3. Enable **Cloud Firestore** in production mode.
 4. Copy the web app configuration into `firebase-applet-config.json`.
+5. Enable **Cloud Messaging** and generate a Web Push certificate for `VITE_FIREBASE_VAPID_KEY`.
+6. Upgrade the Firebase project to **Blaze** before deploying the scheduled function, and configure budget alerts or spend controls in Google Cloud/Firebase.
 
 ### Project Configuration Files
 
@@ -306,6 +318,10 @@ Stores individual vocabulary words along with Spaced Repetition System (SRS v1) 
 - **Field Whitelisting**: `firestore.rules` validates exact schema keys and prevents injecting unknown or unauthorized fields.
 - **Timestamp Integrity**: `createdAt` is immutable; `updatedAt` must equal `request.time`.
 
+### 3. Push Notification Registrations
+
+Each opted-in browser/PWA installation is stored at `notificationUsers/{userId}/devices/{installationId}` with `userId`, FCM `token`, `platform`, `createdAt`, and `updatedAt`. Firestore rules permit only the authenticated owner to manage these documents. `notificationDispatchStates/{userId}` is server-only state used to prevent duplicate two-hour sends and avoid immediately repeating a word.
+
 ---
 
 ## 6. Local Setup & Development
@@ -327,6 +343,7 @@ Stores individual vocabulary words along with Spaced Repetition System (SRS v1) 
 2. **Install dependencies:**
    ```bash
    npm install
+   npm install --prefix functions
    ```
 
 3. **Configure environment & Firebase credentials:**
@@ -337,6 +354,7 @@ Stores individual vocabulary words along with Spaced Repetition System (SRS v1) 
    - Open `.env` and set your `GEMINI_API_KEY`:
      ```ini
      GEMINI_API_KEY="AIzaSyYourGeminiApiKeyHere"
+     VITE_FIREBASE_VAPID_KEY="your_public_web_push_vapid_key_here"
      ```
    - Ensure `firebase-applet-config.json` is configured with your Firebase credentials.
 
@@ -387,6 +405,7 @@ In your **Vercel Dashboard $\rightarrow$ Project Settings $\rightarrow$ Environm
 
 1. `GEMINI_API_KEY`: Your Google Gemini API Key.
 2. `FIREBASE_PROJECT_ID` *(optional)*: Your Firebase project ID.
+3. `VITE_FIREBASE_VAPID_KEY`: The public Firebase Web Push certificate used by the website/PWA.
 
 ---
 
@@ -409,6 +428,11 @@ npm run lint
 
 # Build production bundle to verify compilation
 npm run build
+
+# Type-check, test, and build the scheduled Firebase Functions package
+npm run lint:functions
+npm run test:functions
+npm run build:functions
 ```
 
 ### Test Coverage Overview
@@ -417,6 +441,8 @@ npm run build
 - **`test/wordDetailsApi.test.ts`**: Tests the `/api/ai/word-details` serverless endpoint for authentication validation, schema validation, rate-limiting behavior, and Gemini responses.
 - **`test/topicRepository.test.ts` & `test/vocabularyRepository.test.ts`**: Tests Firestore CRUD mutations, sanitization, and data transformations.
 - **`test/firestore.rules.test.ts`**: Executes automated security tests against the Firebase Firestore emulator ensuring unauthorized cross-user reads/writes are blocked.
+- **`test/notificationService.test.ts` & `test/pushNotification.test.ts`**: Verify browser capability handling, opt-in persistence, logout revocation, foreground payloads, and background display data.
+- **`functions/test/*.test.ts`**: Verify daytime windows, concise content, deterministic non-repeating selection, idempotent dispatch, multicast grouping, and invalid-token cleanup.
 
 ---
 
@@ -440,6 +466,18 @@ npm run fb
 - **Strict Authentication**: All write operations require `request.auth != null`.
 - **Ownership Verification**: Users can only access and modify documents where `data.userId == request.auth.uid`.
 - **Payload Schema Validation**: Every document creation and update must adhere strictly to field whitelists and size limits.
+
+### Vocabulary Push Reminder Deployment
+
+Reminders are opt-in per browser/PWA installation. The scheduled function runs at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, and 20:00 in `Asia/Ho_Chi_Minh`. The operating system may delay or suppress Web Push delivery, and the selected vocabulary can appear on the device lock screen. Logging out revokes the current installation and a later login must opt in again.
+
+Before deployment, confirm the Firebase project uses Blaze, budget controls are acceptable, the Web Push key is configured in Vercel, and the rules deployment has succeeded. Then deploy only the reminder function:
+
+```bash
+firebase deploy --only functions:sendVocabularyReminders
+```
+
+Production smoke testing requires a real HTTPS origin and supported browser/PWA: enable reminders from the Dashboard, verify foreground and background delivery, close the app and verify one notification, open it to confirm `/dictionary` navigation, repeat the same scheduler window to confirm no duplicate, and verify logout revokes the installation. Do not treat local unit tests as proof of real FCM or closed-app delivery.
 
 ---
 

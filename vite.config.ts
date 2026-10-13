@@ -2,6 +2,7 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { defineConfig, loadEnv, Plugin } from 'vite';
+import { VitePWA } from 'vite-plugin-pwa';
 
 function devApiServerPlugin(): Plugin {
   return {
@@ -83,7 +84,26 @@ export default defineConfig(({ mode }) => {
   }
 
   return {
-    plugins: [react(), tailwindcss(), devApiServerPlugin()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      devApiServerPlugin(),
+      VitePWA({
+        strategies: 'injectManifest',
+        srcDir: 'src',
+        filename: 'firebase-messaging-sw.ts',
+        injectRegister: false,
+        manifest: false,
+        injectManifest: {
+          injectionPoint: undefined,
+          rollupFormat: 'iife'
+        },
+        devOptions: {
+          enabled: true,
+          type: 'module'
+        }
+      })
+    ],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, './src')

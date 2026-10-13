@@ -7,8 +7,11 @@ import {
 import { readFileSync } from "fs";
 import { resolve } from "path";
 import {
+  collection,
+  deleteDoc,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
   serverTimestamp,
@@ -242,6 +245,143 @@ describe("Firestore Security Rules Tests", () => {
         updatedAt: serverTimestamp()
       })
     );
+  });
+
+  describe("notification device rules", () => {
+    const validDevice = {
+      userId: "alice",
+      token: "fcm-token-alice",
+      platform: "Mozilla/5.0 Test Browser",
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    it("allows an owner to create, read, list, update, and delete a device", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const deviceRef = doc(aliceDb, "notificationUsers/alice/devices/install-a");
+
+      await assertSucceeds(setDoc(deviceRef, validDevice));
+      await assertSucceeds(getDoc(deviceRef));
+      await assertSucceeds(getDocs(collection(aliceDb, "notificationUsers/alice/devices")));
+      await assertSucceeds(updateDoc(deviceRef, {
+        token: "refreshed-token",
+        platform: "Mozilla/5.0 Updated Browser",
+        updatedAt: serverTimestamp()
+      }));
+      await assertSucceeds(deleteDoc(deviceRef));
+    });
+
+    it("denies anonymous and cross-user access to device registrations", async () => {
+      await seedDocument("notificationUsers/alice/devices/install-a", {
+        userId: "alice",
+        token: "fcm-token-alice",
+        platform: "Mozilla/5.0 Test Browser",
+        createdAt: Timestamp.now(),
+        updatedAt: Timestamp.now()
+      });
+
+      const anonymousDb = testEnv.unauthenticatedContext().firestore();
+      const bobDb = testEnv.authenticatedContext("bob").firestore();
+
+      await assertFails(getDoc(doc(anonymousDb, "notificationUsers/alice/devices/install-a")));
+      await assertFails(setDoc(doc(anonymousDb, "notificationUsers/alice/devices/install-b"), validDevice));
+      await assertFails(getDoc(doc(bobDb, "notificationUsers/alice/devices/install-a")));
+      await assertFails(getDocs(collection(bobDb, "notificationUsers/alice/devices")));
+      await assertFails(updateDoc(doc(bobDb, "notificationUsers/alice/devices/install-a"), {
+        token: "stolen-token",
+        updatedAt: serverTimestamp()
+      }));
+      await assertFails(deleteDoc(doc(bobDb, "notificationUsers/alice/devices/install-a")));
+    });
+
+    it("denies device documents with missing, unknown, or oversized fields", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+
+      await assertFails(setDoc(doc(aliceDb, "notificationUsers/alice/devices/missing"), {
+        userId: "alice",
+        token: "token",
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }));
+      await assertFails(setDoc(doc(aliceDb, "notificationUsers/alice/devices/unknown"), {
+        ...validDevice,
+        secret: "unexpected"
+      }));
+      await assertFails(setDoc(doc(aliceDb, "notificationUsers/alice/devices/long-token"), {
+        ...validDevice,
+        token: "t".repeat(4097)
+      }));
+      await assertFails(setDoc(doc(aliceDb, "notificationUsers/alice/devices/long-platform"), {
+        ...validDevice,
+        platform: "p".repeat(301)
+      }));
+    });
+
+    it("denies mismatched ownership, client timestamps, and immutable-field updates", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const now = Timestamp.now();
+
+      await assertFails(setDoc(doc(aliceDb, "notificationUsers/alice/devices/wrong-owner"), {
+        ...validDevice,
+        userId: "bob"
+      }));
+      await assertFails(setDoc(doc(aliceDb, "notificationUsers/alice/devices/client-time"), {
+        ...validDevice,
+        createdAt: now,
+        updatedAt: now
+      }));
+
+      await seedDocument("notificationUsers/alice/devices/install-a", {
+        userId: "alice",
+        token: "fcm-token-alice",
+        platform: "Mozilla/5.0 Test Browser",
+        createdAt: now,
+        updatedAt: now
+      });
+
+      const deviceRef = doc(aliceDb, "notificationUsers/alice/devices/install-a");
+      await assertFails(updateDoc(deviceRef, {
+        userId: "bob",
+        updatedAt: serverTimestamp()
+      }));
+      await assertFails(updateDoc(deviceRef, {
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      }));
+      await assertFails(updateDoc(deviceRef, {
+        token: "new-token",
+        updatedAt: now
+      }));
+    });
+
+    it("denies every client operation on notification dispatch state", async () => {
+      await seedDocument("notificationDispatchStates/alice", {
+        lastWindowKey: "2026-10-13T08",
+        lastVocabularyId: "vocab-1",
+        lastSentAt: Timestamp.now()
+      });
+
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const stateRef = doc(aliceDb, "notificationDispatchStates/alice");
+
+      await assertFails(getDoc(stateRef));
+      await assertFails(getDocs(collection(aliceDb, "notificationDispatchStates")));
+      await assertFails(setDoc(doc(aliceDb, "notificationDispatchStates/new-state"), {
+        lastWindowKey: "2026-10-13T10",
+        lastVocabularyId: null,
+        lastSentAt: serverTimestamp()
+      }));
+      await assertFails(updateDoc(stateRef, { lastVocabularyId: "vocab-2" }));
+      await assertFails(deleteDoc(stateRef));
+    });
+
+    it("allows an owner to delete an already-missing device registration", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+
+      await assertSucceeds(
+        deleteDoc(doc(aliceDb, "notificationUsers/alice/devices/already-removed"))
+      );
+    });
   });
 
   // 6. Topic create and update rules
