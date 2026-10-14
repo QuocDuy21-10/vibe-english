@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 import {
   AUDIO_SETTINGS_STORAGE_KEY,
@@ -20,6 +20,10 @@ function createStorage(initialValue: string | null = null) {
 }
 
 describe("audio settings", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it("uses gentle US English defaults", () => {
     expect(DEFAULT_AUDIO_SETTINGS).toEqual({
       version: 1,
@@ -84,5 +88,24 @@ describe("audio settings", () => {
     expect(updateAudioSettings(current, { soundEffectsEnabled: false }).voiceURI).toBe(
       "voice-us"
     );
+  });
+
+  it("allows Auto to explicitly clear a selected voice", () => {
+    const current = { ...DEFAULT_AUDIO_SETTINGS, voiceURI: "voice-us" };
+
+    expect(updateAudioSettings(current, { voiceURI: null }).voiceURI).toBeNull();
+  });
+
+  it("survives browsers that deny access to the localStorage property", () => {
+    const browserWindow = {};
+    Object.defineProperty(browserWindow, "localStorage", {
+      get() {
+        throw new DOMException("blocked", "SecurityError");
+      }
+    });
+    vi.stubGlobal("window", browserWindow);
+
+    expect(loadAudioSettings()).toEqual(DEFAULT_AUDIO_SETTINGS);
+    expect(() => saveAudioSettings(DEFAULT_AUDIO_SETTINGS)).not.toThrow();
   });
 });

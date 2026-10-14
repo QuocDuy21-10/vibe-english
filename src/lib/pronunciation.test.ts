@@ -184,4 +184,30 @@ describe("BrowserPronunciationEngine", () => {
     });
     expect(harness.synthesis.speak).not.toHaveBeenCalled();
   });
+
+  it("contains failures while retrieving native voices", async () => {
+    const harness = createHarness([voice("us", "en-US")]);
+    harness.synthesis.getVoices.mockImplementation(() => {
+      throw new Error("voices failed");
+    });
+
+    await expect(harness.engine.speak("hello", { accent: "en-US" })).resolves.toMatchObject({
+      status: "error"
+    });
+  });
+
+  it("contains failures while constructing an utterance", async () => {
+    const synthesis = createSpeechSynthesis([voice("us", "en-US")]);
+    const engine = new BrowserPronunciationEngine(
+      synthesis as unknown as SpeechSynthesis,
+      () => {
+        throw new Error("utterance failed");
+      }
+    );
+
+    await expect(engine.speak("hello", { accent: "en-US" })).resolves.toMatchObject({
+      status: "error"
+    });
+    expect(synthesis.speak).not.toHaveBeenCalled();
+  });
 });

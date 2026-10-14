@@ -52,15 +52,20 @@ export function normalizeAudioSettings(value: unknown): AudioSettings {
 
 function getBrowserStorage(): AudioSettingsStorage | undefined {
   if (typeof window === "undefined") return undefined;
-  return window.localStorage;
+  try {
+    return window.localStorage;
+  } catch {
+    return undefined;
+  }
 }
 
 export function loadAudioSettings(
-  storage: AudioSettingsStorage | undefined = getBrowserStorage()
+  storage?: AudioSettingsStorage
 ): AudioSettings {
-  if (!storage) return defaultSettings();
+  const resolvedStorage = storage ?? getBrowserStorage();
+  if (!resolvedStorage) return defaultSettings();
   try {
-    const storedValue = storage.getItem(AUDIO_SETTINGS_STORAGE_KEY);
+    const storedValue = resolvedStorage.getItem(AUDIO_SETTINGS_STORAGE_KEY);
     return storedValue ? normalizeAudioSettings(JSON.parse(storedValue)) : defaultSettings();
   } catch {
     return defaultSettings();
@@ -69,11 +74,12 @@ export function loadAudioSettings(
 
 export function saveAudioSettings(
   settings: AudioSettings,
-  storage: AudioSettingsStorage | undefined = getBrowserStorage()
+  storage?: AudioSettingsStorage
 ): void {
-  if (!storage) return;
+  const resolvedStorage = storage ?? getBrowserStorage();
+  if (!resolvedStorage) return;
   try {
-    storage.setItem(AUDIO_SETTINGS_STORAGE_KEY, JSON.stringify(normalizeAudioSettings(settings)));
+    resolvedStorage.setItem(AUDIO_SETTINGS_STORAGE_KEY, JSON.stringify(normalizeAudioSettings(settings)));
   } catch {
     // Storage can be unavailable in private browsing or when the quota is exhausted.
   }
@@ -87,6 +93,10 @@ export function updateAudioSettings(
   return normalizeAudioSettings({
     ...current,
     ...patch,
-    voiceURI: accentChanged ? null : (patch.voiceURI ?? current.voiceURI)
+    voiceURI: accentChanged
+      ? null
+      : patch.voiceURI !== undefined
+        ? patch.voiceURI
+        : current.voiceURI
   });
 }

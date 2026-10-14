@@ -19,9 +19,21 @@ import {
   SelectValue
 } from "@/components/ui/select";
 import type { EnglishAccent } from "@/lib/audioSettings";
+import { getPronunciationNotice, type PronunciationNotice } from "@/lib/audioUi";
 import { useAudio } from "@/routes/AudioProvider";
 
 const PREVIEW_TEXT = "Hello! Welcome to your English practice.";
+
+function pronunciationNoticeText(notice: PronunciationNotice, accent: EnglishAccent): string {
+  if (notice.type === "unsupported") return "Trình duyệt này không hỗ trợ phát âm bằng Web Speech API.";
+  if (notice.type === "loading") return "Đang tải danh sách giọng đọc từ thiết bị…";
+  if (notice.type === "no-voices") return "Không lấy được danh sách voice; trình duyệt sẽ tự chọn giọng khi có thể.";
+  if (notice.type === "no-exact") return `Không có voice ${accent}; ứng dụng sẽ dùng một voice tiếng Anh khác.`;
+  if (notice.type === "no-english") return "Thiết bị không có voice tiếng Anh khả dụng.";
+  if (notice.type === "error") return "Không thể phát âm lúc này. Hãy thử lại.";
+  if (notice.type === "fallback") return `Đang fallback sang ${notice.locale}.`;
+  return "Voice và accent phụ thuộc vào các giọng được cài trên thiết bị.";
+}
 
 export function AudioSettingsDialog() {
   const {
@@ -50,18 +62,16 @@ export function AudioSettingsDialog() {
     }
   };
 
-  const pronunciationMessage = (() => {
-    if (voiceState === "unsupported") return "Trình duyệt này không hỗ trợ phát âm bằng Web Speech API.";
-    if (voiceState === "loading") return "Đang tải danh sách giọng đọc từ thiết bị…";
-    if (voices.length === 0) return "Không lấy được danh sách voice; trình duyệt sẽ tự chọn giọng khi có thể.";
-    if (exactVoices.length === 0) return `Không có voice ${settings.accent}; ứng dụng sẽ dùng một voice tiếng Anh khác.`;
-    if (lastPronunciationResult?.status === "no-english") return "Thiết bị không có voice tiếng Anh khả dụng.";
-    if (lastPronunciationResult?.status === "error" || pronunciationStatus === "error") return "Không thể phát âm lúc này. Hãy thử lại.";
-    if (lastPronunciationResult?.fallback && lastPronunciationResult.actualLocale) {
-      return `Đang fallback sang ${lastPronunciationResult.actualLocale}.`;
-    }
-    return "Voice và accent phụ thuộc vào các giọng được cài trên thiết bị.";
-  })();
+  const pronunciationMessage = pronunciationNoticeText(
+    getPronunciationNotice({
+      voiceState,
+      voiceCount: voices.length,
+      exactVoiceCount: exactVoices.length,
+      pronunciationStatus,
+      result: lastPronunciationResult
+    }),
+    settings.accent
+  );
 
   return (
     <Dialog>
@@ -78,7 +88,7 @@ export function AudioSettingsDialog() {
       >
         <Settings2 className="h-5 w-5" />
       </DialogTrigger>
-      <DialogContent showCloseButton={false} className="overflow-hidden rounded-3xl border-none p-0 shadow-2xl sm:max-w-lg">
+      <DialogContent showCloseButton={false} className="overflow-x-hidden overflow-y-auto rounded-3xl border-none p-0 shadow-2xl sm:max-w-lg">
         <DialogHeader className="relative bg-[#10b981] p-5 pr-16 text-white sm:p-6 sm:pr-16">
           <DialogTitle className="flex items-center gap-2 text-xl font-bold text-white sm:text-2xl">
             <Volume2 className="h-5 w-5" /> Cài đặt âm thanh
@@ -150,35 +160,35 @@ export function AudioSettingsDialog() {
 
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600">Accent</label>
+                <label id="audio-accent-label" htmlFor="audio-accent" className="text-xs font-semibold text-slate-600">Accent</label>
                 <Select
                   value={settings.accent}
                   onValueChange={(value) => value && updateSettings({ accent: value as EnglishAccent })}
                 >
-                  <SelectTrigger className="h-11 w-full rounded-xl border-slate-200">
+                  <SelectTrigger id="audio-accent" aria-labelledby="audio-accent-label" className="h-11 w-full rounded-xl border-slate-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="en-US">Anh–Mỹ (US)</SelectItem>
-                    <SelectItem value="en-GB">Anh–Anh (UK)</SelectItem>
+                    <SelectItem className="min-h-11" value="en-US">Anh–Mỹ (US)</SelectItem>
+                    <SelectItem className="min-h-11" value="en-GB">Anh–Anh (UK)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-600">Voice</label>
+                <label id="audio-voice-label" htmlFor="audio-voice" className="text-xs font-semibold text-slate-600">Voice</label>
                 <Select
                   value={settings.voiceURI ?? "auto"}
                   disabled={voiceState !== "ready" || exactVoices.length < 2}
                   onValueChange={(value) => updateSettings({ voiceURI: !value || value === "auto" ? null : value })}
                 >
-                  <SelectTrigger className="h-11 w-full rounded-xl border-slate-200">
+                  <SelectTrigger id="audio-voice" aria-labelledby="audio-voice-label" className="h-11 w-full rounded-xl border-slate-200">
                     <SelectValue placeholder="Tự động" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="auto">Tự động (khuyên dùng)</SelectItem>
+                    <SelectItem className="min-h-11" value="auto">Tự động (khuyên dùng)</SelectItem>
                     {exactVoices.map((voice) => (
-                      <SelectItem key={voice.voiceURI} value={voice.voiceURI}>{voice.name}</SelectItem>
+                      <SelectItem className="min-h-11" key={voice.voiceURI} value={voice.voiceURI}>{voice.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

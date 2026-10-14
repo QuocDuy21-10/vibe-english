@@ -38,7 +38,7 @@ export class SoundEffectsManager {
   private noiseBuffer: AudioBuffer | null = null;
   private config: SoundEffectsConfig = { enabled: true, volume: 0.35 };
   private speechActive = false;
-  private readonly lastPlayedAt = new Map<SoundEffect, number>();
+  private readonly playbackReservations = new Map<SoundEffect, { playedAt: number; token: symbol }>();
   private readonly activeSources = new Map<string, Set<AudioScheduledSourceNode>>();
 
   constructor(
@@ -76,16 +76,31 @@ export class SoundEffectsManager {
     if (!this.config.enabled || this.config.volume === 0) return "disabled";
 
     const currentTime = this.now();
-    const previousTime = this.lastPlayedAt.get(effect);
-    if (previousTime !== undefined && currentTime - previousTime < EFFECT_COOLDOWNS[effect]) {
+    const previousReservation = this.playbackReservations.get(effect);
+    if (
+      previousReservation !== undefined
+      && currentTime - previousReservation.playedAt < EFFECT_COOLDOWNS[effect]
+    ) {
       return "throttled";
     }
+    const reservation = { playedAt: currentTime, token: Symbol(effect) };
+    this.playbackReservations.set(effect, reservation);
+    const releaseReservation = () => {
+      if (this.playbackReservations.get(effect)?.token === reservation.token) {
+        this.playbackReservations.delete(effect);
+      }
+    };
 
     const context = this.ensureContext();
-    if (!context) return "unsupported";
-    if (!(await this.unlock())) return "blocked";
+    if (!context) {
+      releaseReservation();
+      return "unsupported";
+    }
+    if (!(await this.unlock())) {
+      releaseReservation();
+      return "blocked";
+    }
 
-    this.lastPlayedAt.set(effect, currentTime);
     this.stopGroup(effectGroup(effect));
     try {
       if (effect === "correct") this.playCorrect(context);
@@ -94,6 +109,7 @@ export class SoundEffectsManager {
       else this.playComplete(context);
       return "played";
     } catch {
+      releaseReservation();
       return "blocked";
     }
   }
@@ -104,7 +120,7 @@ export class SoundEffectsManager {
     this.context = null;
     this.masterGain = null;
     this.noiseBuffer = null;
-    this.lastPlayedAt.clear();
+    this.playbackReservations.clear();
     if (context && context.state !== "closed") {
       try {
         await context.close();
@@ -138,8 +154,9 @@ export class SoundEffectsManager {
   private updateMasterVolume(): void {
     if (!this.context || !this.masterGain) return;
     const ducking = this.speechActive ? 0.35 : 1;
+    const enabledVolume = this.config.enabled ? this.config.volume : 0;
     this.masterGain.gain.setTargetAtTime(
-      this.config.volume * ducking,
+      enabledVolume * ducking,
       this.context.currentTime,
       0.015
     );

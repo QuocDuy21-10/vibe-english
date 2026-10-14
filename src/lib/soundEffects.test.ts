@@ -128,4 +128,39 @@ describe("SoundEffectsManager", () => {
 
     expect(fake.context.createOscillator).toHaveBeenCalledTimes(2);
   });
+
+  it("reserves cooldown before a suspended context finishes resuming", async () => {
+    const fake = createAudioContext("suspended");
+    const finishResumes: Array<() => void> = [];
+    fake.context.resume.mockImplementation(() => new Promise<void>((resolve) => {
+      finishResumes.push(() => {
+        fake.context.state = "running";
+        resolve();
+      });
+    }));
+    const manager = new SoundEffectsManager(
+      () => fake.context as unknown as AudioContext,
+      () => now
+    );
+
+    const first = manager.play("correct");
+    const second = manager.play("correct");
+    finishResumes.forEach((finishResume) => finishResume());
+
+    await expect(Promise.all([first, second])).resolves.toEqual(["played", "throttled"]);
+    expect(fake.context.createOscillator).toHaveBeenCalledTimes(2);
+  });
+
+  it("mutes the master gain immediately when effects are disabled", async () => {
+    const fake = createAudioContext();
+    const manager = new SoundEffectsManager(
+      () => fake.context as unknown as AudioContext,
+      () => now
+    );
+    await manager.play("correct");
+
+    manager.configure({ enabled: false, volume: 0.35 });
+
+    expect(fake.gains[0].gain.setTargetAtTime).toHaveBeenLastCalledWith(0, 10, 0.015);
+  });
 });

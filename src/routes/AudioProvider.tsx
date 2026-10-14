@@ -117,6 +117,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
 
   const updateSettingsValue = useCallback(
     (patch: Partial<Omit<AudioSettings, "version">>) => {
+      if (patch.accent !== undefined || patch.voiceURI !== undefined) {
+        setLastPronunciationResult(null);
+      }
       setSettings((current) => updateAudioSettings(current, patch));
     },
     []

@@ -140,17 +140,29 @@ export class BrowserPronunciationEngine implements PronunciationEngine {
     }
     this.setStatus("idle");
 
-    const voices = await this.waitForNativeVoices();
+    let voices: SpeechSynthesisVoice[];
+    try {
+      voices = await this.waitForNativeVoices();
+    } catch {
+      this.setStatus("error");
+      return this.result("error", accent);
+    }
     if (currentRequestId !== this.requestId) return this.result("cancelled", accent);
 
-    const selectedVoice = selectVoice(voices, accent, options.voiceURI ?? null);
-    if (voices.length > 0 && !selectedVoice) return this.result("no-english", accent);
-
-    const utterance = this.utteranceFactory(normalizedText);
-    utterance.voice = selectedVoice;
-    utterance.lang = selectedVoice?.lang ?? accent;
-    utterance.rate = Math.min(1.25, Math.max(0.5, options.rate ?? 0.9));
-    utterance.pitch = 1;
+    let selectedVoice: SpeechSynthesisVoice | null;
+    let utterance: SpeechSynthesisUtterance;
+    try {
+      selectedVoice = selectVoice(voices, accent, options.voiceURI ?? null);
+      if (voices.length > 0 && !selectedVoice) return this.result("no-english", accent);
+      utterance = this.utteranceFactory(normalizedText);
+      utterance.voice = selectedVoice;
+      utterance.lang = selectedVoice?.lang ?? accent;
+      utterance.rate = Math.min(1.25, Math.max(0.5, options.rate ?? 0.9));
+      utterance.pitch = 1;
+    } catch {
+      this.setStatus("error");
+      return this.result("error", accent);
+    }
     utterance.onstart = () => {
       if (currentRequestId === this.requestId) this.setStatus("speaking");
     };
