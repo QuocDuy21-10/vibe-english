@@ -2,6 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, type User } from "firebase/auth";
 import { toast } from "sonner";
 import { auth } from "@/lib/firebase";
+import { runLogoutWithNotificationCleanup } from "@/lib/logout";
 import { revokeVocabularyNotificationsForLogout } from "@/services/notificationService";
 import { subscribeTopics } from "@/services/topicRepository";
 import { subscribeVocabularies } from "@/services/vocabularyRepository";
@@ -96,17 +97,28 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    let notificationCleanupFailed = false;
     try {
-      if (user) {
-        try {
-          await revokeVocabularyNotificationsForLogout(user.uid);
-        } catch (error) {
-          notificationCleanupFailed = true;
-          console.warn("Notification cleanup was incomplete during logout", error);
-        }
+      let notificationCleanupError: unknown;
+      const cleanupResult = await runLogoutWithNotificationCleanup(
+        async () => {
+          if (!user) return;
+          try {
+            await revokeVocabularyNotificationsForLogout(user.uid);
+          } catch (error) {
+            notificationCleanupError = error;
+            throw error;
+          }
+        },
+        () => signOut(auth),
+        1_500
+      );
+      const notificationCleanupFailed = cleanupResult !== "completed";
+      if (notificationCleanupFailed) {
+        console.warn(
+          "Notification cleanup was incomplete during logout",
+          notificationCleanupError ?? cleanupResult
+        );
       }
-      await signOut(auth);
       toast.info(
         notificationCleanupFailed
           ? "Đã đăng xuất. Hãy kiểm tra lại quyền thông báo của trình duyệt."

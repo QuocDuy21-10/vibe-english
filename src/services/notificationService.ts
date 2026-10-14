@@ -25,6 +25,18 @@ export type DeviceSubscriptionState = {
   subscribed: boolean;
 };
 
+export type DeviceNotificationCleanupResult = {
+  registrationRemoved: true;
+  tokenInvalidated: boolean;
+};
+
+export class NotificationPermissionDeniedError extends Error {
+  constructor() {
+    super("Quyền thông báo đã bị từ chối.");
+    this.name = "NotificationPermissionDeniedError";
+  }
+}
+
 export type ForegroundVocabularyMessage = {
   title: string;
   body: string;
@@ -78,6 +90,9 @@ export async function enableVocabularyNotifications(userId: string): Promise<voi
   if (capability === "unsupported") {
     throw new Error("Trình duyệt này không hỗ trợ thông báo đẩy.");
   }
+  if (capability === "denied") {
+    throw new NotificationPermissionDeniedError();
+  }
 
   const vapidKey = getVapidKey();
   if (!vapidKey) {
@@ -88,13 +103,16 @@ export async function enableVocabularyNotifications(userId: string): Promise<voi
     ? "granted"
     : await Notification.requestPermission();
   if (permission !== "granted") {
-    throw new Error("Quyền thông báo đã bị từ chối.");
+    throw new NotificationPermissionDeniedError();
   }
 
-  const serviceWorkerRegistration = await navigator.serviceWorker.register(
+  const registeredServiceWorker = await navigator.serviceWorker.register(
     "/firebase-messaging-sw.js",
     { type: "module" }
   );
+  const serviceWorkerRegistration = registeredServiceWorker.active
+    ? registeredServiceWorker
+    : await navigator.serviceWorker.ready;
   const messaging = getMessaging(firebaseApp);
   const token = await getToken(messaging, { vapidKey, serviceWorkerRegistration });
   if (!token) {
@@ -129,11 +147,20 @@ export async function enableVocabularyNotifications(userId: string): Promise<voi
   }
 }
 
-export async function disableVocabularyNotifications(userId: string): Promise<void> {
+export async function disableVocabularyNotifications(
+  userId: string
+): Promise<DeviceNotificationCleanupResult> {
   await deleteDoc(await getDeviceReference(userId));
-  if (await isSupported()) {
-    await deleteToken(getMessaging(firebaseApp));
+  let tokenInvalidated = true;
+  try {
+    if (await isSupported()) {
+      tokenInvalidated = await deleteToken(getMessaging(firebaseApp));
+    }
+  } catch (error) {
+    tokenInvalidated = false;
+    console.warn("Unable to invalidate the local FCM token", error);
   }
+  return { registrationRemoved: true, tokenInvalidated };
 }
 
 export async function invalidateVocabularyNotificationToken(): Promise<void> {
@@ -143,24 +170,21 @@ export async function invalidateVocabularyNotificationToken(): Promise<void> {
 }
 
 export async function revokeVocabularyNotificationsForLogout(userId: string): Promise<void> {
-  let registrationError: unknown;
-  let tokenError: unknown;
+  const registrationPromise = getDeviceReference(userId).then((deviceRef) => deleteDoc(deviceRef));
+  const tokenPromise = invalidateVocabularyNotificationToken();
+  const [registrationResult, tokenResult] = await Promise.allSettled([
+    registrationPromise,
+    tokenPromise
+  ]);
 
-  try {
-    await deleteDoc(await getDeviceReference(userId));
-  } catch (error) {
-    registrationError = error;
-  }
-
-  try {
-    await invalidateVocabularyNotificationToken();
-  } catch (error) {
-    tokenError = error;
-  }
-
-  if (registrationError || tokenError) {
+  if (registrationResult.status === "rejected" || tokenResult.status === "rejected") {
     throw new Error("Không thể thu hồi hoàn toàn đăng ký thông báo trên thiết bị.", {
-      cause: tokenError ?? registrationError
+      cause:
+        tokenResult.status === "rejected"
+          ? tokenResult.reason
+          : registrationResult.status === "rejected"
+            ? registrationResult.reason
+            : undefined
     });
   }
 }
