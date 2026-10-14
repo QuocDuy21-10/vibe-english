@@ -1,5 +1,6 @@
+import { pronunciation } from "@/lib/pronunciation";
+
+// Compatibility facade until all feature components consume AudioProvider.
 export const playAudio = (text: string) => {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  window.speechSynthesis.speak(utterance);
+  void pronunciation.speak(text, { accent: "en-US" });
 };
