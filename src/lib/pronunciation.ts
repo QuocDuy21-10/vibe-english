@@ -132,7 +132,12 @@ export class BrowserPronunciationEngine implements PronunciationEngine {
     if (!this.synthesis || !this.utteranceFactory) return this.result("unsupported", accent);
 
     const currentRequestId = ++this.requestId;
-    this.synthesis.cancel();
+    try {
+      this.synthesis.cancel();
+    } catch {
+      this.setStatus("error");
+      return this.result("error", accent);
+    }
     this.setStatus("idle");
 
     const voices = await this.waitForNativeVoices();

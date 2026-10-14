@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { Brain, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
@@ -15,8 +15,10 @@ import {
   requeueAgainOnce,
   type FlashcardRating
 } from "@/lib/srs";
+import { getStudySound, type StudyAudioEvent } from "@/lib/studyAudio";
 import { getDueCount, getDueVocabularies } from "@/lib/vocabularySelectors";
 import { useAppData } from "@/routes/AppDataProvider";
+import { useAudio } from "@/routes/AudioProvider";
 import { recordVocabularyReview } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary, StudySession } from "@/types/types";
 
@@ -37,6 +39,7 @@ type FlashcardAssessment = {
 
 export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const { user } = useAppData();
+  const { playSound } = useAudio();
   const [selectedTopic, setSelectedTopic] = useState(DEFAULT_TOPIC_FILTER);
   const [view, setView] = useState<StudyView>("topics");
   const [searchQuery, setSearchQuery] = useState("");
@@ -59,6 +62,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const [requeuedIds, setRequeuedIds] = useState<Set<string>>(new Set());
   const [pendingVocabId, setPendingVocabId] = useState<string | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  const completionHandledRef = useRef(false);
+
+  const playStudyEvent = (event: StudyAudioEvent) => {
+    const sound = getStudySound(event);
+    if (sound) playSound(sound);
+  };
 
   const filtered = useMemo(
     () =>
@@ -121,6 +130,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
       goodCount: 0,
       easyCount: 0
     });
+    completionHandledRef.current = false;
     resetCardState();
     resetAssessmentState();
     setView("study");
@@ -158,12 +168,14 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     setScore(0);
     resetCardState();
     resetAssessmentState();
+    completionHandledRef.current = false;
     setView("topics");
   };
 
   const restartSession = () => {
     resetCardState();
     resetAssessmentState();
+    completionHandledRef.current = false;
     setView("study");
   };
 
@@ -174,6 +186,10 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
       setIsFlipped(false);
       setFeedback(null);
     } else {
+      if (!completionHandledRef.current) {
+        completionHandledRef.current = true;
+        playStudyEvent({ type: "session-completed" });
+      }
       setView("summary");
     }
   };
@@ -197,6 +213,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     }
 
     setFeedback(isCorrect ? "correct" : "incorrect");
+    playStudyEvent({ type: "quiz-checked", correct: isCorrect });
     if (isCorrect) {
       toast.success("Chính xác! ✨");
     } else {
@@ -346,7 +363,10 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
         onModeChange={switchStudyMode}
         onPrevious={previous}
         onNext={() => next()}
-        onFlip={() => setIsFlipped((flipped) => !flipped)}
+        onFlip={() => {
+          playStudyEvent({ type: "flashcard-flipped" });
+          setIsFlipped((flipped) => !flipped);
+        }}
         onRate={(rating) => void handleFlashcardRating(rating)}
         onAnswerChange={() => {
           if (feedback) setFeedback(null);

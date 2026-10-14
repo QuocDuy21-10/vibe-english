@@ -172,4 +172,16 @@ describe("BrowserPronunciationEngine", () => {
     expect(statuses).toContain("speaking");
     expect(statuses.at(-1)).toBe("error");
   });
+
+  it("contains a browser failure while clearing the previous speech queue", async () => {
+    const harness = createHarness([voice("us", "en-US")]);
+    harness.synthesis.cancel.mockImplementationOnce(() => {
+      throw new Error("cancel failed");
+    });
+
+    await expect(harness.engine.speak("hello", { accent: "en-US" })).resolves.toMatchObject({
+      status: "error"
+    });
+    expect(harness.synthesis.speak).not.toHaveBeenCalled();
+  });
 });

@@ -6,9 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
-import { playAudio } from "@/lib/audio";
 import { getVocabularyLevel } from "@/lib/srs";
 import { getVocabularySynonymLabels } from "@/lib/vocabulary";
+import { useAudio } from "@/routes/AudioProvider";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -21,6 +21,7 @@ type VocabCardProps = {
 };
 
 export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
+  const { speak } = useAudio();
   const [isEditing, setIsEditing] = useState(false);
   // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
   const [isEditDialogMounted, setIsEditDialogMounted] = useState(false);
@@ -72,8 +73,8 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
             <Button
               variant="ghost"
               size="icon"
-              className="w-9 h-9 min-w-[36px] rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] border-none shrink-0"
-              onClick={() => playAudio(vocabulary.word)}
+              className="h-11 w-11 min-h-[44px] min-w-[44px] rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] border-none shrink-0"
+              onClick={() => void speak(vocabulary.word)}
               aria-label={`Phát âm ${vocabulary.word}`}
             >
               <Volume2 className="w-4 h-4" />

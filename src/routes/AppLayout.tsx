@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { BookOpen, Brain, LayoutDashboard, Layers, Loader2, LogOut } from "lucide-react";
 import { toast } from "sonner";
+import { AudioSettingsDialog } from "@/components/features/AudioSettingsDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { subscribeToForegroundVocabularyMessages } from "@/services/notificationService";
@@ -73,6 +74,8 @@ export function AppLayout() {
             <div className="hidden md:flex bg-[#10b981]/15 px-3 py-1 rounded-full items-center gap-1">
               <span className="text-[#10b981] font-bold text-xs uppercase tracking-wider">{totalVocab} TỪ VỰNG</span>
             </div>
+
+            <AudioSettingsDialog />
 
             <img
               src={user.photoURL || ""}

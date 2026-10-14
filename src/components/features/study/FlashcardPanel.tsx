@@ -4,8 +4,8 @@ import { motion } from "motion/react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { playAudio } from "@/lib/audio";
 import type { FlashcardRating } from "@/lib/srs";
+import { useAudio } from "@/routes/AudioProvider";
 import type { Vocabulary } from "@/types/types";
 
 type FlashcardPanelProps = {
@@ -25,6 +25,7 @@ export function FlashcardPanel({
   onFlip,
   onRate
 }: FlashcardPanelProps) {
+  const { speak } = useAudio();
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
@@ -78,7 +79,7 @@ export function FlashcardPanel({
               className="w-11 h-11 min-w-[44px] rounded-full text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] transition-all border-none shrink-0"
               onClick={(event) => {
                 event.stopPropagation();
-                playAudio(vocabulary.word);
+                void speak(vocabulary.word);
               }}
               aria-label={`Phát âm ${vocabulary.word}`}
             >
