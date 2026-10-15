@@ -41,7 +41,8 @@ vi.mock("firebase/firestore", () => ({
 
 vi.mock("@/lib/firebase", () => ({
   firebaseApp: { name: "app" },
-  db: { name: "db" }
+  db: { name: "db" },
+  auth: { currentUser: null }
 }));
 
 import {

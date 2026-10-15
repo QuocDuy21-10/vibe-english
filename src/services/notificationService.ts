@@ -17,6 +17,8 @@ import {
   updateDoc
 } from "firebase/firestore";
 import { db, firebaseApp } from "@/lib/firebase";
+import { handleFirestoreError } from "@/lib/firestoreErrors";
+import { OperationType } from "@/types/types";
 
 export type NotificationCapability = "unsupported" | "denied" | "prompt" | "granted";
 
@@ -138,6 +140,8 @@ export async function enableVocabularyNotifications(userId: string): Promise<voi
       });
     }
   } catch (error) {
+    const path = typeof deviceRef === "string" ? deviceRef : (deviceRef as { path?: string }).path ?? null;
+    handleFirestoreError(error, OperationType.WRITE, path);
     try {
       await deleteToken(messaging);
     } catch (cleanupError) {
@@ -150,7 +154,14 @@ export async function enableVocabularyNotifications(userId: string): Promise<voi
 export async function disableVocabularyNotifications(
   userId: string
 ): Promise<DeviceNotificationCleanupResult> {
-  await deleteDoc(await getDeviceReference(userId));
+  const deviceRef = await getDeviceReference(userId);
+  try {
+    await deleteDoc(deviceRef);
+  } catch (error) {
+    const path = typeof deviceRef === "string" ? deviceRef : (deviceRef as { path?: string }).path ?? null;
+    handleFirestoreError(error, OperationType.DELETE, path);
+    throw error;
+  }
   let tokenInvalidated = true;
   try {
     if (await isSupported()) {
