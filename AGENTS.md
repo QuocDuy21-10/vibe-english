@@ -148,6 +148,7 @@ MUST search before creating. Check, in order: a similar feature component, an ex
 - `.env.example` documents `GEMINI_API_KEY` and `APP_URL`; `APP_URL` is currently unused.
 - `vite.config.ts` injects `GEMINI_API_KEY` into the browser bundle as `process.env.GEMINI_API_KEY`. Treat it as client-exposed under the current architecture, not as a server-side secret.
 - Never commit `.env`, expose additional secrets to Vite, log secret values, or add fallback credentials.
+- Bắt buộc phải hỏi người dùng trước khi đọc nội dung file `.env` (tuyệt đối không tự ý đọc file `.env`).
 
 ## Tests and commands
 
@@ -187,10 +188,13 @@ npm run fb        # Deploy Firestore rules to the cloud
 - Keep Firestore writes, shared types, rules, and SRS behavior consistent.
 - Mỗi khi thay đổi file `firestore.rules`, bắt buộc phải chạy script `npm run fb` để deploy và đồng bộ rules lên Firebase console.
 - Preserve authentication, ownership checks, type safety, and responsive behavior.
+- Bắt buộc phải hỏi và xin phép người dùng trước khi đọc nội dung file `.env` (tuyệt đối không tự ý đọc file `.env`).
 - Report verified results separately from unverified runtime assumptions.
 
 ### MUST NOT
 
+- Tuyệt đối KHÔNG commit file `.env` (hoặc bất kỳ file môi trường/secrets/credentials nào) vào git.
+- Tuyệt đối KHÔNG tự ý đọc file `.env` khi chưa hỏi và chưa có sự đồng ý của người dùng.
 - Change architecture or add a dependency without task-level justification.
 - Duplicate a component, hook, service, utility, schema, constant, or business calculation.
 - Bypass authentication or Firestore authorization.

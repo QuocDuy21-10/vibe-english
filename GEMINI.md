@@ -73,6 +73,10 @@ Environment
 - GEMINI_API_KEY must be set for Gemini calls.
 - Firebase config comes from firebase-applet-config.json.
 
+### Mandatory Rules
+- **Không commit file `.env`**: Tuyệt đối KHÔNG commit file `.env` (hoặc bất kỳ file biến môi trường, secrets, credentials nào) vào git.
+- **Hỏi trước khi đọc file `.env`**: Khi cần đọc nội dung file `.env`, AI Agent BẮT BUỘC phải hỏi và có sự đồng ý của người dùng trước khi đọc. Tuyệt đối KHÔNG tự ý đọc file `.env`.
+
 Verification
 - For UI changes: run dev server and check key flows (login, add vocab, AI lookup).
 - For logic/type changes: run npm run lint.

@@ -6,6 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 The repository rules in `AGENTS.md` (imported above) apply in full. Commit messages follow `.claude/rules/git-workflow.md` (Conventional Commits). This file only adds what `AGENTS.md` is missing and corrects the parts where it no longer matches the source. **Where the two disagree, this file reflects the current code.**
 
+## Mandatory Security Rules
+
+- **Tuyệt đối KHÔNG commit file `.env`**: Không bao giờ commit file `.env` hoặc bất kỳ file cấu hình chứa secrets/credentials nào vào git.
+- **Bắt buộc hỏi trước khi đọc `.env`**: Khi cần đọc nội dung file `.env`, AI Agent BẮT BUỘC phải hỏi và nhận được sự đồng ý của người dùng trước khi đọc. Tuyệt đối không tự ý đọc file `.env`.
+
 ## Commands
 
 ```bash
