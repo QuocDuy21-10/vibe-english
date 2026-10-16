@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { z } from "zod";
-import { verifyFirebaseIdToken } from "../lib/auth";
-import { createGoogleCloudTestPushDependencies } from "../lib/googleCloud";
-import { sendTestPush, TestPushError, type TestPushErrorCode } from "../lib/testPush";
+import { verifyFirebaseIdToken } from "../lib/auth.js";
+import { createGoogleCloudTestPushDependencies } from "../lib/googleCloud.js";
+import { sendTestPush, TestPushError, type TestPushErrorCode } from "../lib/testPush.js";
 
 const requestSchema = z.object({
   installationId: z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/)

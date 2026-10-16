@@ -5,7 +5,7 @@ import {
   type BaseExternalAccountClient,
   type ExternalAccountClientOptions
 } from "google-auth-library";
-import { TestPushError, type OwnedNotificationDevice, type TestPushDependencies } from "./testPush";
+import { TestPushError, type OwnedNotificationDevice, type TestPushDependencies } from "./testPush.js";
 
 const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
 const RATE_LIMIT_MAX_ATTEMPTS = 3;

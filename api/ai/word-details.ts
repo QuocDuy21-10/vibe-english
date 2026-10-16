@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { z } from "zod";
-import { verifyFirebaseIdToken } from "../lib/auth";
-import { fetchWordDetailsFromGemini } from "../lib/gemini";
+import { verifyFirebaseIdToken } from "../lib/auth.js";
+import { fetchWordDetailsFromGemini } from "../lib/gemini.js";
 
 const wordRequestSchema = z.object({
   word: z

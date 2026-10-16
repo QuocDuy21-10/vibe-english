@@ -1,5 +1,5 @@
 import { createRemoteJWKSet, jwtVerify } from "jose";
-import firebaseConfig from "../../firebase-applet-config.json";
+import firebaseConfig from "../../firebase-applet-config.json" with { type: "json" };
 
 const FIREBASE_JWKS_URL = new URL(
   "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com"
