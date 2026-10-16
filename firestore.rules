@@ -192,7 +192,7 @@ service cloud.firestore {
         && incoming().updatedAt == request.time
         && incoming().diff(existing()).affectedKeys().hasOnly(['token', 'platform', 'updatedAt']);
 
-      allow delete: if isOwner(userId) && existing().userId == userId;
+      allow delete: if isOwner(userId);
     }
 
     match /notificationDispatchStates/{userId} {

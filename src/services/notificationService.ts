@@ -16,8 +16,9 @@ import {
   setDoc,
   updateDoc
 } from "firebase/firestore";
-import { db, firebaseApp } from "@/lib/firebase";
+import { auth, db, firebaseApp } from "@/lib/firebase";
 import { handleFirestoreError } from "@/lib/firestoreErrors";
+import { normalizeNotificationPath } from "@/lib/pushNotification";
 import { OperationType } from "@/types/types";
 
 export type NotificationCapability = "unsupported" | "denied" | "prompt" | "granted";
@@ -45,7 +46,26 @@ export type ForegroundVocabularyMessage = {
   vocabularyId: string;
   word: string;
   url: string;
+  messageId: string;
 };
+
+export type TestPushAccepted = {
+  ok: true;
+  status: "accepted";
+  messageId: string;
+  acceptedAt: string;
+};
+
+export class TestPushRequestError extends Error {
+  constructor(
+    public readonly code: string,
+    message: string,
+    public readonly retryAfterSeconds?: number
+  ) {
+    super(message);
+    this.name = "TestPushRequestError";
+  }
+}
 
 function getVapidKey(): string {
   return import.meta.env.VITE_FIREBASE_VAPID_KEY?.trim() ?? "";
@@ -57,8 +77,12 @@ function getPlatform(): string {
 }
 
 async function getDeviceReference(userId: string) {
-  const installationId = await getId(getInstallations(firebaseApp));
+  const installationId = await getCurrentInstallationId();
   return doc(db, "notificationUsers", userId, "devices", installationId);
+}
+
+async function getCurrentInstallationId(): Promise<string> {
+  return getId(getInstallations(firebaseApp));
 }
 
 export async function getNotificationCapability(): Promise<NotificationCapability> {
@@ -207,8 +231,61 @@ function normalizeForegroundMessage(payload: MessagePayload): ForegroundVocabula
     body: data.body ?? "Mở Vocabloom để ôn tập từ vựng.",
     vocabularyId: data.vocabularyId ?? "",
     word: data.word ?? "",
-    url: data.url ?? "/dictionary"
+    url: normalizeNotificationPath(data.url),
+    messageId: data.messageId ?? payload.messageId ?? ""
   };
+}
+
+function isTestPushAccepted(value: unknown): value is TestPushAccepted {
+  if (typeof value !== "object" || value === null) return false;
+  const result = value as Record<string, unknown>;
+  return result.ok === true
+    && result.status === "accepted"
+    && typeof result.messageId === "string"
+    && typeof result.acceptedAt === "string";
+}
+
+export async function sendTestVocabularyNotification(): Promise<TestPushAccepted> {
+  const capability = await getNotificationCapability();
+  if (capability === "unsupported") {
+    throw new TestPushRequestError(
+      "UNSUPPORTED",
+      "Trình duyệt này không hỗ trợ thông báo đẩy."
+    );
+  }
+  if (capability !== "granted") {
+    throw new NotificationPermissionDeniedError();
+  }
+
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new TestPushRequestError("UNAUTHORIZED", "Phiên đăng nhập không còn hợp lệ.");
+  }
+  const [installationId, idToken] = await Promise.all([
+    getCurrentInstallationId(),
+    currentUser.getIdToken()
+  ]);
+  const response = await fetch("/api/notifications/test", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${idToken}`,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ installationId })
+  });
+  const payload: unknown = await response.json().catch(() => null);
+  if (response.ok && isTestPushAccepted(payload)) return payload;
+
+  const error = typeof payload === "object" && payload !== null
+    ? (payload as { error?: { code?: unknown; message?: unknown; retryAfterSeconds?: unknown } }).error
+    : undefined;
+  throw new TestPushRequestError(
+    typeof error?.code === "string" ? error.code : "INTERNAL_ERROR",
+    typeof error?.message === "string"
+      ? error.message
+      : "Không thể gửi thông báo thử lúc này.",
+    typeof error?.retryAfterSeconds === "number" ? error.retryAfterSeconds : undefined
+  );
 }
 
 export async function subscribeToForegroundVocabularyMessages(

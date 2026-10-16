@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import { BookOpen, Brain, LayoutDashboard, Layers, Loader2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { AudioSettingsDialog } from "@/components/features/AudioSettingsDialog";
 import { Button } from "@/components/ui/button";
+import { createRecentMessageDeduper } from "@/lib/pushNotification";
 import { cn } from "@/lib/utils";
 import { subscribeToForegroundVocabularyMessages } from "@/services/notificationService";
 import { useAppData } from "./AppDataProvider";
@@ -18,6 +19,7 @@ const navItems = [
 export function AppLayout() {
   const { user, dataLoading, vocabularies, logout } = useAppData();
   const navigate = useNavigate();
+  const shouldDisplayMessage = useMemo(() => createRecentMessageDeduper(), []);
 
   useEffect(() => {
     if (!user) return;
@@ -25,6 +27,7 @@ export function AppLayout() {
     let active = true;
     let unsubscribe: (() => void) | undefined;
     subscribeToForegroundVocabularyMessages((message) => {
+      if (!shouldDisplayMessage(message.messageId)) return;
       toast.info(message.title, {
         description: message.body,
         action: {
@@ -45,7 +48,7 @@ export function AppLayout() {
       active = false;
       unsubscribe?.();
     };
-  }, [navigate, user]);
+  }, [navigate, shouldDisplayMessage, user]);
 
   if (!user) {
     return null;

@@ -1,0 +1,124 @@
+name: Vocabulary reminder dispatch
+
+on:
+  schedule:
+    - cron: "0 1 * * *"
+    - cron: "0 3 * * *"
+    - cron: "0 5 * * *"
+    - cron: "0 7 * * *"
+    - cron: "0 9 * * *"
+    - cron: "0 11 * * *"
+    - cron: "0 13 * * *"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: Dispatch mode
+        required: true
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - live
+      scheduled_at:
+        description: Intended ISO-8601 slot, required for manual live
+        required: false
+        type: string
+      confirm_live:
+        description: Confirm a manual live FCM dispatch
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: vocabulary-reminder-dispatch
+  cancel-in-progress: false
+
+env:
+  FIREBASE_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  FIRESTORE_DATABASE_ID: ${{ vars.FIRESTORE_DATABASE_ID }}
+
+jobs:
+  scheduled:
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+          package-manager-cache: false
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_REMINDER_SERVICE_ACCOUNT }}
+      - run: npm ci --prefix functions
+      - name: Dispatch scheduled reminders
+        run: npm --prefix functions run dispatch
+        env:
+          DISPATCH_SOURCE: schedule
+          DISPATCH_MODE: live
+          GITHUB_EVENT_SCHEDULE: ${{ github.event.schedule }}
+          DISPATCH_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+  manual-dry-run:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'dry-run'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+          package-manager-cache: false
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_REMINDER_SERVICE_ACCOUNT }}
+      - run: npm ci --prefix functions
+      - name: Preview reminder dispatch
+        run: npm --prefix functions run dispatch
+        env:
+          DISPATCH_SOURCE: manual
+          DISPATCH_MODE: dry-run
+          DISPATCH_SCHEDULED_AT: ${{ inputs.scheduled_at }}
+          DISPATCH_CONFIRM_LIVE: "false"
+          DISPATCH_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}
+
+  manual-live:
+    if: github.event_name == 'workflow_dispatch' && inputs.mode == 'live'
+    environment: vocabulary-reminder-production
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+          package-manager-cache: false
+      - uses: google-github-actions/auth@v3
+        with:
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_REMINDER_SERVICE_ACCOUNT }}
+      - run: npm ci --prefix functions
+      - name: Dispatch manual live reminders
+        run: npm --prefix functions run dispatch
+        env:
+          DISPATCH_SOURCE: manual
+          DISPATCH_MODE: live
+          DISPATCH_SCHEDULED_AT: ${{ inputs.scheduled_at }}
+          DISPATCH_CONFIRM_LIVE: ${{ inputs.confirm_live }}
+          DISPATCH_RUN_ID: ${{ github.run_id }}-${{ github.run_attempt }}

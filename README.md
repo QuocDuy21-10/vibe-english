@@ -199,6 +199,13 @@ GEMINI_API_KEY="your_gemini_api_key_here"
 # Optional: Override Firebase Project ID used for server-side ID token verification
 # If omitted, it automatically falls back to projectId from firebase-applet-config.json
 # FIREBASE_PROJECT_ID="your_firebase_project_id"
+
+# Required in Vercel production for the OIDC-authenticated notification test endpoint
+GCP_PROJECT_ID="gen-lang-client-0338054309"
+FIRESTORE_DATABASE_ID="ai-studio-5ce4ff1b-cd4e-4400-b368-cedf76f6e3ea"
+GCP_WORKLOAD_IDENTITY_PROVIDER="projects/123456789/locations/global/workloadIdentityPools/vocabloom-external/providers/vercel"
+GCP_TEST_PUSH_SERVICE_ACCOUNT="vocabloom-test-push@gen-lang-client-0338054309.iam.gserviceaccount.com"
+GCP_OIDC_AUDIENCE="https://iam.googleapis.com/projects/123456789/locations/global/workloadIdentityPools/vocabloom-external/providers/vercel"
 ```
 
 > [!IMPORTANT]
@@ -226,7 +233,7 @@ The client Firebase SDK reads its connection configuration from `firebase-applet
   "storageBucket": "your-app.appspot.com",
   "messagingSenderId": "123456789",
   "appId": "1:123456789:web:abcdef",
-  "firestoreDatabaseId": "(default)"
+  "firestoreDatabaseId": "your-named-database-id"
 }
 ```
 
@@ -241,7 +248,7 @@ The client Firebase SDK reads its connection configuration from `firebase-applet
 3. Enable **Cloud Firestore** in production mode.
 4. Copy the web app configuration into `firebase-applet-config.json`.
 5. Enable **Cloud Messaging** and generate a Web Push certificate for `VITE_FIREBASE_VAPID_KEY`.
-6. Upgrade the Firebase project to **Blaze** before deploying the scheduled function, and configure budget alerts or spend controls in Google Cloud/Firebase.
+6. Keep the Firebase target project on **Spark** and configure the external GitHub/Vercel identities described in [`docs/VOCABULARY_REMINDERS.md`](docs/VOCABULARY_REMINDERS.md). The separate GCP project that owns the Workload Identity Pool must have billing enabled.
 
 ### Project Configuration Files
 
@@ -406,6 +413,13 @@ In your **Vercel Dashboard $\rightarrow$ Project Settings $\rightarrow$ Environm
 1. `GEMINI_API_KEY`: Your Google Gemini API Key.
 2. `FIREBASE_PROJECT_ID` *(optional)*: Your Firebase project ID.
 3. `VITE_FIREBASE_VAPID_KEY`: The public Firebase Web Push certificate used by the website/PWA.
+4. `GCP_PROJECT_ID`: `gen-lang-client-0338054309` for the notification test endpoint.
+5. `FIRESTORE_DATABASE_ID`: `ai-studio-5ce4ff1b-cd4e-4400-b368-cedf76f6e3ea`.
+6. `GCP_WORKLOAD_IDENTITY_PROVIDER`: Full Vercel WIF provider resource name.
+7. `GCP_TEST_PUSH_SERVICE_ACCOUNT`: Least-privilege target service account email.
+8. `GCP_OIDC_AUDIENCE`: Full HTTPS audience for the Vercel WIF provider.
+
+The GCP identity values are server-only identifiers rather than private keys. Vercel supplies the short-lived OIDC token at request time; do not add a service-account JSON fallback.
 
 ---
 
@@ -429,7 +443,7 @@ npm run lint
 # Build production bundle to verify compilation
 npm run build
 
-# Type-check, test, and build the scheduled Firebase Functions package
+# Type-check, test, and build the standalone reminder dispatcher package
 npm run lint:functions
 npm run test:functions
 npm run build:functions
@@ -442,7 +456,9 @@ npm run build:functions
 - **`test/topicRepository.test.ts` & `test/vocabularyRepository.test.ts`**: Tests Firestore CRUD mutations, sanitization, and data transformations.
 - **`test/firestore.rules.test.ts`**: Executes automated security tests against the Firebase Firestore emulator ensuring unauthorized cross-user reads/writes are blocked.
 - **`test/notificationService.test.ts` & `test/pushNotification.test.ts`**: Verify browser capability handling, opt-in persistence, logout revocation, foreground payloads, and background display data.
-- **`functions/test/*.test.ts`**: Verify daytime windows, concise content, deterministic non-repeating selection, idempotent dispatch, multicast grouping, and invalid-token cleanup.
+- **`test/VocabularyNotificationCard.test.tsx`**: Verifies test-push loading, duplicate-click protection, accepted copy, and failure state.
+- **`test/testPushApi.test.ts`**: Verifies authenticated current-device test push, validation, server rate limiting, FCM errors, and response redaction.
+- **`functions/test/*.test.ts`**: Verify intended schedule windows, delayed execution, concise content, deterministic non-repeating selection, leases, retry, per-device outcomes, and invalid-token cleanup.
 
 ---
 
@@ -469,15 +485,11 @@ npm run fb
 
 ### Vocabulary Push Reminder Deployment
 
-Reminders are opt-in per browser/PWA installation. The scheduled function runs at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, and 20:00 in `Asia/Ho_Chi_Minh`. The operating system may delay or suppress Web Push delivery, and the selected vocabulary can appear on the device lock screen. Logging out revokes the current installation and a later login must opt in again.
+Reminders are opt-in per browser/PWA installation. GitHub Actions invokes the Node.js 22 Firebase Admin dispatcher at 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, and 20:00 in `Asia/Ho_Chi_Minh`; no Firebase Scheduled Function or Cloud Scheduler is required. A delayed job keeps its intended slot for at most 90 minutes and never sends multiple catch-up notifications.
 
-Before deployment, confirm the Firebase project uses Blaze, budget controls are acceptable, the Web Push key is configured in Vercel, and the rules deployment has succeeded. Then deploy only the reminder function:
+The Dashboard test button calls the authenticated Vercel endpoint `POST /api/notifications/test`, which sends only to the current Firebase installation and enforces a server-side limit of three attempts per 15 minutes.
 
-```bash
-firebase deploy --only functions:sendVocabularyReminders
-```
-
-Production smoke testing requires a real HTTPS origin and supported browser/PWA: enable reminders from the Dashboard, verify foreground and background delivery, close the app and verify one notification, open it to confirm `/dictionary` navigation, repeat the same scheduler window to confirm no duplicate, and verify logout revokes the installation. Do not treat local unit tests as proof of real FCM or closed-app delivery.
+See [`docs/VOCABULARY_REMINDERS.md`](docs/VOCABULARY_REMINDERS.md) for GitHub variables, WIF providers, least-privilege IAM, Vercel variables, manual dry/live dispatches, mobile checks, cost boundaries, and safe removal of any previously deployed function. Do not treat FCM acceptance, local unit tests, or a Firestore registration document as proof that an operating system displayed the notification.
 
 ---
 

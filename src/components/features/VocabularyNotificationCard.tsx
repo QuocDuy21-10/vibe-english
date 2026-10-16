@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { Bell, BellOff, Loader2, ShieldCheck } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bell, BellOff, Loader2, Send, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import {
   disableVocabularyNotifications,
   enableVocabularyNotifications,
   getCurrentDeviceSubscription,
+  sendTestVocabularyNotification,
   type DeviceSubscriptionState
 } from "@/services/notificationService";
 
@@ -25,13 +26,22 @@ function isIosWithoutInstalledPwa(): boolean {
   return isIos && !isStandalone;
 }
 
+function getErrorCode(error: unknown): string | null {
+  if (typeof error !== "object" || error === null || !("code" in error)) return null;
+  return typeof error.code === "string" ? error.code : null;
+}
+
 export function VocabularyNotificationCard({
   userId,
   vocabularyCount
 }: VocabularyNotificationCardProps) {
   const [subscription, setSubscription] = useState<DeviceSubscriptionState | null>(null);
   const [pending, setPending] = useState(false);
+  const [testPending, setTestPending] = useState(false);
+  const [testMessage, setTestMessage] = useState<string | null>(null);
+  const [testFailed, setTestFailed] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const testRequestInFlight = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -87,6 +97,32 @@ export function VocabularyNotificationCard({
     }
   };
 
+  const handleTest = async () => {
+    if (testRequestInFlight.current) return;
+    testRequestInFlight.current = true;
+    setTestPending(true);
+    setTestMessage(null);
+    setTestFailed(false);
+    try {
+      await sendTestVocabularyNotification();
+      const message = "FCM đã chấp nhận thông báo thử. Hãy kiểm tra thông báo trên thiết bị.";
+      setTestMessage(message);
+      toast.success(message);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Không thể gửi thông báo thử.";
+      setTestFailed(true);
+      setTestMessage(
+        getErrorCode(error) === "DEVICE_TOKEN_INVALID"
+          ? "Đăng ký thiết bị đã hết hạn. Hãy tắt rồi bật lại nhắc từ vựng."
+          : message
+      );
+      toast.error(message);
+    } finally {
+      testRequestInFlight.current = false;
+      setTestPending(false);
+    }
+  };
+
   const isLoading = !subscription && !errorMessage;
   const isUnsupported = subscription?.capability === "unsupported";
   const isDenied = subscription?.capability === "denied";
@@ -118,7 +154,7 @@ export function VocabularyNotificationCard({
             {isUnsupported && (
               <p className="text-sm font-medium text-amber-700">
                 {isIosWithoutInstalledPwa()
-                  ? "Trên iPhone/iPad, hãy thêm Vocabloom vào Màn hình chính rồi mở ứng dụng từ đó."
+                  ? "Trên iPhone/iPad, hãy thêm Vocabloom vào Màn hình chính rồi mở từ biểu tượng. Thiết bị vẫn cần hỗ trợ Firebase Cloud Messaging."
                   : "Trình duyệt này chưa hỗ trợ thông báo đẩy cho Vocabloom."}
               </p>
             )}
@@ -128,6 +164,19 @@ export function VocabularyNotificationCard({
               </p>
             )}
             {errorMessage && <p className="text-sm font-medium text-rose-600">{errorMessage}</p>}
+            {isSubscribed && (
+              <p className="max-w-prose text-xs leading-relaxed text-slate-500">
+                Trạng thái này xác nhận đăng ký FCM tồn tại; hãy gửi thử để kiểm tra FCM có chấp nhận yêu cầu hiện tại hay không.
+              </p>
+            )}
+            {testMessage && (
+              <p
+                className={`text-sm font-medium ${testFailed ? "text-rose-600" : "text-emerald-700"}`}
+                role="status"
+              >
+                {testMessage}
+              </p>
+            )}
           </div>
         </div>
 
@@ -143,9 +192,18 @@ export function VocabularyNotificationCard({
               </div>
               <Button
                 type="button"
+                className="min-h-11 w-full px-4 sm:w-auto"
+                disabled={pending || testPending}
+                onClick={handleTest}
+              >
+                {testPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {testPending ? "Đang gửi thử" : "Gửi thông báo thử"}
+              </Button>
+              <Button
+                type="button"
                 variant="outline"
                 className="min-h-11 w-full px-4 sm:w-auto"
-                disabled={pending}
+                disabled={pending || testPending}
                 onClick={handleDisable}
               >
                 {pending && <Loader2 className="h-4 w-4 animate-spin" />}

@@ -12,8 +12,9 @@ function devApiServerPlugin(): Plugin {
         const url = req.url || '';
         const isWordDetails = url === '/api/ai/word-details' || url.startsWith('/api/ai/word-details?');
         const isBatchDetails = url === '/api/ai/batch-details' || url.startsWith('/api/ai/batch-details?');
+        const isNotificationTest = url === '/api/notifications/test' || url.startsWith('/api/notifications/test?');
 
-        if (isWordDetails || isBatchDetails) {
+        if (isWordDetails || isBatchDetails || isNotificationTest) {
           try {
             let body = '';
             for await (const chunk of req) {
@@ -55,8 +56,11 @@ function devApiServerPlugin(): Plugin {
             if (isWordDetails) {
               const { default: handler } = await import('./api/ai/word-details.ts');
               await handler(fakeReq, fakeRes);
-            } else {
+            } else if (isBatchDetails) {
               const { default: handler } = await import('./api/ai/batch-details.ts');
+              await handler(fakeReq, fakeRes);
+            } else {
+              const { default: handler } = await import('./api/notifications/test.ts');
               await handler(fakeReq, fakeRes);
             }
           } catch (err: any) {

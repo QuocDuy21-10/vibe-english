@@ -3,8 +3,13 @@ functions/lib/
 .playwright-cli/
 build/
 dist/
-.github/
-docs/
+gha-creds-*.json
+.github/*
+!.github/workflows/
+.github/workflows/*
+!.github/workflows/vocabulary-reminder.yml
+docs/*
+!docs/VOCABULARY_REMINDERS.md
 coverage/
 .DS_Store
 *.log

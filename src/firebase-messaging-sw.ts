@@ -3,23 +3,18 @@
 import { initializeApp } from "firebase/app";
 import { getMessaging, onBackgroundMessage } from "firebase/messaging/sw";
 import firebaseConfig from "../firebase-applet-config.json";
-import { createVocabularyNotificationDisplay } from "./lib/pushNotification";
+import {
+  createRecentMessageDeduper,
+  createVocabularyNotificationDisplay,
+  normalizeNotificationPath
+} from "./lib/pushNotification";
 
 declare const self: ServiceWorkerGlobalScope;
-
-const messaging = getMessaging(initializeApp(firebaseConfig));
-
-onBackgroundMessage(messaging, (payload) => {
-  const notification = createVocabularyNotificationDisplay(payload.data);
-  return self.registration.showNotification(notification.title, notification.options);
-});
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const notificationData = event.notification.data as { url?: string } | undefined;
-  const path = notificationData?.url?.startsWith("/")
-    ? notificationData.url
-    : "/dictionary";
+  const path = normalizeNotificationPath(notificationData?.url);
   const targetUrl = new URL(path, self.location.origin).href;
 
   event.waitUntil((async () => {
@@ -31,4 +26,14 @@ self.addEventListener("notificationclick", (event) => {
     }
     return self.clients.openWindow(targetUrl);
   })());
+});
+
+const shouldDisplayMessage = createRecentMessageDeduper();
+const messaging = getMessaging(initializeApp(firebaseConfig));
+
+onBackgroundMessage(messaging, (payload) => {
+  const messageId = payload.data?.messageId ?? payload.messageId ?? "";
+  if (!shouldDisplayMessage(messageId)) return Promise.resolve();
+  const notification = createVocabularyNotificationDisplay(payload.data);
+  return self.registration.showNotification(notification.title, notification.options);
 });

@@ -14,6 +14,7 @@ const mocks = vi.hoisted(() => ({
   updateDoc: vi.fn(),
   deleteDoc: vi.fn(),
   serverTimestamp: vi.fn(() => "SERVER_TIMESTAMP"),
+  getIdToken: vi.fn(),
   foregroundHandler: undefined as ((payload: unknown) => void) | undefined
 }));
 
@@ -42,7 +43,12 @@ vi.mock("firebase/firestore", () => ({
 vi.mock("@/lib/firebase", () => ({
   firebaseApp: { name: "app" },
   db: { name: "db" },
-  auth: { currentUser: null }
+  auth: {
+    currentUser: {
+      uid: "alice",
+      getIdToken: mocks.getIdToken
+    }
+  }
 }));
 
 import {
@@ -52,6 +58,7 @@ import {
   getNotificationCapability,
   NotificationPermissionDeniedError,
   revokeVocabularyNotificationsForLogout,
+  sendTestVocabularyNotification,
   subscribeToForegroundVocabularyMessages
 } from "@/services/notificationService";
 
@@ -88,6 +95,7 @@ describe("notificationService", () => {
     mocks.isSupported.mockResolvedValue(true);
     mocks.getId.mockResolvedValue("installation-1");
     mocks.getToken.mockResolvedValue("fcm-token-1");
+    mocks.getIdToken.mockResolvedValue("firebase-id-token");
     mocks.deleteToken.mockResolvedValue(true);
     mocks.getDoc.mockResolvedValue({ exists: () => false });
     mocks.setDoc.mockResolvedValue(undefined);
@@ -256,7 +264,8 @@ describe("notificationService", () => {
         body: "noun • quả táo",
         vocabularyId: "vocab-1",
         word: "apple",
-        url: "/dictionary"
+        url: "/dictionary",
+        messageId: "message-1"
       }
     });
 
@@ -265,8 +274,59 @@ describe("notificationService", () => {
       body: "noun • quả táo",
       vocabularyId: "vocab-1",
       word: "apple",
-      url: "/dictionary"
+      url: "/dictionary",
+      messageId: "message-1"
     });
     expect(typeof unsubscribe).toBe("function");
+  });
+
+  it("sends a test notification for the current Firebase installation", async () => {
+    installBrowserNotification("granted");
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        ok: true,
+        status: "accepted",
+        messageId: "projects/project/messages/test-1",
+        acceptedAt: "2026-10-15T01:00:00.000Z"
+      })
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(sendTestVocabularyNotification()).resolves.toEqual({
+      ok: true,
+      status: "accepted",
+      messageId: "projects/project/messages/test-1",
+      acceptedAt: "2026-10-15T01:00:00.000Z"
+    });
+    expect(fetchMock).toHaveBeenCalledWith("/api/notifications/test", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer firebase-id-token",
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ installationId: "installation-1" })
+    });
+  });
+
+  it("surfaces typed test-push failures without exposing server details", async () => {
+    installBrowserNotification("granted");
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: false,
+      json: async () => ({
+        ok: false,
+        error: {
+          code: "RATE_LIMITED",
+          message: "Bạn đã gửi quá nhiều thông báo thử.",
+          retryAfterSeconds: 600
+        }
+      })
+    }));
+
+    await expect(sendTestVocabularyNotification()).rejects.toMatchObject({
+      name: "TestPushRequestError",
+      code: "RATE_LIMITED",
+      retryAfterSeconds: 600
+    });
   });
 });
