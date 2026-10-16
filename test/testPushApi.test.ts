@@ -322,4 +322,66 @@ describe("POST /api/notifications/test", () => {
     });
     expect(JSON.stringify(capture.body)).not.toContain("raw credential response");
   });
+
+  it("logs safe Google API metadata for unexpected test-push failures", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const googleApiError = Object.assign(new Error("response included sensitive-token-value"), {
+      name: "GaxiosError",
+      code: "ERR_BAD_REQUEST",
+      response: {
+        status: 400,
+        data: {
+          error: "invalid_target",
+          error_description: "sensitive-token-value"
+        }
+      }
+    });
+    mocks.createDependencies.mockResolvedValue(createDependencies({
+      async getOwnedDevice() {
+        throw googleApiError;
+      }
+    }));
+    const { request, response, capture } = createRequestResponse({
+      authorization: "Bearer valid-token",
+      body: { installationId: "installation_123" }
+    });
+
+    await handler(request, response);
+
+    expect(capture.statusCode).toBe(500);
+    expect(errorLog).toHaveBeenCalledWith(JSON.stringify({
+      event: "notification-test-error",
+      context: "send-test-push",
+      name: "GaxiosError",
+      code: "ERR_BAD_REQUEST",
+      httpStatus: 400,
+      apiError: "invalid_target"
+    }));
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("sensitive-token-value");
+    errorLog.mockRestore();
+  });
+
+  it("identifies Vercel OIDC exchange failures without logging their message", async () => {
+    const errorLog = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    mocks.createDependencies.mockResolvedValue(createDependencies({
+      async getOwnedDevice() {
+        throw new Error("Failed to exchange token: sensitive provider response");
+      }
+    }));
+    const { request, response } = createRequestResponse({
+      authorization: "Bearer valid-token",
+      body: { installationId: "installation_123" }
+    });
+
+    await handler(request, response);
+
+    expect(errorLog).toHaveBeenCalledWith(JSON.stringify({
+      event: "notification-test-error",
+      context: "send-test-push",
+      name: "Error",
+      source: "vercel-oidc-exchange"
+    }));
+    expect(JSON.stringify(errorLog.mock.calls)).not.toContain("sensitive provider response");
+    errorLog.mockRestore();
+  });
 });

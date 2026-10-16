@@ -8,6 +8,39 @@ const requestSchema = z.object({
   installationId: z.string().trim().min(1).max(128).regex(/^[A-Za-z0-9_-]+$/)
 }).strict();
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function safeDiagnosticCode(value: unknown): string | undefined {
+  return typeof value === "string" && /^[A-Za-z][A-Za-z0-9_-]{0,79}$/.test(value)
+    ? value
+    : undefined;
+}
+
+function summarizeUnexpectedTestPushError(error: unknown) {
+  const errorRecord = asRecord(error);
+  const response = asRecord(errorRecord?.response);
+  const responseData = asRecord(response?.data);
+  const errorName = safeDiagnosticCode(errorRecord?.name) ?? "unknown";
+  const isVercelOidcExchange = errorName === "VercelOidcTokenError"
+    || (typeof errorRecord?.message === "string"
+      && errorRecord.message.startsWith("Failed to exchange token:"));
+  return {
+    event: "notification-test-error",
+    context: "send-test-push",
+    name: errorName,
+    ...(safeDiagnosticCode(errorRecord?.code) ? { code: safeDiagnosticCode(errorRecord?.code) } : {}),
+    ...(typeof response?.status === "number" ? { httpStatus: response.status } : {}),
+    ...(safeDiagnosticCode(responseData?.error)
+      ? { apiError: safeDiagnosticCode(responseData?.error) }
+      : {}),
+    ...(isVercelOidcExchange ? { source: "vercel-oidc-exchange" } : {})
+  };
+}
+
 function errorResponse(
   res: VercelResponse,
   statusCode: number,
@@ -84,7 +117,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         error.retryAfterSeconds
       );
     }
-    console.error("Unexpected test push failure", error instanceof Error ? error.name : "unknown");
+    console.error(JSON.stringify(summarizeUnexpectedTestPushError(error)));
     return errorResponse(res, 500, "INTERNAL_ERROR", "Không thể gửi thông báo thử lúc này.");
   }
 }
