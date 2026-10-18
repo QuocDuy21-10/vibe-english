@@ -54,10 +54,19 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
           package-manager-cache: false
+      - name: Resolve GitHub Workload Identity Provider
+        id: github-wif
+        run: |
+          provider="${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
+          if [ -z "$provider" ]; then
+            echo "Missing required repository variable: GCP_WORKLOAD_IDENTITY_PROVIDER" >&2
+            exit 1
+          fi
+          echo "value=${provider%/*}/github" >> "$GITHUB_OUTPUT"
       - uses: google-github-actions/auth@v3
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ steps.github-wif.outputs.value }}
           service_account: ${{ vars.GCP_REMINDER_SERVICE_ACCOUNT }}
       - run: npm ci --prefix functions
       - name: Dispatch scheduled reminders
@@ -80,10 +89,19 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
           package-manager-cache: false
+      - name: Resolve GitHub Workload Identity Provider
+        id: github-wif
+        run: |
+          provider="${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
+          if [ -z "$provider" ]; then
+            echo "Missing required repository variable: GCP_WORKLOAD_IDENTITY_PROVIDER" >&2
+            exit 1
+          fi
+          echo "value=${provider%/*}/github" >> "$GITHUB_OUTPUT"
       - uses: google-github-actions/auth@v3
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ steps.github-wif.outputs.value }}
           service_account: ${{ vars.GCP_REMINDER_SERVICE_ACCOUNT }}
       - run: npm ci --prefix functions
       - name: Preview reminder dispatch
@@ -108,10 +126,19 @@ jobs:
           cache: npm
           cache-dependency-path: functions/package-lock.json
           package-manager-cache: false
+      - name: Resolve GitHub Workload Identity Provider
+        id: github-wif
+        run: |
+          provider="${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}"
+          if [ -z "$provider" ]; then
+            echo "Missing required repository variable: GCP_WORKLOAD_IDENTITY_PROVIDER" >&2
+            exit 1
+          fi
+          echo "value=${provider%/*}/github" >> "$GITHUB_OUTPUT"
       - uses: google-github-actions/auth@v3
         with:
           project_id: ${{ vars.GCP_PROJECT_ID }}
-          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          workload_identity_provider: ${{ steps.github-wif.outputs.value }}
           service_account: ${{ vars.GCP_REMINDER_SERVICE_ACCOUNT }}
       - run: npm ci --prefix functions
       - name: Dispatch manual live reminders
