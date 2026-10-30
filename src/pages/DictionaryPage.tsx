@@ -1,10 +1,11 @@
-import { useDeferredValue, useMemo, useState } from "react";
+import { lazy, Suspense, useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowDownAZ,
   ArrowUpDown,
   FileSpreadsheet,
   Filter,
   Layers,
+  Loader2,
   Plus,
   Search,
   SearchIcon,
@@ -13,8 +14,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence } from "motion/react";
 
-import { AddVocabDialog } from "@/components/features/AddVocabDialog";
-import { ImportVocabDialog } from "@/components/features/ImportVocabDialog";
+import { LazyDialogBoundary } from "@/components/features/LazyDialogBoundary";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 
 import { VocabCard } from "@/components/features/VocabCard";
@@ -42,6 +42,21 @@ import type {
 import { buildVocabularyCardMetadata } from "@/lib/vocabularySelectors";
 import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
 
+const loadAddVocabDialog = () =>
+  import("@/components/features/AddVocabDialog").then((module) => ({ default: module.AddVocabDialog }));
+const loadImportVocabDialog = () =>
+  import("@/components/features/ImportVocabDialog").then((module) => ({ default: module.ImportVocabDialog }));
+const LazyAddVocabDialog = lazy(loadAddVocabDialog);
+const LazyImportVocabDialog = lazy(loadImportVocabDialog);
+
+function DialogLoading() {
+  return (
+    <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
+      <Loader2 className="h-6 w-6 animate-spin text-[#10b981]" />
+    </div>
+  );
+}
+
 export function DictionaryPage() {
   const { user } = useAuth();
   const { vocabularies, topics } = useVocabularyData();
@@ -55,6 +70,8 @@ export function DictionaryPage() {
   const [pageSize, setPageSize] = useState(50);
   const [isAddingVocab, setIsAddingVocab] = useState(false);
   const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const [isAddDialogMounted, setIsAddDialogMounted] = useState(false);
+  const [isImportDialogMounted, setIsImportDialogMounted] = useState(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const filteredVocab = useFilteredAndSortedVocabularies(vocabularies, {
@@ -81,6 +98,35 @@ export function DictionaryPage() {
   );
 
   const hasSearchQuery = searchQuery.trim().length > 0;
+
+  const preloadAddVocabDialog = () => { void loadAddVocabDialog(); };
+  const preloadImportVocabDialog = () => { void loadImportVocabDialog(); };
+
+  const addVocabDialogBody = isAddDialogMounted && user ? (
+    <Suspense fallback={<DialogLoading />}>
+      <LazyDialogBoundary resetKey={isAddingVocab}>
+        <LazyAddVocabDialog
+          onClose={() => setIsAddingVocab(false)}
+          userId={user.uid}
+          topics={topics}
+          vocabularies={vocabularies}
+        />
+      </LazyDialogBoundary>
+    </Suspense>
+  ) : null;
+
+  const importDialogBody = isImportDialogMounted && user ? (
+    <Suspense fallback={<DialogLoading />}>
+      <LazyDialogBoundary resetKey={isBulkImporting}>
+        <LazyImportVocabDialog
+          onClose={() => setIsBulkImporting(false)}
+          userId={user.uid}
+          topics={topics}
+          vocabularies={vocabularies}
+        />
+      </LazyDialogBoundary>
+    </Suspense>
+  ) : null;
 
   const activeFilterCount =
     (selectedTopicId !== DEFAULT_TOPIC_FILTER ? 1 : 0) +
@@ -137,11 +183,22 @@ export function DictionaryPage() {
             {user && (
               <>
                 {/* Bulk & File Import Trigger */}
-                <Dialog open={isBulkImporting} onOpenChange={setIsBulkImporting}>
+                <Dialog
+                  open={isBulkImporting}
+                  onOpenChange={(open) => {
+                    if (open) setIsImportDialogMounted(true);
+                    setIsBulkImporting(open);
+                  }}
+                  onOpenChangeComplete={(open) => {
+                    if (!open) setIsImportDialogMounted(false);
+                  }}
+                >
                   <DialogTrigger
                     render={
                       <Button
                         variant="outline"
+                        onMouseEnter={preloadImportVocabDialog}
+                        onFocus={preloadImportVocabDialog}
                         className="flex-1 sm:flex-none rounded-full px-3.5 sm:px-4 border-slate-200 hover:border-[#10b981] hover:bg-[#ECFDF5] text-slate-700 hover:text-[#10b981] transition-all h-11 font-medium cursor-pointer shadow-sm min-h-[44px]"
                       />
                     }
@@ -150,19 +207,25 @@ export function DictionaryPage() {
                     <span className="hidden sm:inline">Nhập nhiều từ</span>
                     <span className="sm:hidden text-xs font-semibold">Nhập từ</span>
                   </DialogTrigger>
-                  <ImportVocabDialog
-                    onClose={() => setIsBulkImporting(false)}
-                    userId={user.uid}
-                    topics={topics}
-                    vocabularies={vocabularies}
-                  />
+                  {importDialogBody}
                 </Dialog>
 
                 {/* Single Add Vocab Trigger */}
-                <Dialog open={isAddingVocab} onOpenChange={setIsAddingVocab}>
+                <Dialog
+                  open={isAddingVocab}
+                  onOpenChange={(open) => {
+                    if (open) setIsAddDialogMounted(true);
+                    setIsAddingVocab(open);
+                  }}
+                  onOpenChangeComplete={(open) => {
+                    if (!open) setIsAddDialogMounted(false);
+                  }}
+                >
                   <DialogTrigger
                     render={
                       <Button
+                        onMouseEnter={preloadAddVocabDialog}
+                        onFocus={preloadAddVocabDialog}
                         className="flex-1 sm:flex-none bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/20 border-none transition-all h-11 font-medium cursor-pointer min-h-[44px]"
                       />
                     }
@@ -171,12 +234,7 @@ export function DictionaryPage() {
                     <span className="hidden sm:inline">Thêm từ mới</span>
                     <span className="sm:hidden text-xs font-semibold">Thêm từ</span>
                   </DialogTrigger>
-                  <AddVocabDialog
-                    onClose={() => setIsAddingVocab(false)}
-                    userId={user.uid}
-                    topics={topics}
-                    vocabularies={vocabularies}
-                  />
+                  {addVocabDialogBody}
                 </Dialog>
               </>
             )}
@@ -341,7 +399,16 @@ export function DictionaryPage() {
             </p>
           </div>
           {vocabularies.length === 0 ? (
-            <Dialog open={isAddingVocab} onOpenChange={setIsAddingVocab}>
+            <Dialog
+              open={isAddingVocab}
+              onOpenChange={(open) => {
+                if (open) setIsAddDialogMounted(true);
+                setIsAddingVocab(open);
+              }}
+              onOpenChangeComplete={(open) => {
+                if (!open) setIsAddDialogMounted(false);
+              }}
+            >
               <DialogTrigger
                 render={
                   <Button className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
@@ -350,14 +417,7 @@ export function DictionaryPage() {
                 <Plus className="w-4 h-4 mr-1.5" />
                 Thêm từ mới ngay
               </DialogTrigger>
-              {user && (
-                <AddVocabDialog
-                  onClose={() => setIsAddingVocab(false)}
-                  userId={user.uid}
-                  topics={topics}
-                  vocabularies={vocabularies}
-                />
-              )}
+              {addVocabDialogBody}
             </Dialog>
           ) : (
             <Button

@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { lazy, memo, Suspense, useState } from "react";
 import { Edit3, Tags, Trash2, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -11,7 +11,11 @@ import { useAudioActions } from "@/routes/AudioProvider";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { EditVocabDialog } from "@/components/features/EditVocabDialog";
+import { LazyDialogBoundary } from "@/components/features/LazyDialogBoundary";
+
+const loadEditVocabDialog = () =>
+  import("@/components/features/EditVocabDialog").then((module) => ({ default: module.EditVocabDialog }));
+const LazyEditVocabDialog = lazy(loadEditVocabDialog);
 
 type VocabCardProps = {
   vocabulary: Vocabulary;
@@ -137,12 +141,22 @@ export const VocabCard = memo(function VocabCard({
               <Edit3 className="w-4 h-4" />
             </DialogTrigger>
             {isEditDialogMounted && (
-              <EditVocabDialog
-                vocabulary={vocabulary}
-                topics={topics}
-                vocabularies={vocabularies}
-                onClose={() => setIsEditing(false)}
-              />
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
+                    <span className="sr-only">Đang tải hộp thoại</span>
+                  </div>
+                }
+              >
+                <LazyDialogBoundary resetKey={isEditing}>
+                  <LazyEditVocabDialog
+                    vocabulary={vocabulary}
+                    topics={topics}
+                    vocabularies={vocabularies}
+                    onClose={() => setIsEditing(false)}
+                  />
+                </LazyDialogBoundary>
+              </Suspense>
             )}
           </Dialog>
 
