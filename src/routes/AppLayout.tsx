@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { createRecentMessageDeduper } from "@/lib/pushNotification";
 import { cn } from "@/lib/utils";
 import { subscribeToForegroundVocabularyMessages } from "@/services/notificationService";
-import { useAppData } from "./AppDataProvider";
+import { useAuth, useVocabularyData } from "./AppDataProvider";
 
 const navItems = [
   { to: "/dashboard", label: "Bảng tin", icon: LayoutDashboard },
@@ -17,7 +17,8 @@ const navItems = [
 ];
 
 export function AppLayout() {
-  const { user, dataLoading, vocabularies, logout } = useAppData();
+  const { user, logout } = useAuth();
+  const { dataLoading, vocabularies } = useVocabularyData();
   const navigate = useNavigate();
   const shouldDisplayMessage = useMemo(() => createRecentMessageDeduper(), []);
 

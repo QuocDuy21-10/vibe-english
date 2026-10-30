@@ -1,9 +1,9 @@
 import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import { useAppData } from "@/routes/AppDataProvider";
+import { useAuth } from "@/routes/AppDataProvider";
 
 export function LoginPage() {
-  const { login } = useAppData();
+  const { login } = useAuth();
 
   return (
     <div className="min-h-dvh w-full flex flex-col items-center justify-center bg-[#ECFDF5] p-4 sm:p-6 text-center">

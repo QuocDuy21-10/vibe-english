@@ -11,13 +11,14 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { DEFAULT_TOPIC_FILTER } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
 import { getPaginationModel } from "@/lib/pagination";
-import { useAppData } from "@/routes/AppDataProvider";
+import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
 import { deleteTopic } from "@/services/topicRepository";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import type { Topic } from "@/types/types";
 
 export function TopicsPage() {
-  const { topics, user, vocabularies } = useAppData();
+  const { user } = useAuth();
+  const { topics, vocabularies } = useVocabularyData();
   const [topicSearchQuery, setTopicSearchQuery] = useState("");
   const [selectedTopicId, setSelectedTopicId] = useState<string>(DEFAULT_TOPIC_FILTER);
   const [currentPage, setCurrentPage] = useState(1);

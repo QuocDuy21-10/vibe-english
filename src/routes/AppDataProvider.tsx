@@ -8,17 +8,21 @@ import { subscribeTopics } from "@/services/topicRepository";
 import { subscribeVocabularies } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 
-type AppDataContextValue = {
+export type AuthContextValue = {
   user: User | null;
   loading: boolean;
-  dataLoading: boolean;
-  topics: Topic[];
-  vocabularies: Vocabulary[];
   login: () => Promise<void>;
   logout: () => Promise<void>;
 };
 
-const AppDataContext = createContext<AppDataContextValue | null>(null);
+export type VocabularyDataContextValue = {
+  dataLoading: boolean;
+  topics: Topic[];
+  vocabularies: Vocabulary[];
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
+const VocabularyDataContext = createContext<VocabularyDataContextValue | null>(null);
 
 export function AppDataProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -132,18 +136,44 @@ export function AppDataProvider({ children }: { children: ReactNode }) {
 
   const dataLoading = topicsLoading || vocabulariesLoading;
 
-  const value = useMemo(
-    () => ({ user, loading, dataLoading, topics, vocabularies, login, logout }),
-    [user, loading, dataLoading, topics, vocabularies, login, logout]
+  const authValue = useMemo<AuthContextValue>(
+    () => ({ user, loading, login, logout }),
+    [user, loading, login, logout]
   );
 
-  return <AppDataContext.Provider value={value}>{children}</AppDataContext.Provider>;
+  const dataValue = useMemo<VocabularyDataContextValue>(
+    () => ({ dataLoading, topics, vocabularies }),
+    [dataLoading, topics, vocabularies]
+  );
+
+  return (
+    <AuthContext.Provider value={authValue}>
+      <VocabularyDataContext.Provider value={dataValue}>
+        {children}
+      </VocabularyDataContext.Provider>
+    </AuthContext.Provider>
+  );
 }
 
-export function useAppData() {
-  const context = useContext(AppDataContext);
+export function useAuth() {
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error("useAppData must be used within AppDataProvider");
+    throw new Error("useAuth must be used within AppDataProvider");
   }
   return context;
+}
+
+export function useVocabularyData() {
+  const context = useContext(VocabularyDataContext);
+  if (!context) {
+    throw new Error("useVocabularyData must be used within AppDataProvider");
+  }
+  return context;
+}
+
+export function useAppData(): AuthContextValue & VocabularyDataContextValue {
+  return {
+    ...useAuth(),
+    ...useVocabularyData()
+  };
 }

@@ -38,10 +38,11 @@ import type {
   VocabularySortOption,
   VocabularyStatusFilter
 } from "@/lib/vocabularySelectors";
-import { useAppData } from "@/routes/AppDataProvider";
+import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
 
 export function DictionaryPage() {
-  const { vocabularies, topics, user } = useAppData();
+  const { user } = useAuth();
+  const { vocabularies, topics } = useVocabularyData();
   const [searchQuery, setSearchQuery] = useState("");
   const [searchMode, setSearchMode] = useState<VocabularySearchMode>("contains");
   const [caseSensitive, setCaseSensitive] = useState(false);

@@ -1,8 +1,8 @@
 import { StudyArea } from "@/components/features/StudyArea";
-import { useAppData } from "@/routes/AppDataProvider";
+import { useVocabularyData } from "@/routes/AppDataProvider";
 
 export function StudyPage() {
-  const { vocabularies, topics } = useAppData();
+  const { vocabularies, topics } = useVocabularyData();
 
   return <StudyArea vocabulary={vocabularies} topics={topics} />;
 }

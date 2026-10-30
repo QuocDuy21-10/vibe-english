@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
-import { useAppData } from "./AppDataProvider";
+import { useAuth } from "./AppDataProvider";
 
 type GuardProps = {
   children: ReactNode;
@@ -16,7 +16,7 @@ function FullScreenLoader() {
 }
 
 export function RequireAuth({ children }: GuardProps) {
-  const { user, loading } = useAppData();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return <FullScreenLoader />;
@@ -30,7 +30,7 @@ export function RequireAuth({ children }: GuardProps) {
 }
 
 export function PublicOnly({ children }: GuardProps) {
-  const { user, loading } = useAppData();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return <FullScreenLoader />;
