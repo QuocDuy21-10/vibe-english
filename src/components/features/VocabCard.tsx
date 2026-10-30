@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { getVocabularyLevel } from "@/lib/srs";
 import { getVocabularySynonymLabels } from "@/lib/vocabulary";
-import { useAudio } from "@/routes/AudioProvider";
+import { useAudioActions } from "@/routes/AudioProvider";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -21,7 +21,7 @@ type VocabCardProps = {
 };
 
 export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
-  const { speak } = useAudio();
+  const { speak } = useAudioActions();
   const [isEditing, setIsEditing] = useState(false);
   // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
   const [isEditDialogMounted, setIsEditDialogMounted] = useState(false);

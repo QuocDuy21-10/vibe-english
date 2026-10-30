@@ -18,7 +18,7 @@ import {
 import { getStudySound, type StudyAudioEvent } from "@/lib/studyAudio";
 import { getDueCount, getDueVocabularies } from "@/lib/vocabularySelectors";
 import { useAppData } from "@/routes/AppDataProvider";
-import { useAudio } from "@/routes/AudioProvider";
+import { useAudioActions } from "@/routes/AudioProvider";
 import { recordVocabularyReview } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary, StudySession } from "@/types/types";
 
@@ -39,7 +39,7 @@ type FlashcardAssessment = {
 
 export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const { user } = useAppData();
-  const { playSound } = useAudio();
+  const { playSound } = useAudioActions();
   const [selectedTopic, setSelectedTopic] = useState(DEFAULT_TOPIC_FILTER);
   const [view, setView] = useState<StudyView>("topics");
   const [searchQuery, setSearchQuery] = useState("");

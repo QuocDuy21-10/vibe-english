@@ -26,19 +26,23 @@ import { soundEffects, type SoundEffect } from "@/lib/soundEffects";
 
 type VoiceState = "loading" | "ready" | "unsupported";
 
-type AudioContextValue = {
+export type AudioStateContextValue = {
   settings: AudioSettings;
   voices: PronunciationVoiceOption[];
   voiceState: VoiceState;
   pronunciationStatus: PronunciationStatus;
   lastPronunciationResult: PronunciationResult | null;
   updateSettings: (patch: Partial<Omit<AudioSettings, "version">>) => void;
+};
+
+export type AudioActionsContextValue = {
   playSound: (effect: SoundEffect) => void;
   speak: (text: string, options?: Omit<SpeakOptions, "accent" | "voiceURI">) => Promise<PronunciationResult>;
   cancelSpeech: () => void;
 };
 
-const AudioContext = createContext<AudioContextValue | null>(null);
+const AudioStateContext = createContext<AudioStateContextValue | null>(null);
+const AudioActionsContext = createContext<AudioActionsContextValue | null>(null);
 
 function supportsSpeechSynthesis(): boolean {
   return typeof window !== "undefined"
@@ -149,17 +153,14 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       ? "loading"
       : "ready";
 
-  const value = useMemo<AudioContextValue>(
+  const stateValue = useMemo<AudioStateContextValue>(
     () => ({
       settings,
       voices,
       voiceState,
       pronunciationStatus,
       lastPronunciationResult,
-      updateSettings: updateSettingsValue,
-      playSound,
-      speak,
-      cancelSpeech
+      updateSettings: updateSettingsValue
     }),
     [
       settings,
@@ -167,18 +168,43 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       voiceState,
       pronunciationStatus,
       lastPronunciationResult,
-      updateSettingsValue,
-      playSound,
-      speak,
-      cancelSpeech
+      updateSettingsValue
     ]
   );
 
-  return <AudioContext.Provider value={value}>{children}</AudioContext.Provider>;
+  const actionsValue = useMemo<AudioActionsContextValue>(
+    () => ({
+      playSound,
+      speak,
+      cancelSpeech
+    }),
+    [playSound, speak, cancelSpeech]
+  );
+
+  return (
+    <AudioStateContext.Provider value={stateValue}>
+      <AudioActionsContext.Provider value={actionsValue}>
+        {children}
+      </AudioActionsContext.Provider>
+    </AudioStateContext.Provider>
+  );
 }
 
-export function useAudio() {
-  const context = useContext(AudioContext);
-  if (!context) throw new Error("useAudio must be used within AudioProvider");
+export function useAudioState() {
+  const context = useContext(AudioStateContext);
+  if (!context) throw new Error("useAudioState must be used within AudioProvider");
   return context;
+}
+
+export function useAudioActions() {
+  const context = useContext(AudioActionsContext);
+  if (!context) throw new Error("useAudioActions must be used within AudioProvider");
+  return context;
+}
+
+export function useAudio(): AudioStateContextValue & AudioActionsContextValue {
+  return {
+    ...useAudioState(),
+    ...useAudioActions()
+  };
 }
