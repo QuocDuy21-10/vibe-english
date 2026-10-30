@@ -1,10 +1,10 @@
-import { useState } from "react";
-import { Edit3, Plus, SearchIcon, Trash2, X, Search } from "lucide-react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { Plus, SearchIcon, X, Search } from "lucide-react";
 import { toast } from "sonner";
 import { TopicDialog } from "@/components/features/TopicDialog";
+import { TopicCard } from "@/components/features/TopicCard";
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PaginationControls } from "@/components/ui/pagination-controls";
@@ -25,6 +25,7 @@ export function TopicsPage() {
   const [pageSize, setPageSize] = useState(12);
   const [isAddingTopic, setIsAddingTopic] = useState(false);
   const [deletingTopic, setDeletingTopic] = useState<Topic | null>(null);
+  const deferredSearchQuery = useDeferredValue(topicSearchQuery);
 
   const topicVocabCounts = useTopicVocabularyCounts(vocabularies);
 
@@ -32,14 +33,24 @@ export function TopicsPage() {
     return null;
   }
 
-  const filteredTopics = topics.filter((topic) => {
-    const matchesSearch = topic.name.toLowerCase().includes(topicSearchQuery.toLowerCase());
-    const matchesTopic = selectedTopicId === DEFAULT_TOPIC_FILTER || topic.id === selectedTopicId;
-    return matchesSearch && matchesTopic;
-  });
+  const filteredTopics = useMemo(
+    () => topics.filter((topic) => {
+      const matchesSearch = topic.name.toLowerCase().includes(deferredSearchQuery.toLowerCase());
+      const matchesTopic = selectedTopicId === DEFAULT_TOPIC_FILTER || topic.id === selectedTopicId;
+      return matchesSearch && matchesTopic;
+    }),
+    [topics, deferredSearchQuery, selectedTopicId]
+  );
 
-  const pagination = getPaginationModel(filteredTopics.length, pageSize, currentPage);
-  const paginatedTopics = filteredTopics.slice(pagination.startIndex, pagination.endIndex);
+  const pagination = useMemo(
+    () => getPaginationModel(filteredTopics.length, pageSize, currentPage),
+    [filteredTopics.length, pageSize, currentPage]
+  );
+  const paginatedTopics = useMemo(
+    () => filteredTopics.slice(pagination.startIndex, pagination.endIndex),
+    [filteredTopics, pagination.startIndex, pagination.endIndex]
+  );
+  const handleDelete = useCallback((topic: Topic) => setDeletingTopic(topic), []);
 
   const resetFilters = () => {
     setTopicSearchQuery("");
@@ -108,47 +119,13 @@ export function TopicsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {paginatedTopics.map((topic) => (
-          <Card
+          <TopicCard
             key={topic.id}
-            className="rounded-2xl sm:rounded-3xl border-slate-100 bg-white shadow-sm hover:shadow-md hover:border-[#10b981]/40 transition-all group overflow-hidden relative flex flex-col justify-between"
-          >
-            <div className="absolute top-0 right-0 w-24 h-24 bg-[#ECFDF5] rounded-full -mr-8 -mt-8 opacity-60 group-hover:bg-[#ECFDF5]/90 transition-colors pointer-events-none" />
-            <CardHeader className="pb-2 relative">
-              <CardTitle className="text-xl font-bold text-slate-800 tracking-tight break-words line-clamp-2">
-                {topic.name}
-              </CardTitle>
-              <CardDescription className="text-xs font-bold text-[#10b981] uppercase tracking-wider mt-1">
-                {topicVocabCounts.get(topic.id) ?? 0} TỪ VỰNG
-              </CardDescription>
-            </CardHeader>
-            <CardFooter className="flex justify-end gap-1.5 pt-2 pb-3 px-4 relative border-t-0 bg-transparent">
-              <Dialog>
-                <DialogTrigger
-                  render={
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
-                      aria-label={`Chỉnh sửa chủ đề ${topic.name}`}
-                    />
-                  }
-                >
-                  <Edit3 className="w-4 h-4" />
-                </DialogTrigger>
-                <TopicDialog topic={topic} userId={user.uid} />
-              </Dialog>
-
-              <Button
-                variant="ghost"
-                size="icon"
-                className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
-                aria-label={`Xóa chủ đề ${topic.name}`}
-                onClick={() => setDeletingTopic(topic)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </CardFooter>
-          </Card>
+            topic={topic}
+            vocabularyCount={topicVocabCounts.get(topic.id) ?? 0}
+            userId={user.uid}
+            onDelete={handleDelete}
+          />
         ))}
       </div>
 

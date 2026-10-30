@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Edit3, Tags, Trash2, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
@@ -21,7 +21,15 @@ type VocabCardProps = {
   vocabularies?: Vocabulary[];
 };
 
-export function VocabCard({ vocabulary, topics, topicName, synonymLabels, vocabularies = [] }: VocabCardProps) {
+const EMPTY_VOCABULARIES: Vocabulary[] = [];
+
+export const VocabCard = memo(function VocabCard({
+  vocabulary,
+  topics,
+  topicName,
+  synonymLabels,
+  vocabularies = EMPTY_VOCABULARIES
+}: VocabCardProps) {
   const { speak } = useAudioActions();
   const [isEditing, setIsEditing] = useState(false);
   // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
@@ -170,4 +178,4 @@ export function VocabCard({ vocabulary, topics, topicName, synonymLabels, vocabu
       </Card>
     </motion.div>
   );
-}
+});

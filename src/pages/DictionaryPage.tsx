@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useDeferredValue, useMemo, useState } from "react";
 import {
   ArrowDownAZ,
   ArrowUpDown,
@@ -55,9 +55,10 @@ export function DictionaryPage() {
   const [pageSize, setPageSize] = useState(50);
   const [isAddingVocab, setIsAddingVocab] = useState(false);
   const [isBulkImporting, setIsBulkImporting] = useState(false);
+  const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const filteredVocab = useFilteredAndSortedVocabularies(vocabularies, {
-    searchQuery,
+    searchQuery: deferredSearchQuery,
     searchMode,
     caseSensitive,
     selectedTopicId,
@@ -70,8 +71,14 @@ export function DictionaryPage() {
     [vocabularies, topics]
   );
 
-  const pagination = getPaginationModel(filteredVocab.length, pageSize, currentPage);
-  const paginatedVocab = filteredVocab.slice(pagination.startIndex, pagination.endIndex);
+  const pagination = useMemo(
+    () => getPaginationModel(filteredVocab.length, pageSize, currentPage),
+    [filteredVocab.length, pageSize, currentPage]
+  );
+  const paginatedVocab = useMemo(
+    () => filteredVocab.slice(pagination.startIndex, pagination.endIndex),
+    [filteredVocab, pagination.startIndex, pagination.endIndex]
+  );
 
   const hasSearchQuery = searchQuery.trim().length > 0;
 
