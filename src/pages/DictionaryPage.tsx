@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   ArrowDownAZ,
   ArrowUpDown,
@@ -36,8 +36,10 @@ import { getPaginationModel } from "@/lib/pagination";
 import type {
   VocabularySearchMode,
   VocabularySortOption,
-  VocabularyStatusFilter
+  VocabularyStatusFilter,
+  VocabularyCardMetadata
 } from "@/lib/vocabularySelectors";
+import { buildVocabularyCardMetadata } from "@/lib/vocabularySelectors";
 import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
 
 export function DictionaryPage() {
@@ -62,6 +64,11 @@ export function DictionaryPage() {
     statusFilter,
     sortOption
   });
+
+  const cardMetadata = useMemo(
+    () => buildVocabularyCardMetadata(vocabularies, topics),
+    [vocabularies, topics]
+  );
 
   const pagination = getPaginationModel(filteredVocab.length, pageSize, currentPage);
   const paginatedVocab = filteredVocab.slice(pagination.startIndex, pagination.endIndex);
@@ -304,6 +311,7 @@ export function DictionaryPage() {
               vocabulary={vocabulary}
               topics={topics}
               vocabularies={vocabularies}
+              {...(cardMetadata.get(vocabulary.id) as VocabularyCardMetadata)}
             />
           ))}
         </AnimatePresence>

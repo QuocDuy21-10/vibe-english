@@ -1,5 +1,6 @@
 import { DEFAULT_TOPIC_FILTER, LEVELS, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
 import { getVocabularyLevel, isDueForReview } from "@/lib/srs";
+import { normalizeSynonymSelection, normalizeVocabularyWord } from "@/lib/vocabulary";
 import type { Topic, Vocabulary } from "@/types/types";
 
 export function getDueVocabularies(vocabularies: Vocabulary[], now = new Date()): Vocabulary[] {
@@ -214,6 +215,49 @@ export function countVocabulariesByTopic(vocabularies: Vocabulary[]) {
     counts.set(vocabulary.topicId, (counts.get(vocabulary.topicId) ?? 0) + 1);
   });
   return counts;
+}
+
+export type VocabularyCardMetadata = {
+  topicName: string;
+  synonymLabels: string[];
+};
+
+export function buildVocabularyCardMetadata(
+  vocabularies: Vocabulary[],
+  topics: Topic[]
+): ReadonlyMap<string, VocabularyCardMetadata> {
+  const topicNameById = new Map(topics.map((topic) => [topic.id, topic.name]));
+  const vocabularyWordById = new Map(vocabularies.map((vocabulary) => [vocabulary.id, vocabulary.word]));
+  const metadata = new Map<string, VocabularyCardMetadata>();
+
+  for (const vocabulary of vocabularies) {
+    const selection = normalizeSynonymSelection(vocabulary);
+    const synonymLabels: string[] = [];
+    const seenWords = new Set<string>();
+
+    for (const synonymId of selection.synonymIds) {
+      const word = vocabularyWordById.get(synonymId);
+      if (!word) continue;
+      const normalizedWord = normalizeVocabularyWord(word);
+      if (seenWords.has(normalizedWord)) continue;
+      seenWords.add(normalizedWord);
+      synonymLabels.push(word);
+    }
+
+    for (const word of selection.customSynonyms) {
+      const normalizedWord = normalizeVocabularyWord(word);
+      if (seenWords.has(normalizedWord)) continue;
+      seenWords.add(normalizedWord);
+      synonymLabels.push(word);
+    }
+
+    metadata.set(vocabulary.id, {
+      topicName: topicNameById.get(vocabulary.topicId ?? "") ?? "Chưa phân loại",
+      synonymLabels
+    });
+  }
+
+  return metadata;
 }
 
 export function getTopicTimestamp(topic: Topic): number {

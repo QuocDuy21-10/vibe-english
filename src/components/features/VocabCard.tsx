@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { getVocabularyLevel } from "@/lib/srs";
-import { getVocabularySynonymLabels } from "@/lib/vocabulary";
 import { useAudioActions } from "@/routes/AudioProvider";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
@@ -17,18 +16,18 @@ import { EditVocabDialog } from "@/components/features/EditVocabDialog";
 type VocabCardProps = {
   vocabulary: Vocabulary;
   topics: Topic[];
+  topicName: string;
+  synonymLabels: string[];
   vocabularies?: Vocabulary[];
 };
 
-export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
+export function VocabCard({ vocabulary, topics, topicName, synonymLabels, vocabularies = [] }: VocabCardProps) {
   const { speak } = useAudioActions();
   const [isEditing, setIsEditing] = useState(false);
   // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
   const [isEditDialogMounted, setIsEditDialogMounted] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
   const level = getVocabularyLevel(vocabulary);
-  const synonymLabels = getVocabularySynonymLabels(vocabulary, vocabularies);
 
   const handleDelete = async () => {
     try {

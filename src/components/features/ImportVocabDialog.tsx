@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MAX_IMPORT_FILE_SIZE_BYTES } from "@/constants/vocab";
 import { analyzeBulkItems, parseBulkText } from "@/lib/bulkParser";
 import { cn } from "@/lib/utils";
+import { normalizeVocabularyWord } from "@/lib/vocabulary";
 import { batchCreateVocabularies } from "@/services/vocabularyRepository";
 import type {
   AnalyzedBulkRow,
@@ -252,11 +253,14 @@ export function ImportVocabDialog({
         setAiProgress({ current, total });
       });
 
+      const detailsByWord = new Map<string, (typeof detailsList)[number]>();
+      detailsList.forEach((detail) => {
+        const key = normalizeVocabularyWord(detail.word);
+        if (!detailsByWord.has(key)) detailsByWord.set(key, detail);
+      });
       const newOverrides = new Map(enrichedOverrides);
       rowsToEnrich.forEach((row) => {
-        const detail = detailsList.find(
-          (d) => d.word.toLowerCase().trim() === row.word.toLowerCase().trim()
-        );
+        const detail = detailsByWord.get(normalizeVocabularyWord(row.word));
         if (detail) {
           const itemKey = pasteItems[row.rowNumber - 1]?.rawId;
           if (itemKey) {
