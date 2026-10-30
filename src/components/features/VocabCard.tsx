@@ -5,7 +5,13 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { getVocabularyLevel } from "@/lib/srs";
 import { useAudioActions } from "@/routes/AudioProvider";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
@@ -16,6 +22,7 @@ import { LazyDialogBoundary } from "@/components/features/LazyDialogBoundary";
 const loadEditVocabDialog = () =>
   import("@/components/features/EditVocabDialog").then((module) => ({ default: module.EditVocabDialog }));
 const LazyEditVocabDialog = lazy(loadEditVocabDialog);
+const preloadEditVocabDialog = () => { void loadEditVocabDialog().catch(() => undefined); };
 
 type VocabCardProps = {
   vocabulary: Vocabulary;
@@ -133,6 +140,8 @@ export const VocabCard = memo(function VocabCard({
                 <Button
                   variant="ghost"
                   size="icon"
+                  onPointerEnter={preloadEditVocabDialog}
+                  onFocus={preloadEditVocabDialog}
                   className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
                   aria-label={`Chỉnh sửa từ ${vocabulary.word}`}
                 />
@@ -143,12 +152,17 @@ export const VocabCard = memo(function VocabCard({
             {isEditDialogMounted && (
               <Suspense
                 fallback={
-                  <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
-                    <span className="sr-only">Đang tải hộp thoại</span>
-                  </div>
+                  <DialogContent className="sm:max-w-lg rounded-3xl border-none shadow-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Chỉnh sửa từ vựng</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
+                      <span className="sr-only">Đang tải hộp thoại</span>
+                    </div>
+                  </DialogContent>
                 }
               >
-                <LazyDialogBoundary resetKey={isEditing}>
+                <LazyDialogBoundary dialog resetKey={isEditing}>
                   <LazyEditVocabDialog
                     vocabulary={vocabulary}
                     topics={topics}

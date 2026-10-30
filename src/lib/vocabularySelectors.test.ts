@@ -205,10 +205,11 @@ describe("topic selectors", () => {
       vocabulary("happy", {
         word: "Happy",
         topicId: "topic-a",
-        synonymIds: ["joyful", "missing"],
+        synonymIds: ["joyful", "joyful-verb", "missing"],
         customSynonyms: ["Cheerful", "cheerful"]
       }),
       vocabulary("joyful", { word: "Joyful", topicId: null }),
+      vocabulary("joyful-verb", { word: "Joyful", partOfSpeech: "verb", topicId: null }),
       vocabulary("unknown-topic", { topicId: "missing-topic" })
     ];
     const topics: Topic[] = [
@@ -221,7 +222,7 @@ describe("topic selectors", () => {
 
     expect(metadata.get("happy")).toEqual({
       topicName: "Feelings",
-      synonymLabels: ["Joyful", "Cheerful"]
+      synonymLabels: ["Joyful", "Joyful", "Cheerful"]
     });
     expect(metadata.get("unknown-topic")).toEqual({
       topicName: "Chưa phân loại",

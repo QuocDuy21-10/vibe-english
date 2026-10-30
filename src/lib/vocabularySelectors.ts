@@ -233,17 +233,14 @@ export function buildVocabularyCardMetadata(
   for (const vocabulary of vocabularies) {
     const selection = normalizeSynonymSelection(vocabulary);
     const synonymLabels: string[] = [];
-    const seenWords = new Set<string>();
 
     for (const synonymId of selection.synonymIds) {
       const word = vocabularyWordById.get(synonymId);
       if (!word) continue;
-      const normalizedWord = normalizeVocabularyWord(word);
-      if (seenWords.has(normalizedWord)) continue;
-      seenWords.add(normalizedWord);
       synonymLabels.push(word);
     }
 
+    const seenWords = new Set(synonymLabels.map(normalizeVocabularyWord));
     for (const word of selection.customSynonyms) {
       const normalizedWord = normalizeVocabularyWord(word);
       if (seenWords.has(normalizedWord)) continue;

@@ -20,7 +20,13 @@ import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
 import { VocabCard } from "@/components/features/VocabCard";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { PaginationControls } from "@/components/ui/pagination-controls";
 import {
@@ -49,11 +55,16 @@ const loadImportVocabDialog = () =>
 const LazyAddVocabDialog = lazy(loadAddVocabDialog);
 const LazyImportVocabDialog = lazy(loadImportVocabDialog);
 
-function DialogLoading() {
+function DialogLoading({ title }: { title: string }) {
   return (
-    <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
-      <Loader2 className="h-6 w-6 animate-spin text-[#10b981]" />
-    </div>
+    <DialogContent className="sm:max-w-lg rounded-3xl border-none shadow-2xl">
+      <DialogHeader>
+        <DialogTitle>{title}</DialogTitle>
+      </DialogHeader>
+      <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
+        <Loader2 className="h-6 w-6 animate-spin text-[#10b981]" />
+      </div>
+    </DialogContent>
   );
 }
 
@@ -99,12 +110,12 @@ export function DictionaryPage() {
 
   const hasSearchQuery = searchQuery.trim().length > 0;
 
-  const preloadAddVocabDialog = () => { void loadAddVocabDialog(); };
-  const preloadImportVocabDialog = () => { void loadImportVocabDialog(); };
+  const preloadAddVocabDialog = () => { void loadAddVocabDialog().catch(() => undefined); };
+  const preloadImportVocabDialog = () => { void loadImportVocabDialog().catch(() => undefined); };
 
   const addVocabDialogBody = isAddDialogMounted && user ? (
-    <Suspense fallback={<DialogLoading />}>
-      <LazyDialogBoundary resetKey={isAddingVocab}>
+    <Suspense fallback={<DialogLoading title="Thêm từ mới" />}>
+      <LazyDialogBoundary dialog resetKey={isAddingVocab}>
         <LazyAddVocabDialog
           onClose={() => setIsAddingVocab(false)}
           userId={user.uid}
@@ -116,8 +127,8 @@ export function DictionaryPage() {
   ) : null;
 
   const importDialogBody = isImportDialogMounted && user ? (
-    <Suspense fallback={<DialogLoading />}>
-      <LazyDialogBoundary resetKey={isBulkImporting}>
+    <Suspense fallback={<DialogLoading title="Nhập nhiều từ" />}>
+      <LazyDialogBoundary dialog resetKey={isBulkImporting}>
         <LazyImportVocabDialog
           onClose={() => setIsBulkImporting(false)}
           userId={user.uid}
@@ -197,7 +208,7 @@ export function DictionaryPage() {
                     render={
                       <Button
                         variant="outline"
-                        onMouseEnter={preloadImportVocabDialog}
+                        onPointerEnter={preloadImportVocabDialog}
                         onFocus={preloadImportVocabDialog}
                         className="flex-1 sm:flex-none rounded-full px-3.5 sm:px-4 border-slate-200 hover:border-[#10b981] hover:bg-[#ECFDF5] text-slate-700 hover:text-[#10b981] transition-all h-11 font-medium cursor-pointer shadow-sm min-h-[44px]"
                       />
@@ -224,7 +235,7 @@ export function DictionaryPage() {
                   <DialogTrigger
                     render={
                       <Button
-                        onMouseEnter={preloadAddVocabDialog}
+                        onPointerEnter={preloadAddVocabDialog}
                         onFocus={preloadAddVocabDialog}
                         className="flex-1 sm:flex-none bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-4 shadow-sm shadow-[#10b981]/20 border-none transition-all h-11 font-medium cursor-pointer min-h-[44px]"
                       />
@@ -411,7 +422,11 @@ export function DictionaryPage() {
             >
               <DialogTrigger
                 render={
-                  <Button className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md" />
+                  <Button
+                    onPointerEnter={preloadAddVocabDialog}
+                    onFocus={preloadAddVocabDialog}
+                    className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-full px-5 h-11 font-semibold text-sm shadow-md"
+                  />
                 }
               >
                 <Plus className="w-4 h-4 mr-1.5" />

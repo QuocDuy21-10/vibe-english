@@ -29,10 +29,6 @@ export function TopicsPage() {
 
   const topicVocabCounts = useTopicVocabularyCounts(vocabularies);
 
-  if (!user) {
-    return null;
-  }
-
   const filteredTopics = useMemo(
     () => topics.filter((topic) => {
       const matchesSearch = topic.name.toLowerCase().includes(deferredSearchQuery.toLowerCase());
@@ -51,6 +47,10 @@ export function TopicsPage() {
     [filteredTopics, pagination.startIndex, pagination.endIndex]
   );
   const handleDelete = useCallback((topic: Topic) => setDeletingTopic(topic), []);
+
+  if (!user) {
+    return null;
+  }
 
   const resetFilters = () => {
     setTopicSearchQuery("");
