@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { VocabularyNotificationCard } from "@/components/features/VocabularyNotificationCard";
 import { LEVELS } from "@/constants/vocab";
 import { useVocabularyOverview } from "@/hooks/useVocabStats";
-import { useAppData } from "@/routes/AppDataProvider";
+import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
 
 // Geometry mirrors the previous Recharts pie (5px chart margin, 65%/85% radii, 4° padding,
 // counter-clockwise from 3 o'clock) in a 100x100 viewBox, without loading the charting library.
@@ -62,7 +62,8 @@ function MasteryDonut({ segments }: { segments: DonutSegment[] }) {
 }
 
 export function DashboardPage() {
-  const { user, vocabularies, topics } = useAppData();
+  const { user } = useAuth();
+  const { vocabularies, topics } = useVocabularyData();
   const { stats, levelCounts } = useVocabularyOverview(vocabularies);
 
   return (

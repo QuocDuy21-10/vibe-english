@@ -5,7 +5,7 @@ import { motion } from "motion/react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { FlashcardRating } from "@/lib/srs";
-import { useAudio } from "@/routes/AudioProvider";
+import { useAudioActions } from "@/routes/AudioProvider";
 import type { Vocabulary } from "@/types/types";
 
 type FlashcardPanelProps = {
@@ -25,7 +25,7 @@ export function FlashcardPanel({
   onFlip,
   onRate
 }: FlashcardPanelProps) {
-  const { speak } = useAudio();
+  const { speak } = useAudioActions();
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();

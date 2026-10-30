@@ -25,6 +25,7 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { analyzeBulkItems, parseBulkText, parseCsvContent } from "@/lib/bulkParser";
+import { normalizeVocabularyWord } from "@/lib/vocabulary";
 import { batchCreateVocabularies } from "@/services/vocabularyRepository";
 import type { AnalyzedBulkRow, Topic, Vocabulary } from "@/types/types";
 
@@ -119,11 +120,14 @@ export function BulkImportDialog({
         setAiProgress({ current, total });
       });
 
+      const detailsByWord = new Map<string, (typeof detailsList)[number]>();
+      detailsList.forEach((detail) => {
+        const key = normalizeVocabularyWord(detail.word);
+        if (!detailsByWord.has(key)) detailsByWord.set(key, detail);
+      });
       const newOverrides = new Map(enrichedOverrides);
       rowsToEnrich.forEach((row) => {
-        const detail = detailsList.find(
-          (d) => d.word.toLowerCase().trim() === row.word.toLowerCase().trim()
-        );
+        const detail = detailsByWord.get(normalizeVocabularyWord(row.word));
         if (detail) {
           newOverrides.set(row.rawId, {
             definition: detail.definition || row.definition || "",

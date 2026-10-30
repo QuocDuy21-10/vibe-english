@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import { DEFAULT_TOPIC_FILTER, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
 import {
   countVocabulariesByTopic,
+  buildVocabularyCardMetadata,
   filterAndSortVocabularies,
   filterVocabularies,
   getDueCount,
@@ -199,6 +200,38 @@ describe("getVocabularyOverview", () => {
 });
 
 describe("topic selectors", () => {
+  it("builds indexed card metadata without mutating source arrays", () => {
+    const vocabularies = [
+      vocabulary("happy", {
+        word: "Happy",
+        topicId: "topic-a",
+        synonymIds: ["joyful", "joyful-verb", "missing"],
+        customSynonyms: ["Cheerful", "cheerful"]
+      }),
+      vocabulary("joyful", { word: "Joyful", topicId: null }),
+      vocabulary("joyful-verb", { word: "Joyful", partOfSpeech: "verb", topicId: null }),
+      vocabulary("unknown-topic", { topicId: "missing-topic" })
+    ];
+    const topics: Topic[] = [
+      { id: "topic-a", name: "Feelings", userId: "user", createdAt: NOW }
+    ];
+    const originalVocabularyOrder = [...vocabularies];
+    const originalTopicOrder = [...topics];
+
+    const metadata = buildVocabularyCardMetadata(vocabularies, topics);
+
+    expect(metadata.get("happy")).toEqual({
+      topicName: "Feelings",
+      synonymLabels: ["Joyful", "Joyful", "Cheerful"]
+    });
+    expect(metadata.get("unknown-topic")).toEqual({
+      topicName: "Chưa phân loại",
+      synonymLabels: []
+    });
+    expect(vocabularies).toEqual(originalVocabularyOrder);
+    expect(topics).toEqual(originalTopicOrder);
+  });
+
   it("counts only vocabularies with a topic", () => {
     const counts = countVocabulariesByTopic([
       vocabulary("one"),

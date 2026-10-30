@@ -1,34 +1,52 @@
-import { useState } from "react";
+import { lazy, memo, Suspense, useState } from "react";
 import { Edit3, Tags, Trash2, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "@/components/ui/dialog";
 import { getVocabularyLevel } from "@/lib/srs";
-import { getVocabularySynonymLabels } from "@/lib/vocabulary";
-import { useAudio } from "@/routes/AudioProvider";
+import { useAudioActions } from "@/routes/AudioProvider";
 import { deleteVocabulary } from "@/services/vocabularyRepository";
 import type { Topic, Vocabulary } from "@/types/types";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { EditVocabDialog } from "@/components/features/EditVocabDialog";
+import { LazyDialogBoundary } from "@/components/features/LazyDialogBoundary";
+
+const loadEditVocabDialog = () =>
+  import("@/components/features/EditVocabDialog").then((module) => ({ default: module.EditVocabDialog }));
+const LazyEditVocabDialog = lazy(loadEditVocabDialog);
+const preloadEditVocabDialog = () => { void loadEditVocabDialog().catch(() => undefined); };
 
 type VocabCardProps = {
   vocabulary: Vocabulary;
   topics: Topic[];
+  topicName: string;
+  synonymLabels: string[];
   vocabularies?: Vocabulary[];
 };
 
-export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardProps) {
-  const { speak } = useAudio();
+const EMPTY_VOCABULARIES: Vocabulary[] = [];
+
+export const VocabCard = memo(function VocabCard({
+  vocabulary,
+  topics,
+  topicName,
+  synonymLabels,
+  vocabularies = EMPTY_VOCABULARIES
+}: VocabCardProps) {
+  const { speak } = useAudioActions();
   const [isEditing, setIsEditing] = useState(false);
   // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
   const [isEditDialogMounted, setIsEditDialogMounted] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const topicName = topics.find((t) => t.id === vocabulary.topicId)?.name || "Chưa phân loại";
   const level = getVocabularyLevel(vocabulary);
-  const synonymLabels = getVocabularySynonymLabels(vocabulary, vocabularies);
 
   const handleDelete = async () => {
     try {
@@ -122,6 +140,8 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
                 <Button
                   variant="ghost"
                   size="icon"
+                  onPointerEnter={preloadEditVocabDialog}
+                  onFocus={preloadEditVocabDialog}
                   className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
                   aria-label={`Chỉnh sửa từ ${vocabulary.word}`}
                 />
@@ -130,12 +150,27 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
               <Edit3 className="w-4 h-4" />
             </DialogTrigger>
             {isEditDialogMounted && (
-              <EditVocabDialog
-                vocabulary={vocabulary}
-                topics={topics}
-                vocabularies={vocabularies}
-                onClose={() => setIsEditing(false)}
-              />
+              <Suspense
+                fallback={
+                  <DialogContent className="sm:max-w-lg rounded-3xl border-none shadow-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Chỉnh sửa từ vựng</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
+                      <span className="sr-only">Đang tải hộp thoại</span>
+                    </div>
+                  </DialogContent>
+                }
+              >
+                <LazyDialogBoundary dialog resetKey={isEditing}>
+                  <LazyEditVocabDialog
+                    vocabulary={vocabulary}
+                    topics={topics}
+                    vocabularies={vocabularies}
+                    onClose={() => setIsEditing(false)}
+                  />
+                </LazyDialogBoundary>
+              </Suspense>
             )}
           </Dialog>
 
@@ -171,4 +206,4 @@ export function VocabCard({ vocabulary, topics, vocabularies = [] }: VocabCardPr
       </Card>
     </motion.div>
   );
-}
+});
