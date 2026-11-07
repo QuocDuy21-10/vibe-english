@@ -9,17 +9,20 @@ import { afterEach, describe, expect, it } from "vitest";
 const SERVERLESS_SOURCES = [
   "api/ai/batch-details.ts",
   "api/ai/word-details.ts",
+  "api/ai/word-usages.ts",
   "api/lib/aiRateLimit.ts",
   "api/lib/auth.ts",
   "api/lib/gemini.ts",
   "api/lib/googleCloud.ts",
   "api/lib/testPush.ts",
+  "api/lib/wordUsages.ts",
   "api/notifications/test.ts"
 ];
 
 const SERVERLESS_ENTRYPOINTS = [
   "api/ai/batch-details.js",
   "api/ai/word-details.js",
+  "api/ai/word-usages.js",
   "api/notifications/test.js"
 ];
 
@@ -68,5 +71,6 @@ describe("Vercel serverless runtime", () => {
         `${relative(projectRoot, entrypoint)} failed to import:\n${result.stderr}`
       ).toBe(0);
     }
-  });
+    // One Node process per entrypoint; the 5s default is too tight when the whole suite runs in parallel.
+  }, 20000);
 });
