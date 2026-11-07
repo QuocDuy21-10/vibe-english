@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
-import { Loader2 } from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
+import { Loader2, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { useAudioActions } from "@/routes/AudioProvider";
 import type { StudyMode, Vocabulary } from "@/types/types";
 
 export type QuizCard =
@@ -25,7 +26,60 @@ function MeaningPrompt({ definition }: { definition: string }) {
   );
 }
 
-export function getQuizCard({ vocabulary }: GetQuizCardInput): QuizCard {
+export function ListeningPrompt({ word, phonetic }: { word: string; phonetic: string }) {
+  const { speak } = useAudioActions();
+  const [speechUnavailable, setSpeechUnavailable] = useState(false);
+
+  const play = () => {
+    void speak(word).then((result) => {
+      setSpeechUnavailable(result.status === "unsupported" || result.status === "no-english");
+    });
+  };
+
+  // Speak once per card; the panel is keyed per word, so `play` only needs to run when the word changes.
+  useEffect(play, [word]);
+
+  return (
+    <div className="flex flex-col items-center gap-3">
+      <p className="text-xs font-bold text-[#10b981] uppercase tracking-wide">Nghe và gõ từ bạn nghe được</p>
+      <Button
+        type="button"
+        variant="outline"
+        className="h-16 w-16 rounded-full border-[#10b981]/40 text-[#10b981] hover:bg-[#ECFDF5]"
+        onClick={play}
+        aria-label="Nghe lại"
+      >
+        <Volume2 className="w-7 h-7" />
+      </Button>
+      {speechUnavailable && (
+        <p className="text-xs text-amber-600 font-medium">
+          Trình duyệt không phát được âm thanh. Gợi ý phiên âm: <span className="font-bold">{phonetic || "—"}</span>
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ListeningReveal({ vocabulary }: { vocabulary: Vocabulary }) {
+  return (
+    <div className="space-y-0.5">
+      <p className="text-sm font-bold text-slate-800 break-words">{vocabulary.definition}</p>
+      <p className="text-xs text-slate-400 italic">{vocabulary.phonetic || "—"}</p>
+    </div>
+  );
+}
+
+export function getQuizCard({ mode, vocabulary }: GetQuizCardInput): QuizCard {
+  if (mode === "listening") {
+    return {
+      status: "ready",
+      label: "NGHE VÀ VIẾT",
+      answer: vocabulary.word,
+      prompt: <ListeningPrompt word={vocabulary.word} phonetic={vocabulary.phonetic} />,
+      afterAnswer: <ListeningReveal vocabulary={vocabulary} />
+    };
+  }
+
   return {
     status: "ready",
     label: "ĐIỀN TỪ VÀO CHỖ TRỐNG",
