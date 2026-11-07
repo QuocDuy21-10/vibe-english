@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
   buildHeatmap,
+  formatDayLabel,
   getHeatmapIntensity,
   getTodayProgress,
   localDayKey,
   startOfLocalDay,
+  summarizeDays,
   toActivityItems,
   type ActivityItem
 } from "./learningActivity";
@@ -151,5 +153,52 @@ describe("buildHeatmap", () => {
     expect(lastWeek[5]).toMatchObject({ count: 15, intensity: 4 });
     expect(lastWeek[0]).toMatchObject({ count: 1, intensity: 1 });
     expect(lastWeek[1]).toMatchObject({ count: 0, intensity: 0 });
+  });
+});
+
+describe("summarizeDays", () => {
+  it("groups by local day, newest first, with counts and unique words", () => {
+    const items = [
+      item(new Date(2026, 10, 7, 9), { vocabularyId: "a" }),
+      item(new Date(2026, 10, 7, 10), { vocabularyId: "a", success: false }),
+      item(new Date(2026, 10, 7, 11), { vocabularyId: "b", kind: "quiz" }),
+      item(new Date(2026, 10, 5, 23, 59), { vocabularyId: "c", kind: "quiz", success: false })
+    ];
+
+    expect(summarizeDays(items)).toEqual([
+      {
+        dayKey: "2026-11-07",
+        date: new Date(2026, 10, 7),
+        total: 3,
+        flashcardCount: 2,
+        quizCount: 1,
+        accuracy: 67,
+        uniqueWordCount: 2,
+        vocabularyIds: ["a", "b"]
+      },
+      {
+        dayKey: "2026-11-05",
+        date: new Date(2026, 10, 5),
+        total: 1,
+        flashcardCount: 0,
+        quizCount: 1,
+        accuracy: 0,
+        uniqueWordCount: 1,
+        vocabularyIds: ["c"]
+      }
+    ]);
+  });
+
+  it("returns an empty list without activity", () => {
+    expect(summarizeDays([])).toEqual([]);
+  });
+});
+
+describe("formatDayLabel", () => {
+  it("names today and yesterday, otherwise weekday and date", () => {
+    expect(formatDayLabel(new Date(2026, 10, 7), NOW)).toBe("Hôm nay");
+    expect(formatDayLabel(new Date(2026, 10, 6), NOW)).toBe("Hôm qua");
+    expect(formatDayLabel(new Date(2026, 10, 5), NOW)).toBe("T5, 05/11");
+    expect(formatDayLabel(new Date(2026, 10, 1), NOW)).toBe("CN, 01/11");
   });
 });

@@ -132,3 +132,50 @@ export function buildHeatmap(items: ActivityItem[], goal: number, now = new Date
     })
   );
 }
+
+export type DaySummary = {
+  dayKey: string;
+  date: Date;
+  total: number;
+  flashcardCount: number;
+  quizCount: number;
+  accuracy: number | null;
+  uniqueWordCount: number;
+  vocabularyIds: string[];
+};
+
+const WEEKDAY_LABELS = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"] as const;
+
+export function summarizeDays(items: ActivityItem[]): DaySummary[] {
+  const byDay = new Map<string, ActivityItem[]>();
+  for (const entry of items) {
+    const key = localDayKey(entry.at);
+    const dayItems = byDay.get(key);
+    if (dayItems) dayItems.push(entry);
+    else byDay.set(key, [entry]);
+  }
+
+  return [...byDay.entries()]
+    .sort(([a], [b]) => (a < b ? 1 : a > b ? -1 : 0))
+    .map(([dayKey, dayItems]) => {
+      const ordered = [...dayItems].sort((a, b) => a.at.getTime() - b.at.getTime());
+      const vocabularyIds = [...new Set(ordered.map((entry) => entry.vocabularyId))];
+      return {
+        dayKey,
+        date: startOfLocalDay(ordered[0].at),
+        total: ordered.length,
+        flashcardCount: ordered.filter((entry) => entry.kind === "flashcard").length,
+        quizCount: ordered.filter((entry) => entry.kind === "quiz").length,
+        accuracy: accuracyOf(ordered),
+        uniqueWordCount: vocabularyIds.length,
+        vocabularyIds
+      };
+    });
+}
+
+export function formatDayLabel(date: Date, now = new Date()): string {
+  const key = localDayKey(date);
+  if (key === localDayKey(now)) return "Hôm nay";
+  if (key === localDayKey(startOfLocalDay(now, -1))) return "Hôm qua";
+  return `${WEEKDAY_LABELS[date.getDay()]}, ${formatShortDate(date)}`;
+}

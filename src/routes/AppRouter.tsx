@@ -16,6 +16,9 @@ const DictionaryPage = lazy(() =>
 const LoginPage = lazy(() =>
   import("@/pages/LoginPage").then((module) => ({ default: module.LoginPage }))
 );
+const ProgressPage = lazy(() =>
+  import("@/pages/ProgressPage").then((module) => ({ default: module.ProgressPage }))
+);
 const StudyPage = lazy(() =>
   import("@/pages/StudyPage").then((module) => ({ default: module.StudyPage }))
 );
@@ -60,6 +63,7 @@ export function AppRouter() {
               <Route path="dictionary" element={<DictionaryPage />} />
               <Route path="topics" element={<TopicsPage />} />
               <Route path="study" element={<StudyPage />} />
+              <Route path="progress" element={<ProgressPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>
