@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getWordDetails } from "../src/services/geminiService";
+import { getBatchWordDetails, getWordDetails } from "../src/services/geminiService";
 
 // Mock firebase auth
 vi.mock("@/lib/firebase", () => ({
@@ -74,5 +74,39 @@ describe("Client geminiService", () => {
     await expect(getWordDetails("hello")).rejects.toThrow(
       "Server rate limit exceeded"
     );
+  });
+
+  it("stops sending batch chunks after a 429 and keeps already-fetched results", async () => {
+    (auth as any).currentUser = {
+      getIdToken: vi.fn().mockResolvedValue("mock-token-123")
+    };
+    const words = Array.from({ length: 50 }, (_, i) => `word${i}`);
+    globalThis.fetch = vi.fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: async () => words.slice(0, 20).map((word) => ({
+          word,
+          definition: "nghĩa",
+          partOfSpeech: "noun",
+          phonetic: "/x/"
+        }))
+      })
+      .mockResolvedValueOnce({
+        ok: false,
+        status: 429,
+        json: async () => ({ error: "Bạn đã tra quá 300 từ trong 1 giờ." })
+      }) as any;
+    const onProgress = vi.fn();
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await getBatchWordDetails(words, onProgress);
+
+    expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(50);
+    expect(result[0].definition).toBe("nghĩa");
+    expect(result.slice(20).every((item) => item.definition === "")).toBe(true);
+    expect(onProgress).toHaveBeenLastCalledWith(50, 50);
+    consoleError.mockRestore();
   });
 });

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { z } from "zod";
+import { enforceAiQuota } from "../lib/aiRateLimit.js";
 import { verifyFirebaseIdToken } from "../lib/auth.js";
 import { fetchWordDetailsFromGemini } from "../lib/gemini.js";
 
@@ -20,8 +21,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // 2. Authentication check
   const authHeader = req.headers.authorization;
+  let userId: string;
   try {
-    await verifyFirebaseIdToken(authHeader);
+    userId = (await verifyFirebaseIdToken(authHeader)).uid;
   } catch (authError) {
     return res.status(401).json({
       error: "Unauthorized: Yêu cầu đăng nhập để sử dụng tính năng tra từ AI."
@@ -48,7 +50,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   const { word } = parseResult.data;
 
-  // 4. Call Gemini AI via Serverless
+  // 4. Per-user hourly quota (counted in words) before spending Gemini tokens
+  if (!(await enforceAiQuota(res, userId, 1))) return;
+
+  // 5. Call Gemini AI via Serverless
   try {
     const details = await fetchWordDetailsFromGemini(word);
     return res.status(200).json(details);

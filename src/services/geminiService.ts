@@ -69,6 +69,7 @@ export async function getBatchWordDetails(
   const BATCH_CHUNK_SIZE = 20;
   const results: WordDetails[] = [];
   let processed = 0;
+  let quotaExhausted = false;
 
   for (let i = 0; i < trimmedWords.length; i += BATCH_CHUNK_SIZE) {
     const chunk = trimmedWords.slice(i, i + BATCH_CHUNK_SIZE);
@@ -84,6 +85,8 @@ export async function getBatchWordDetails(
       });
 
       if (!response.ok) {
+        // The server's hourly quota rejects every later chunk too, so stop sending them.
+        quotaExhausted = response.status === 429;
         let errorMessage = "Không thể lấy thông tin từ AI hàng loạt.";
         try {
           const errorJson = await response.json();
@@ -113,9 +116,16 @@ export async function getBatchWordDetails(
     }
 
     processed += chunk.length;
+    if (quotaExhausted) {
+      trimmedWords.slice(processed).forEach((word) => {
+        results.push({ word, definition: "", partOfSpeech: "", phonetic: "" });
+      });
+      processed = trimmedWords.length;
+    }
     if (onProgress) {
       onProgress(Math.min(processed, trimmedWords.length), trimmedWords.length);
     }
+    if (quotaExhausted) break;
   }
 
   return results;

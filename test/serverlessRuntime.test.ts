@@ -9,6 +9,7 @@ import { afterEach, describe, expect, it } from "vitest";
 const SERVERLESS_SOURCES = [
   "api/ai/batch-details.ts",
   "api/ai/word-details.ts",
+  "api/lib/aiRateLimit.ts",
   "api/lib/auth.ts",
   "api/lib/gemini.ts",
   "api/lib/googleCloud.ts",

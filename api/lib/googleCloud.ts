@@ -7,9 +7,22 @@ import {
 } from "google-auth-library";
 import { TestPushError, type OwnedNotificationDevice, type TestPushDependencies } from "./testPush.js";
 
-const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000;
-const RATE_LIMIT_MAX_ATTEMPTS = 3;
+const TEST_PUSH_RATE_LIMIT: FixedWindowPolicy = { windowMs: 15 * 60 * 1000, limit: 3 };
 const CLOUD_PLATFORM_SCOPE = "https://www.googleapis.com/auth/cloud-platform";
+
+export interface FixedWindowPolicy {
+  windowMs: number;
+  limit: number;
+}
+
+export interface RateLimitResult {
+  allowed: boolean;
+  retryAfterSeconds: number;
+}
+
+export type FixedWindowDecision =
+  | { allowed: true; windowStartedAt: Date; nextCount: number }
+  | { allowed: false; retryAfterSeconds: number };
 
 type FirestoreValue = {
   stringValue?: string;
@@ -145,35 +158,61 @@ async function rollbackTransaction(
   });
 }
 
-async function consumeRateLimitTransaction(
-  authClient: BaseExternalAccountClient,
-  baseUrl: string,
-  stateDocumentUrl: string,
-  stateDocumentName: string,
-  now: Date
-): Promise<{ allowed: boolean; retryAfterSeconds: number }> {
-  const transaction = await beginTransaction(authClient, baseUrl);
-  const document = await getDocument(authClient, stateDocumentUrl, transaction);
-  const storedStart = document?.fields?.windowStartedAt?.timestampValue;
-  const parsedStart = storedStart ? new Date(storedStart) : null;
-  const withinWindow = parsedStart
-    && !Number.isNaN(parsedStart.getTime())
-    && now.getTime() - parsedStart.getTime() < RATE_LIMIT_WINDOW_MS;
-  const currentCount = withinWindow
-    ? Number(document?.fields?.count?.integerValue ?? "0")
-    : 0;
-  if (withinWindow && currentCount >= RATE_LIMIT_MAX_ATTEMPTS) {
-    await rollbackTransaction(authClient, baseUrl, transaction);
+export function evaluateFixedWindow(
+  stored: { windowStartedAt?: string; count?: string } | undefined,
+  now: Date,
+  policy: FixedWindowPolicy,
+  cost: number
+): FixedWindowDecision {
+  const parsedStart = stored?.windowStartedAt ? new Date(stored.windowStartedAt) : null;
+  const elapsedMs = parsedStart && !Number.isNaN(parsedStart.getTime())
+    ? now.getTime() - parsedStart.getTime()
+    : Number.POSITIVE_INFINITY;
+  const withinWindow = elapsedMs < policy.windowMs;
+  const storedCount = Number.parseInt(stored?.count ?? "0", 10);
+  const currentCount = withinWindow && Number.isFinite(storedCount) ? storedCount : 0;
+
+  if (currentCount + cost > policy.limit) {
     return {
       allowed: false,
       retryAfterSeconds: Math.max(
         1,
-        Math.ceil((RATE_LIMIT_WINDOW_MS - (now.getTime() - parsedStart.getTime())) / 1000)
+        Math.ceil((policy.windowMs - (withinWindow ? elapsedMs : 0)) / 1000)
       )
     };
   }
+  return {
+    allowed: true,
+    windowStartedAt: withinWindow && parsedStart ? parsedStart : now,
+    nextCount: currentCount + cost
+  };
+}
 
-  const windowStartedAt = withinWindow && parsedStart ? parsedStart : now;
+async function consumeFixedWindowTransaction(
+  authClient: BaseExternalAccountClient,
+  baseUrl: string,
+  stateDocumentUrl: string,
+  stateDocumentName: string,
+  now: Date,
+  policy: FixedWindowPolicy,
+  cost: number
+): Promise<RateLimitResult> {
+  const transaction = await beginTransaction(authClient, baseUrl);
+  const document = await getDocument(authClient, stateDocumentUrl, transaction);
+  const decision = evaluateFixedWindow(
+    {
+      windowStartedAt: document?.fields?.windowStartedAt?.timestampValue,
+      count: document?.fields?.count?.integerValue
+    },
+    now,
+    policy,
+    cost
+  );
+  if (decision.allowed === false) {
+    await rollbackTransaction(authClient, baseUrl, transaction);
+    return { allowed: false, retryAfterSeconds: decision.retryAfterSeconds };
+  }
+
   await authClient.request({
     url: `${baseUrl}:commit`,
     method: "POST",
@@ -183,8 +222,8 @@ async function consumeRateLimitTransaction(
         update: {
           name: stateDocumentName,
           fields: {
-            windowStartedAt: { timestampValue: windowStartedAt.toISOString() },
-            count: { integerValue: String(currentCount + 1) },
+            windowStartedAt: { timestampValue: decision.windowStartedAt.toISOString() },
+            count: { integerValue: String(decision.nextCount) },
             lastAttemptAt: { timestampValue: now.toISOString() }
           }
         },
@@ -195,12 +234,62 @@ async function consumeRateLimitTransaction(
   return { allowed: true, retryAfterSeconds: 0 };
 }
 
-export async function createGoogleCloudTestPushDependencies(): Promise<TestPushDependencies> {
+interface FirestoreContext {
+  authClient: BaseExternalAccountClient;
+  projectId: string;
+  databaseId: string;
+  baseUrl: string;
+}
+
+async function createFirestoreContext(): Promise<FirestoreContext> {
   const projectId = requiredEnvironment("GCP_PROJECT_ID");
   const databaseId = requiredEnvironment("FIRESTORE_DATABASE_ID");
   if (databaseId === "(default)") throw new Error("Named Firestore database is required");
   const authClient = await createAuthClient();
-  const baseUrl = databaseUrl(projectId, databaseId);
+  return { authClient, projectId, databaseId, baseUrl: databaseUrl(projectId, databaseId) };
+}
+
+async function consumeFixedWindow(
+  context: FirestoreContext,
+  statePath: string,
+  now: Date,
+  policy: FixedWindowPolicy,
+  cost: number
+): Promise<RateLimitResult> {
+  const { authClient, projectId, databaseId, baseUrl } = context;
+  const stateUrl = documentUrl(projectId, databaseId, statePath);
+  const stateName = `projects/${projectId}/databases/${databaseId}/documents/${statePath}`;
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    try {
+      return await consumeFixedWindowTransaction(
+        authClient,
+        baseUrl,
+        stateUrl,
+        stateName,
+        now,
+        policy,
+        cost
+      );
+    } catch (error) {
+      if (!isTransactionConflict(error) || attempt === 4) throw error;
+    }
+  }
+  throw new Error("Unable to commit rate limit transaction");
+}
+
+export async function createGoogleCloudAiQuotaConsumer(
+  policy: FixedWindowPolicy
+): Promise<(userId: string, cost: number, now: Date) => Promise<RateLimitResult>> {
+  const context = await createFirestoreContext();
+  return (userId, cost, now) => {
+    const stateId = createHash("sha256").update(userId).digest("hex");
+    return consumeFixedWindow(context, `aiUsageStates/${stateId}`, now, policy, cost);
+  };
+}
+
+export async function createGoogleCloudTestPushDependencies(): Promise<TestPushDependencies> {
+  const context = await createFirestoreContext();
+  const { authClient, projectId, databaseId, baseUrl } = context;
 
   return {
     async getOwnedDevice(userId, installationId) {
@@ -213,23 +302,13 @@ export async function createGoogleCloudTestPushDependencies(): Promise<TestPushD
 
     async consumeRateLimit(userId, installationId, now) {
       const stateId = rateStateId(userId, installationId);
-      const statePath = `notificationTestStates/${stateId}`;
-      const stateUrl = documentUrl(projectId, databaseId, statePath);
-      const stateName = `projects/${projectId}/databases/${databaseId}/documents/${statePath}`;
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        try {
-          return await consumeRateLimitTransaction(
-            authClient,
-            baseUrl,
-            stateUrl,
-            stateName,
-            now
-          );
-        } catch (error) {
-          if (!isTransactionConflict(error) || attempt === 4) throw error;
-        }
-      }
-      throw new Error("Unable to commit rate limit transaction");
+      return consumeFixedWindow(
+        context,
+        `notificationTestStates/${stateId}`,
+        now,
+        TEST_PUSH_RATE_LIMIT,
+        1
+      );
     },
 
     async sendMessage(input) {
