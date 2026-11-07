@@ -1,10 +1,14 @@
 import { Award, Target, Trophy, Zap } from "lucide-react";
 import { motion } from "motion/react";
 import { Card } from "@/components/ui/card";
+import { DailyGoalCard } from "@/components/features/progress/DailyGoalCard";
+import { LearningHeatmap } from "@/components/features/progress/LearningHeatmap";
 import { VocabularyNotificationCard } from "@/components/features/VocabularyNotificationCard";
 import { LEVELS } from "@/constants/vocab";
 import { useVocabularyOverview } from "@/hooks/useVocabStats";
+import { buildHeatmap, getTodayProgress } from "@/lib/learningActivity";
 import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
+import { useLearningActivity } from "@/routes/LearningActivityProvider";
 
 // Geometry mirrors the previous Recharts pie (5px chart margin, 65%/85% radii, 4° padding,
 // counter-clockwise from 3 o'clock) in a 100x100 viewBox, without loading the charting library.
@@ -65,9 +69,18 @@ export function DashboardPage() {
   const { user } = useAuth();
   const { vocabularies, topics } = useVocabularyData();
   const { stats, levelCounts } = useVocabularyOverview(vocabularies);
+  const { items, dailyGoal, isLoading: activityLoading } = useLearningActivity();
+  // Computed per render (cheap) so "today" stays correct across midnight.
+  const now = new Date();
+  const todayProgress = getTodayProgress(items, dailyGoal, now);
+  const heatmapWeeks = buildHeatmap(items, dailyGoal, now);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
+      {user && <DailyGoalCard userId={user.uid} progress={todayProgress} isLoading={activityLoading} />}
+      <div className="md:col-span-2">
+        <LearningHeatmap weeks={heatmapWeeks} isLoading={activityLoading} />
+      </div>
       <Card className="md:col-span-2 rounded-3xl border-none shadow-xl shadow-emerald-950/5 bg-gradient-to-br from-white to-[#ECFDF5]/60 overflow-hidden p-5 sm:p-8 flex flex-col md:flex-row items-center gap-6 sm:gap-8">
         <div className="flex-1 space-y-3 sm:space-y-4 text-center md:text-left">
           <div className="flex items-center justify-center md:justify-start gap-1.5 text-[#10b981] font-bold uppercase tracking-wider text-xs">

@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { AudioProvider } from "./AudioProvider";
 import { AppLayout } from "./AppLayout";
+import { LearningActivityProvider } from "./LearningActivityProvider";
 import { PublicOnly, RequireAuth } from "./RouteGuards";
 
 const DashboardPage = lazy(() =>
@@ -48,7 +49,9 @@ export function AppRouter() {
               path="/"
               element={
                 <RequireAuth>
-                  <AppLayout />
+                  <LearningActivityProvider>
+                    <AppLayout />
+                  </LearningActivityProvider>
                 </RequireAuth>
               }
             >
