@@ -7,7 +7,13 @@ import { StudySessionView } from "@/components/features/study/StudySessionView";
 import { StudySummary } from "@/components/features/study/StudySummary";
 import { StudyTopicPicker } from "@/components/features/study/StudyTopicPicker";
 import { Button } from "@/components/ui/button";
-import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
+import {
+  DEFAULT_TOPIC_FILTER,
+  QUICK_QUIZ_TOPIC,
+  SRS_REVIEW_TOPIC,
+  UNASSIGNED_TOPIC_FILTER,
+  WEAK_WORDS_TOPIC
+} from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
 import {
   calculateNextSchedule,
@@ -15,6 +21,7 @@ import {
   requeueAgainOnce,
   type FlashcardRating
 } from "@/lib/srs";
+import { WEAK_PRACTICE_LIMIT } from "@/lib/learningActivity";
 import { getStudySound, type StudyAudioEvent } from "@/lib/studyAudio";
 import { getDueCount, getDueVocabularies } from "@/lib/vocabularySelectors";
 import { useAuth } from "@/routes/AppDataProvider";
@@ -26,6 +33,7 @@ import type { QuizAttemptResult, Topic, Vocabulary, StudySession } from "@/types
 type StudyAreaProps = {
   vocabulary: Vocabulary[];
   topics: Topic[];
+  weakVocabularies: Vocabulary[];
 };
 
 type StudyView = "topics" | "study" | "summary";
@@ -38,7 +46,7 @@ type FlashcardAssessment = {
   nextReview: Date;
 };
 
-export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
+export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaProps) {
   const { user } = useAuth();
   const { playSound } = useAudioActions();
   const [selectedTopic, setSelectedTopic] = useState(DEFAULT_TOPIC_FILTER);
@@ -151,6 +159,15 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     }
 
     beginSession(SRS_REVIEW_TOPIC, "flashcard", due);
+  };
+
+  const startWeakWordsPractice = () => {
+    if (weakVocabularies.length === 0) {
+      toast.info("Chưa có từ nào hay quên trong 30 ngày qua.");
+      return;
+    }
+
+    beginSession(WEAK_WORDS_TOPIC, "flashcard", weakVocabularies.slice(0, WEAK_PRACTICE_LIMIT));
   };
 
   const startTopicSession = (topicId: string) => {
@@ -268,6 +285,8 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
         onSearchChange={setSearchQuery}
         onStartSrsReview={startSrsReview}
         onStartQuickQuiz={startQuickQuiz}
+        weakCount={weakVocabularies.length}
+        onStartWeakPractice={startWeakWordsPractice}
         onSelectTopic={startTopicSession}
       />
     );
@@ -353,13 +372,17 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
           ? "Kiểm tra nhanh"
           : selectedTopic === SRS_REVIEW_TOPIC
             ? "Ôn tập đến hạn"
-            : topics.find((topic) => topic.id === selectedTopic)?.name || "Chủ đề";
+            : selectedTopic === WEAK_WORDS_TOPIC
+              ? "Luyện từ yếu"
+              : topics.find((topic) => topic.id === selectedTopic)?.name || "Chủ đề";
   const subtitle =
     selectedTopic === SRS_REVIEW_TOPIC
       ? "Thuật toán SRS"
       : selectedTopic === QUICK_QUIZ_TOPIC
         ? "Thử thách 10 từ vựng"
-        : "Đang ôn tập";
+        : selectedTopic === WEAK_WORDS_TOPIC
+          ? "Từ hay quên trong 30 ngày"
+          : "Đang ôn tập";
 
   const handleConfirmExit = () => {
     setShowExitConfirm(false);

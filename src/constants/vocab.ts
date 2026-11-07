@@ -3,6 +3,7 @@ export const DEFAULT_TOPIC_FILTER = "all";
 export const UNASSIGNED_TOPIC_FILTER = "none";
 export const QUICK_QUIZ_TOPIC = "quick_quiz";
 export const SRS_REVIEW_TOPIC = "srs_review";
+export const WEAK_WORDS_TOPIC = "weak_words";
 export const DEFAULT_DAILY_GOAL = 15;
 export const DAILY_GOAL_OPTIONS = [10, 15, 20, 30, 50] as const;
 

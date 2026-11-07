@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC } from "@/constants/vocab";
+import { QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, WEAK_WORDS_TOPIC } from "@/constants/vocab";
 import type { FlashcardRating } from "@/lib/srs";
 import type { StudySession } from "@/types/types";
 
@@ -73,7 +73,9 @@ export function StudySummary({
               ? `Bạn đã hoàn thành phiên ôn tập ${displayItemCount} từ vựng đến hạn!`
               : selectedTopic === QUICK_QUIZ_TOPIC
                 ? "Bạn đã hoàn thành bài học thử thách 10 từ vựng."
-                : `Bạn đã hoàn thành ${displayItemCount} từ vựng trong chủ đề này.`}
+                : selectedTopic === WEAK_WORDS_TOPIC
+                  ? `Bạn đã luyện xong ${displayItemCount} từ hay quên!`
+                  : `Bạn đã hoàn thành ${displayItemCount} từ vựng trong chủ đề này.`}
           </p>
         </div>
 

@@ -1,5 +1,5 @@
-import { resolveReviewDate } from "@/lib/srs";
-import type { QuizAttempt, ReviewEvent } from "@/types/types";
+import { normalizeSchedule, resolveReviewDate } from "@/lib/srs";
+import type { QuizAttempt, ReviewEvent, Vocabulary } from "@/types/types";
 
 export const ACTIVITY_WINDOW_DAYS = 70;
 export const HEATMAP_WEEKS = 10;
@@ -178,4 +178,38 @@ export function formatDayLabel(date: Date, now = new Date()): string {
   if (key === localDayKey(now)) return "Hôm nay";
   if (key === localDayKey(startOfLocalDay(now, -1))) return "Hôm qua";
   return `${WEEKDAY_LABELS[date.getDay()]}, ${formatShortDate(date)}`;
+}
+
+export const WEAK_WORD_WINDOW_DAYS = 30;
+export const WEAK_WORD_MIN_FAILURES = 2;
+export const WEAK_PRACTICE_LIMIT = 20;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+export type WeakWord = {
+  vocabulary: Vocabulary;
+  failureCount: number;
+};
+
+export function getWeakWords(items: ActivityItem[], vocabularies: Vocabulary[], now = new Date()): WeakWord[] {
+  const since = now.getTime() - WEAK_WORD_WINDOW_DAYS * DAY_MS;
+  const failures = new Map<string, number>();
+  for (const entry of items) {
+    if (entry.success || entry.at.getTime() < since) continue;
+    failures.set(entry.vocabularyId, (failures.get(entry.vocabularyId) ?? 0) + 1);
+  }
+
+  const vocabularyById = new Map(vocabularies.map((vocabulary) => [vocabulary.id, vocabulary]));
+  const weakWords: WeakWord[] = [];
+  for (const [vocabularyId, failureCount] of failures) {
+    const vocabulary = vocabularyById.get(vocabularyId);
+    if (vocabulary && failureCount >= WEAK_WORD_MIN_FAILURES) {
+      weakWords.push({ vocabulary, failureCount });
+    }
+  }
+
+  return weakWords.sort(
+    (a, b) =>
+      b.failureCount - a.failureCount ||
+      normalizeSchedule(b.vocabulary, now).lapses - normalizeSchedule(a.vocabulary, now).lapses
+  );
 }

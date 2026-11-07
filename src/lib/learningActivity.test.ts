@@ -3,6 +3,7 @@ import {
   buildHeatmap,
   formatDayLabel,
   getHeatmapIntensity,
+  getWeakWords,
   getTodayProgress,
   localDayKey,
   startOfLocalDay,
@@ -10,7 +11,7 @@ import {
   toActivityItems,
   type ActivityItem
 } from "./learningActivity";
-import type { QuizAttempt, ReviewEvent } from "@/types/types";
+import type { QuizAttempt, ReviewEvent, Vocabulary } from "@/types/types";
 
 // 2026-11-07 is a Saturday. All dates are local time.
 const NOW = new Date(2026, 10, 7, 15, 0);
@@ -200,5 +201,63 @@ describe("formatDayLabel", () => {
     expect(formatDayLabel(new Date(2026, 10, 6), NOW)).toBe("Hôm qua");
     expect(formatDayLabel(new Date(2026, 10, 5), NOW)).toBe("T5, 05/11");
     expect(formatDayLabel(new Date(2026, 10, 1), NOW)).toBe("CN, 01/11");
+  });
+});
+
+function vocab(id: string, lapses = 0): Vocabulary {
+  return {
+    id,
+    word: id,
+    definition: `${id}-def`,
+    partOfSpeech: "noun",
+    phonetic: "",
+    topicId: null,
+    userId: "u",
+    createdAt: new Date(2026, 0, 1),
+    updatedAt: new Date(2026, 0, 1),
+    level: 1,
+    nextReview: null,
+    srsVersion: 1,
+    intervalDays: 1,
+    easeFactor: 2.5,
+    repetitions: 1,
+    lapses,
+    lastReviewedAt: null
+  };
+}
+
+describe("getWeakWords", () => {
+  const fail = (id: string, daysAgo: number) =>
+    item(new Date(NOW.getTime() - daysAgo * 24 * 60 * 60 * 1000), { vocabularyId: id, success: false });
+
+  it("keeps words with at least 2 failures in the last 30 days", () => {
+    const items = [fail("a", 1), fail("a", 2), fail("b", 1), item(NOW, { vocabularyId: "b" })];
+
+    expect(getWeakWords(items, [vocab("a"), vocab("b")], NOW)).toEqual([{ vocabulary: vocab("a"), failureCount: 2 }]);
+  });
+
+  it("ignores failures older than 30 days", () => {
+    const items = [fail("a", 1), fail("a", 31)];
+
+    expect(getWeakWords(items, [vocab("a")], NOW)).toEqual([]);
+  });
+
+  it("ignores deleted vocabulary", () => {
+    expect(getWeakWords([fail("gone", 1), fail("gone", 2)], [vocab("a")], NOW)).toEqual([]);
+  });
+
+  it("sorts by failures, then by SRS lapses", () => {
+    const items = [
+      fail("a", 1), fail("a", 2),
+      fail("b", 1), fail("b", 2), fail("b", 3),
+      fail("c", 1), fail("c", 2)
+    ];
+    const result = getWeakWords(items, [vocab("a", 1), vocab("b", 0), vocab("c", 4)], NOW);
+
+    expect(result.map((w) => [w.vocabulary.id, w.failureCount])).toEqual([
+      ["b", 3],
+      ["c", 2],
+      ["a", 2]
+    ]);
   });
 });
