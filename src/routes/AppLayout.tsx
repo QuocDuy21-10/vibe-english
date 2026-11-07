@@ -1,6 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
-import { BookOpen, Brain, LayoutDashboard, Layers, Loader2, LogOut } from "lucide-react";
+import { BookOpen, Brain, LayoutDashboard, Layers, LineChart, Loader2, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import { AudioSettingsDialog } from "@/components/features/AudioSettingsDialog";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ const navItems = [
   { to: "/dictionary", label: "Từ điển", icon: BookOpen },
   { to: "/topics", label: "Chủ đề", icon: Layers },
   { to: "/study", label: "Flashcard", icon: Brain },
+  { to: "/progress", label: "Tiến độ", icon: LineChart },
 ];
 
 export function AppLayout() {
