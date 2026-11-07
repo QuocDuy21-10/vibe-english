@@ -2,12 +2,17 @@ import { motion } from "motion/react";
 import { Trophy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, WEAK_WORDS_TOPIC } from "@/constants/vocab";
+import {
+  QUICK_QUIZ_TOPIC,
+  SRS_REVIEW_TOPIC,
+  STUDY_MODE_LABELS,
+  WEAK_WORDS_TOPIC
+} from "@/constants/vocab";
 import type { FlashcardRating } from "@/lib/srs";
-import type { StudySession } from "@/types/types";
+import type { StudyMode, StudySession } from "@/types/types";
 
 type StudySummaryProps = {
-  studyMode: "flashcard" | "quiz";
+  studyMode: StudyMode;
   selectedTopic: string;
   itemCount: number;
   score: number;
@@ -77,6 +82,11 @@ export function StudySummary({
                   ? `Bạn đã luyện xong ${displayItemCount} từ hay quên!`
                   : `Bạn đã hoàn thành ${displayItemCount} từ vựng trong chủ đề này.`}
           </p>
+          {studyMode !== "flashcard" && (
+            <p className="text-xs font-bold uppercase tracking-wider text-[#10b981]">
+              Chế độ: {STUDY_MODE_LABELS[studyMode]}
+            </p>
+          )}
         </div>
 
         {studyMode === "flashcard" ? (

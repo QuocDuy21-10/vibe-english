@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { getBatchWordDetails, getWordDetails } from "../src/services/geminiService";
+import { getBatchWordDetails, getWordDetails, getWordUsages } from "../src/services/geminiService";
 
 // Mock firebase auth
 vi.mock("@/lib/firebase", () => ({
@@ -108,5 +108,45 @@ describe("Client geminiService", () => {
     expect(result.slice(20).every((item) => item.definition === "")).toBe(true);
     expect(onProgress).toHaveBeenLastCalledWith(50, 50);
     consoleError.mockRestore();
+  });
+
+  describe("getWordUsages", () => {
+    const items = [{ word: "deploy", partOfSpeech: "verb", definition: "triển khai" }];
+
+    it("posts items with the bearer token and returns parsed usages", async () => {
+      (auth as any).currentUser = { getIdToken: vi.fn().mockResolvedValue("tok") };
+      const payload = [{
+        word: "deploy",
+        examples: [{ sentence: "We deployed it.", translation: "Đã triển khai.", answer: "deployed" }],
+        collocations: [{ phrase: "deploy code", meaning: "triển khai mã" }]
+      }];
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => payload }) as any;
+
+      await expect(getWordUsages(items)).resolves.toEqual(payload);
+      expect(globalThis.fetch).toHaveBeenCalledWith("/api/ai/word-usages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: "Bearer tok" },
+        body: JSON.stringify({ items })
+      });
+    });
+
+    it("rejects a malformed response", async () => {
+      (auth as any).currentUser = { getIdToken: vi.fn().mockResolvedValue("tok") };
+      globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [{ word: "deploy" }] }) as any;
+      await expect(getWordUsages(items)).rejects.toThrow();
+    });
+
+    it("surfaces the server error message", async () => {
+      (auth as any).currentUser = { getIdToken: vi.fn().mockResolvedValue("tok") };
+      globalThis.fetch = vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({ error: "Bạn đã tra quá 300 từ trong 1 giờ." })
+      }) as any;
+      await expect(getWordUsages(items)).rejects.toThrow("Bạn đã tra quá 300 từ trong 1 giờ.");
+    });
+
+    it("requires a signed-in user", async () => {
+      await expect(getWordUsages(items)).rejects.toThrow("Bạn cần đăng nhập");
+    });
   });
 });

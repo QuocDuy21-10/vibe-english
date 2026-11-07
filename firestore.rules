@@ -141,6 +141,21 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+    function isValidWordUsage(data, vocabId) {
+      return data.keys().hasAll(['userId', 'vocabularyId', 'word', 'examples', 'collocations', 'generatedAt'])
+        && data.keys().size() == 6
+        && data.userId == request.auth.uid
+        && data.vocabularyId == vocabId
+        && data.word is string && data.word.size() > 0 && data.word.size() <= 100
+        && data.examples is list && data.examples.size() <= 5
+        && data.collocations is list && data.collocations.size() <= 8
+        && data.generatedAt == request.time;
+    }
+
+    function ownsVocabulary(vocabId) {
+      return get(/databases/$(database)/documents/vocabularies/$(vocabId)).data.userId == request.auth.uid;
+    }
+
     // --- Rules ---
 
     match /topics/{topicId} {
@@ -192,6 +207,20 @@ service cloud.firestore {
         && incoming().reviewedAt == request.time;
 
       allow update, delete: if false;
+    }
+
+    match /wordUsages/{vocabId} {
+      // resource == null: reading or deleting a not-yet-generated cache must not fail (deleteVocabulary batches it).
+      allow get, delete: if isSignedIn()
+        && (resource == null || resource.data.userId == request.auth.uid);
+
+      allow create: if isSignedIn()
+        && isValidWordUsage(incoming(), vocabId)
+        && ownsVocabulary(vocabId);
+
+      allow update: if isOwner(existing().userId)
+        && isValidWordUsage(incoming(), vocabId)
+        && ownsVocabulary(vocabId);
     }
 
     match /quizAttempts/{attemptId} {

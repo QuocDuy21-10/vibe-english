@@ -1,3 +1,5 @@
+import type { StudyMode } from "@/types/types";
+
 export const LEVELS = [0, 1, 2, 3, 4] as const;
 export const DEFAULT_TOPIC_FILTER = "all";
 export const UNASSIGNED_TOPIC_FILTER = "none";
@@ -6,6 +8,15 @@ export const SRS_REVIEW_TOPIC = "srs_review";
 export const WEAK_WORDS_TOPIC = "weak_words";
 export const DEFAULT_DAILY_GOAL = 15;
 export const DAILY_GOAL_OPTIONS = [10, 15, 20, 30, 50] as const;
+
+export const STUDY_MODES: readonly StudyMode[] = ["flashcard", "quiz", "listening", "context"];
+
+export const STUDY_MODE_LABELS: Record<StudyMode, string> = {
+  flashcard: "Flashcard",
+  quiz: "Điền từ",
+  listening: "Nghe",
+  context: "Ngữ cảnh"
+};
 
 export const PART_OF_SPEECH_OPTIONS = [
   "noun",

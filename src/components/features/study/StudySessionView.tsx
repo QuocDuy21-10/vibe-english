@@ -2,24 +2,27 @@ import { ArrowLeft, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "motion/react";
 
 import { Button } from "@/components/ui/button";
+import { STUDY_MODES, STUDY_MODE_LABELS } from "@/constants/vocab";
 import { cn } from "@/lib/utils";
 import type { FlashcardRating } from "@/lib/srs";
-import type { Vocabulary } from "@/types/types";
+import type { StudyMode, Vocabulary } from "@/types/types";
 import { FlashcardPanel } from "./FlashcardPanel";
 import { QuizPanel } from "./QuizPanel";
+import { QuizStatusCard, type QuizCard } from "./quizCards";
 
 type StudySessionViewProps = {
   vocabulary: Vocabulary;
   currentIndex: number;
   itemCount: number;
-  studyMode: "flashcard" | "quiz";
+  studyMode: StudyMode;
+  quizCard: QuizCard | null;
   title: string;
   subtitle: string;
   isFlipped: boolean;
   isPending: boolean;
   feedback: "correct" | "incorrect" | null;
   onReturnToTopics: () => void;
-  onModeChange: (mode: "flashcard" | "quiz") => void;
+  onModeChange: (mode: StudyMode) => void;
   onPrevious: () => void;
   onNext: () => void;
   onFlip: () => void;
@@ -34,6 +37,7 @@ export function StudySessionView({
   currentIndex,
   itemCount,
   studyMode,
+  quizCard,
   title,
   subtitle,
   isFlipped,
@@ -54,7 +58,7 @@ export function StudySessionView({
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-12 w-full flex flex-col flex-grow">
       <div className="space-y-4">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
           <Button
             variant="ghost"
             size="sm"
@@ -65,33 +69,24 @@ export function StudySessionView({
             Danh sách chủ đề
           </Button>
 
-          <div className="bg-white border border-slate-200/60 p-1 rounded-full flex gap-1 shadow-sm">
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "rounded-full px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer",
-                studyMode === "flashcard"
-                  ? "bg-[#10b981] text-white hover:bg-[#10b981]/90 hover:text-white shadow-sm"
-                  : "text-slate-500 hover:bg-[#ECFDF5]"
-              )}
-              onClick={() => onModeChange("flashcard")}
-            >
-              Flashcard
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "rounded-full px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer",
-                studyMode === "quiz"
-                  ? "bg-[#10b981] text-white hover:bg-[#10b981]/90 hover:text-white shadow-sm"
-                  : "text-slate-500 hover:bg-[#ECFDF5]"
-              )}
-              onClick={() => onModeChange("quiz")}
-            >
-              Điền từ
-            </Button>
+          <div className="bg-white border border-slate-200/60 p-1 rounded-full flex gap-1 shadow-sm overflow-x-auto max-w-full">
+            {STUDY_MODES.map((mode) => (
+              <Button
+                key={mode}
+                variant="ghost"
+                size="sm"
+                aria-pressed={studyMode === mode}
+                className={cn(
+                  "rounded-full px-3 sm:px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer shrink-0",
+                  studyMode === mode
+                    ? "bg-[#10b981] text-white hover:bg-[#10b981]/90 hover:text-white shadow-sm"
+                    : "text-slate-500 hover:bg-[#ECFDF5]"
+                )}
+                onClick={() => onModeChange(mode)}
+              >
+                {STUDY_MODE_LABELS[mode]}
+              </Button>
+            ))}
           </div>
         </div>
 
@@ -136,18 +131,23 @@ export function StudySessionView({
               onFlip={onFlip}
               onRate={onRate}
             />
-          ) : (
+          ) : quizCard?.status === "ready" ? (
             <QuizPanel
-              key={vocabulary.id}
-              vocabulary={vocabulary}
-              currentIndex={currentIndex}
+              key={`${studyMode}-${vocabulary.id}-${currentIndex}`}
+              itemKey={`${studyMode}-${vocabulary.id}-${currentIndex}`}
+              label={quizCard.label}
+              answer={quizCard.answer}
+              prompt={quizCard.prompt}
+              afterAnswer={quizCard.afterAnswer}
               feedback={feedback}
               onAnswerChange={onAnswerChange}
               onCheckAnswer={onCheckAnswer}
               onRevealAnswer={onRevealAnswer}
               onNext={onNext}
             />
-          )}
+          ) : quizCard ? (
+            <QuizStatusCard card={quizCard} onSkip={onNext} />
+          ) : null}
         </div>
 
         <Button

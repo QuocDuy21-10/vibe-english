@@ -1,5 +1,5 @@
 import { lazy, memo, Suspense, useState } from "react";
-import { Edit3, Tags, Trash2, Volume2 } from "lucide-react";
+import { Edit3, Loader2, Quote, Tags, Trash2, Volume2 } from "lucide-react";
 import { motion } from "motion/react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +24,11 @@ const loadEditVocabDialog = () =>
 const LazyEditVocabDialog = lazy(loadEditVocabDialog);
 const preloadEditVocabDialog = () => { void loadEditVocabDialog().catch(() => undefined); };
 
+const loadWordUsageDialog = () =>
+  import("@/components/features/WordUsageDialog").then((module) => ({ default: module.WordUsageDialog }));
+const LazyWordUsageDialog = lazy(loadWordUsageDialog);
+const preloadWordUsageDialog = () => { void loadWordUsageDialog().catch(() => undefined); };
+
 type VocabCardProps = {
   vocabulary: Vocabulary;
   topics: Topic[];
@@ -43,6 +48,7 @@ export const VocabCard = memo(function VocabCard({
 }: VocabCardProps) {
   const { speak } = useAudioActions();
   const [isEditing, setIsEditing] = useState(false);
+  const [isUsageOpen, setIsUsageOpen] = useState(false);
   // Keeps the edit form mounted only while open or animating closed, so idle cards skip useForm setup.
   const [isEditDialogMounted, setIsEditDialogMounted] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -125,6 +131,42 @@ export const VocabCard = memo(function VocabCard({
         </CardContent>
 
         <div className="absolute top-3.5 right-3 flex flex-col gap-1">
+          <Dialog open={isUsageOpen} onOpenChange={setIsUsageOpen}>
+            <DialogTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onPointerEnter={preloadWordUsageDialog}
+                  onFocus={preloadWordUsageDialog}
+                  className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
+                  aria-label={`Xem ví dụ của ${vocabulary.word}`}
+                />
+              }
+            >
+              <Quote className="w-4 h-4" />
+            </DialogTrigger>
+            {isUsageOpen && (
+              <Suspense
+                fallback={
+                  <DialogContent className="sm:max-w-lg rounded-3xl border-none shadow-2xl">
+                    <DialogHeader>
+                      <DialogTitle>Ví dụ</DialogTitle>
+                    </DialogHeader>
+                    <div className="flex items-center justify-center p-8" role="status" aria-label="Đang tải hộp thoại">
+                      <Loader2 className="w-6 h-6 animate-spin text-[#10b981]" />
+                      <span className="sr-only">Đang tải hộp thoại</span>
+                    </div>
+                  </DialogContent>
+                }
+              >
+                <LazyDialogBoundary dialog resetKey={isUsageOpen}>
+                  <LazyWordUsageDialog vocabulary={vocabulary} />
+                </LazyDialogBoundary>
+              </Suspense>
+            )}
+          </Dialog>
+
           <Dialog
             open={isEditing}
             onOpenChange={(open) => {

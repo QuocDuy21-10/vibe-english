@@ -1,7 +1,6 @@
 import {
   addDoc,
   collection,
-  deleteDoc,
   doc,
   onSnapshot,
   orderBy,
@@ -208,7 +207,11 @@ export async function batchCreateVocabularies(
 
 export async function deleteVocabulary(id: string): Promise<void> {
   try {
-    await deleteDoc(doc(db, "vocabularies", id));
+    const batch = writeBatch(db);
+    batch.delete(doc(db, "vocabularies", id));
+    // Cached AI examples are keyed by vocabulary id; remove them with the word.
+    batch.delete(doc(db, "wordUsages", id));
+    await batch.commit();
   } catch (error) {
     handleFirestoreError(error, OperationType.DELETE, `vocabularies/${id}`);
     throw error;

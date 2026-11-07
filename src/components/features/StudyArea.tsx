@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Brain, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { getQuizCard } from "@/components/features/study/quizCards";
 import { StudyExitConfirmDialog } from "@/components/features/study/StudyExitConfirmDialog";
 import { StudySessionView } from "@/components/features/study/StudySessionView";
 import { StudySummary } from "@/components/features/study/StudySummary";
@@ -15,6 +16,7 @@ import {
   WEAK_WORDS_TOPIC
 } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
+import { useWordUsages } from "@/hooks/useWordUsages";
 import {
   calculateNextSchedule,
   normalizeSchedule,
@@ -28,7 +30,7 @@ import { useAuth } from "@/routes/AppDataProvider";
 import { useAudioActions } from "@/routes/AudioProvider";
 import { recordQuizAttempt } from "@/services/quizAttemptRepository";
 import { recordVocabularyReview } from "@/services/vocabularyRepository";
-import type { QuizAttemptResult, Topic, Vocabulary, StudySession } from "@/types/types";
+import type { QuizAttemptResult, Topic, Vocabulary, StudyMode, StudySession } from "@/types/types";
 
 type StudyAreaProps = {
   vocabulary: Vocabulary[];
@@ -37,7 +39,6 @@ type StudyAreaProps = {
 };
 
 type StudyView = "topics" | "study" | "summary";
-type StudyMode = "flashcard" | "quiz";
 type QuizFeedback = "correct" | "incorrect" | null;
 
 type FlashcardAssessment = {
@@ -71,6 +72,8 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
   const [requeuedIds, setRequeuedIds] = useState<Set<string>>(new Set());
   const [pendingVocabId, setPendingVocabId] = useState<string | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  // New seed per session so a word shows a different example sentence each time.
+  const [sessionSeed, setSessionSeed] = useState(() => String(Date.now()));
   const completionHandledRef = useRef(false);
 
   const playStudyEvent = (event: StudyAudioEvent) => {
@@ -91,6 +94,12 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
   );
 
   const dueCount = useMemo(() => getDueCount(vocabulary), [vocabulary]);
+
+  const { states: usageStates, retry: retryUsage } = useWordUsages(
+    filtered,
+    view === "study" && studyMode === "context",
+    user?.uid ?? null
+  );
 
   const flashcardStats = useMemo(() => {
     const stats: Record<FlashcardRating, number> = { again: 0, hard: 0, good: 0, easy: 0 };
@@ -128,6 +137,7 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
           });
 
     setSelectedTopic(topicId);
+    setSessionSeed(String(Date.now()));
     setStudyMode(mode);
     setSessionVocab(items);
     setScore(0);
@@ -226,12 +236,12 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
     });
   };
 
-  const checkAnswer = (answer: string) => {
+  const checkAnswer = (answer: string, expected: string) => {
     const currentVocabulary = filtered[safeCurrentIndex];
     const trimmedAnswer = answer.trim();
     if (!currentVocabulary || !trimmedAnswer) return;
 
-    const isCorrect = trimmedAnswer.toLowerCase() === currentVocabulary.word.trim().toLowerCase();
+    const isCorrect = trimmedAnswer.toLowerCase() === expected.trim().toLowerCase();
     if (!feedback && !attemptedWords.has(currentVocabulary.id)) {
       setAttemptedWords((previousWords) => new Set(previousWords).add(currentVocabulary.id));
       if (isCorrect) setScore((previousScore) => previousScore + 1);
@@ -312,6 +322,16 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
   }
 
   const current = filtered[safeCurrentIndex];
+  const quizCard =
+    studyMode === "flashcard"
+      ? null
+      : getQuizCard({
+          mode: studyMode,
+          vocabulary: current,
+          usageState: usageStates[current.id],
+          seed: sessionSeed,
+          onRetry: () => retryUsage(current)
+        });
   const handleFlashcardRating = async (rating: FlashcardRating) => {
     if (pendingVocabId === current.id) return;
     if (!user) {
@@ -396,6 +416,7 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
         currentIndex={safeCurrentIndex}
         itemCount={filtered.length}
         studyMode={studyMode}
+        quizCard={quizCard}
         title={title}
         subtitle={subtitle}
         isFlipped={isFlipped}
@@ -413,7 +434,9 @@ export function StudyArea({ vocabulary, topics, weakVocabularies }: StudyAreaPro
         onAnswerChange={() => {
           if (feedback) setFeedback(null);
         }}
-        onCheckAnswer={checkAnswer}
+        onCheckAnswer={(answer) => {
+          if (quizCard?.status === "ready") checkAnswer(answer, quizCard.answer);
+        }}
         onRevealAnswer={revealAnswer}
       />
       <StudyExitConfirmDialog

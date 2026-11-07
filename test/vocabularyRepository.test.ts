@@ -8,13 +8,14 @@ import {
   batchCreateVocabularies,
   subscribeVocabularies
 } from "@/services/vocabularyRepository";
-import { addDoc, updateDoc, deleteDoc, onSnapshot, writeBatch } from "firebase/firestore";
+import { addDoc, updateDoc, onSnapshot, writeBatch } from "firebase/firestore";
 import type { ScheduleUpdate } from "@/lib/srs";
 import type { Vocabulary } from "@/types/types";
 
 const mockBatch = {
   update: vi.fn(),
   set: vi.fn(),
+  delete: vi.fn(),
   commit: vi.fn().mockResolvedValue(undefined)
 };
 
@@ -192,17 +193,18 @@ describe("vocabularyRepository", () => {
   });
 
   describe("deleteVocabulary", () => {
-    it("calls deleteDoc on the vocabulary reference", async () => {
-      vi.mocked(deleteDoc).mockResolvedValueOnce(undefined as any);
-
+    it("deletes the vocabulary and its cached word usages in one batch", async () => {
       await deleteVocabulary("vocab-1");
 
-      expect(deleteDoc).toHaveBeenCalledWith("doc:vocabularies/vocab-1");
+      expect(writeBatch).toHaveBeenCalled();
+      expect(mockBatch.delete).toHaveBeenCalledWith("doc:vocabularies/vocab-1");
+      expect(mockBatch.delete).toHaveBeenCalledWith("doc:wordUsages/vocab-1");
+      expect(mockBatch.commit).toHaveBeenCalled();
     });
 
-    it("logs error and re-throws when deleteDoc fails", async () => {
+    it("logs error and re-throws when the batch fails", async () => {
       const error = new Error("Delete error");
-      vi.mocked(deleteDoc).mockRejectedValueOnce(error);
+      mockBatch.commit.mockRejectedValueOnce(error);
 
       await expect(deleteVocabulary("vocab-1")).rejects.toThrow("Delete error");
       expect(handleFirestoreError).toHaveBeenCalledWith(error, "delete", "vocabularies/vocab-1");

@@ -132,6 +132,8 @@ export interface ReviewEvent {
   srsVersion: number;
 }
 
+export type StudyMode = "flashcard" | "quiz" | "listening" | "context";
+
 export type QuizAttemptResult = "correct" | "incorrect" | "revealed";
 
 export interface QuizAttempt {
@@ -174,4 +176,27 @@ export interface FirestoreErrorInfo {
     userId?: string | null;
     isAuthenticated: boolean;
   }
+}
+
+export interface WordUsageExample {
+  sentence: string;
+  translation: string;
+  answer: string;
+}
+
+export interface WordUsageCollocation {
+  phrase: string;
+  meaning: string;
+}
+
+export interface WordUsageContent {
+  examples: WordUsageExample[];
+  collocations: WordUsageCollocation[];
+}
+
+export interface WordUsage extends WordUsageContent {
+  userId: string;
+  vocabularyId: string;
+  word: string;
+  generatedAt: Timestamp | Date;
 }

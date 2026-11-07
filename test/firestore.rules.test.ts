@@ -930,6 +930,95 @@ describe("Firestore Security Rules Tests", () => {
       );
     });
   });
+
+  describe("wordUsages collection rules", () => {
+    const usage = (overrides: Record<string, unknown> = {}) => ({
+      userId: "alice",
+      vocabularyId: "v_alice",
+      word: "deploy",
+      examples: [{ sentence: "We deployed it.", translation: "Đã triển khai.", answer: "deployed" }],
+      collocations: [{ phrase: "deploy code", meaning: "triển khai mã" }],
+      generatedAt: serverTimestamp(),
+      ...overrides
+    });
+
+    beforeEach(async () => {
+      await seedDocument("vocabularies/v_alice", { userId: "alice", word: "deploy" });
+      await seedDocument("vocabularies/v_bob", { userId: "bob", word: "ship" });
+    });
+
+    it("allows the owner to create a usage for their own vocabulary", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage()));
+    });
+
+    it("allows the owner to overwrite (regenerate) their usage", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage()));
+      await assertSucceeds(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ examples: [] })));
+    });
+
+    it("denies creating a usage for another user's vocabulary", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_bob"), usage({ vocabularyId: "v_bob" })));
+    });
+
+    it("denies a usage whose vocabulary does not exist", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_missing"), usage({ vocabularyId: "v_missing" })));
+    });
+
+    it("denies a usage with another userId", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ userId: "bob" })));
+    });
+
+    it("denies a vocabularyId that does not match the document id", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ vocabularyId: "other" })));
+    });
+
+    it("denies extra keys", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ extra: true })));
+    });
+
+    it("denies more than 5 examples or 8 collocations", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const example = { sentence: "s", translation: "t", answer: "s" };
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ examples: Array(6).fill(example) })));
+      await assertFails(
+        setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ collocations: Array(9).fill({ phrase: "p", meaning: "m" }) }))
+      );
+    });
+
+    it("denies a client-chosen generatedAt", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "wordUsages/v_alice"), usage({ generatedAt: Timestamp.now() })));
+    });
+
+    it("lets the owner read and delete, but not another user", async () => {
+      await seedDocument("wordUsages/v_alice", { ...usage(), generatedAt: Timestamp.now() });
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const bobDb = testEnv.authenticatedContext("bob").firestore();
+      await assertSucceeds(getDoc(doc(aliceDb, "wordUsages/v_alice")));
+      await assertFails(getDoc(doc(bobDb, "wordUsages/v_alice")));
+      await assertFails(deleteDoc(doc(bobDb, "wordUsages/v_alice")));
+      await assertSucceeds(deleteDoc(doc(aliceDb, "wordUsages/v_alice")));
+    });
+
+    it("allows reading and deleting a usage that does not exist yet", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(getDoc(doc(aliceDb, "wordUsages/v_none")));
+      await assertSucceeds(deleteDoc(doc(aliceDb, "wordUsages/v_none")));
+    });
+
+    it("denies listing the collection", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(getDocs(collection(aliceDb, "wordUsages")));
+    });
+  });
+
   // 10. QuizAttempts security rules
   describe("quizAttempts collection rules", () => {
     const validAttempt = (userId: string) => ({
