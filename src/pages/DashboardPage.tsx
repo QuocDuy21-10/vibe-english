@@ -3,8 +3,10 @@ import { motion } from "motion/react";
 import { Card } from "@/components/ui/card";
 import { DailyGoalCard } from "@/components/features/progress/DailyGoalCard";
 import { LearningHeatmap } from "@/components/features/progress/LearningHeatmap";
+import { LearningMomentumCard } from "@/components/features/LearningMomentumCard";
 import { VocabularyNotificationCard } from "@/components/features/VocabularyNotificationCard";
 import { LEVELS } from "@/constants/vocab";
+import { useGamificationStats } from "@/hooks/useGamificationStats";
 import { useVocabularyOverview } from "@/hooks/useVocabStats";
 import { buildHeatmap, getTodayProgress } from "@/lib/learningActivity";
 import { useAuth, useVocabularyData } from "@/routes/AppDataProvider";
@@ -74,6 +76,7 @@ export function DashboardPage() {
   const now = new Date();
   const todayProgress = getTodayProgress(items, dailyGoal, now);
   const heatmapWeeks = buildHeatmap(items, dailyGoal, now);
+  const gamification = useGamificationStats(user?.uid, stats.learnedVocab);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 lg:gap-8">
@@ -139,6 +142,10 @@ export function DashboardPage() {
           </p>
         </div>
       </Card>
+
+      <div className="md:col-span-3">
+        <LearningMomentumCard {...gamification} />
+      </div>
 
       {/* Levels Matrix */}
       <div className="md:col-span-3 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
