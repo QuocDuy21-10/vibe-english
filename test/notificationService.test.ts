@@ -275,9 +275,26 @@ describe("notificationService", () => {
       vocabularyId: "vocab-1",
       word: "apple",
       url: "/dictionary",
-      messageId: "message-1"
+      messageId: "message-1",
+      kind: ""
     });
     expect(typeof unsubscribe).toBe("function");
+  });
+
+  it("attaches the foreground listener before permission is granted", async () => {
+    installBrowserNotification("default");
+
+    await subscribeToForegroundVocabularyMessages(vi.fn());
+
+    expect(mocks.onMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips the foreground listener when push is unsupported", async () => {
+    mocks.isSupported.mockResolvedValue(false);
+
+    await subscribeToForegroundVocabularyMessages(vi.fn());
+
+    expect(mocks.onMessage).not.toHaveBeenCalled();
   });
 
   it("sends a test notification for the current Firebase installation", async () => {

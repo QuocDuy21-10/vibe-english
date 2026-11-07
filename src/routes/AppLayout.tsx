@@ -4,7 +4,7 @@ import { BookOpen, Brain, LayoutDashboard, Layers, Loader2, LogOut } from "lucid
 import { toast } from "sonner";
 import { AudioSettingsDialog } from "@/components/features/AudioSettingsDialog";
 import { Button } from "@/components/ui/button";
-import { createRecentMessageDeduper } from "@/lib/pushNotification";
+import { createRecentMessageDeduper, createVocabularyNotificationDisplay } from "@/lib/pushNotification";
 import { cn } from "@/lib/utils";
 import { subscribeToForegroundVocabularyMessages } from "@/services/notificationService";
 import { useAuth, useVocabularyData } from "./AppDataProvider";
@@ -29,13 +29,20 @@ export function AppLayout() {
     let unsubscribe: (() => void) | undefined;
     subscribeToForegroundVocabularyMessages((message) => {
       if (!shouldDisplayMessage(message.messageId)) return;
-      toast.info(message.title, {
-        description: message.body,
-        action: {
-          label: "Mở từ điển",
-          onClick: () => navigate(message.url)
-        }
-      });
+      // FCM hands pushes to the visible page instead of the service worker, so show the OS notification here.
+      const { title, options } = createVocabularyNotificationDisplay(message);
+      navigator.serviceWorker.ready
+        .then((registration) => registration.showNotification(title, options))
+        .catch((error) => {
+          console.error("Unable to show foreground notification", error);
+          toast.info(message.title, {
+            description: message.body,
+            action: {
+              label: "Mở từ điển",
+              onClick: () => navigate(message.url)
+            }
+          });
+        });
     })
       .then((listenerCleanup) => {
         if (active) unsubscribe = listenerCleanup;

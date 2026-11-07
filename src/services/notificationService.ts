@@ -47,6 +47,7 @@ export type ForegroundVocabularyMessage = {
   word: string;
   url: string;
   messageId: string;
+  kind: string;
 };
 
 export type TestPushAccepted = {
@@ -232,7 +233,8 @@ function normalizeForegroundMessage(payload: MessagePayload): ForegroundVocabula
     vocabularyId: data.vocabularyId ?? "",
     word: data.word ?? "",
     url: normalizeNotificationPath(data.url),
-    messageId: data.messageId ?? payload.messageId ?? ""
+    messageId: data.messageId ?? payload.messageId ?? "",
+    kind: data.kind ?? ""
   };
 }
 
@@ -291,8 +293,9 @@ export async function sendTestVocabularyNotification(): Promise<TestPushAccepted
 export async function subscribeToForegroundVocabularyMessages(
   listener: (message: ForegroundVocabularyMessage) => void
 ): Promise<Unsubscribe> {
-  const capability = await getNotificationCapability();
-  if (capability !== "granted") return () => undefined;
+  // Attach even before permission is granted: the layout subscribes once, and a later
+  // enable in the same session must still receive foreground pushes.
+  if (await getNotificationCapability() === "unsupported") return () => undefined;
 
   return onMessage(getMessaging(firebaseApp), (payload) => {
     listener(normalizeForegroundMessage(payload));
