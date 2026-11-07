@@ -134,6 +134,22 @@ export interface ReviewEvent {
 
 export type StudyMode = "flashcard" | "quiz" | "listening" | "context";
 
+export type QuizAttemptResult = "correct" | "incorrect" | "revealed";
+
+export interface QuizAttempt {
+  id?: string;
+  userId: string;
+  vocabularyId: string;
+  topicId: string | null;
+  result: QuizAttemptResult;
+  attemptedAt: Timestamp | Date;
+}
+
+export interface UserSettings {
+  dailyGoal: number;
+  updatedAt: Timestamp | Date;
+}
+
 export type StudySession = {
   initialCount: number;
   completedCount: number;

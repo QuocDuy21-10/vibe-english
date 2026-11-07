@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { AudioProvider } from "./AudioProvider";
 import { AppLayout } from "./AppLayout";
+import { LearningActivityProvider } from "./LearningActivityProvider";
 import { PublicOnly, RequireAuth } from "./RouteGuards";
 
 const DashboardPage = lazy(() =>
@@ -14,6 +15,9 @@ const DictionaryPage = lazy(() =>
 );
 const LoginPage = lazy(() =>
   import("@/pages/LoginPage").then((module) => ({ default: module.LoginPage }))
+);
+const ProgressPage = lazy(() =>
+  import("@/pages/ProgressPage").then((module) => ({ default: module.ProgressPage }))
 );
 const StudyPage = lazy(() =>
   import("@/pages/StudyPage").then((module) => ({ default: module.StudyPage }))
@@ -48,7 +52,9 @@ export function AppRouter() {
               path="/"
               element={
                 <RequireAuth>
-                  <AppLayout />
+                  <LearningActivityProvider>
+                    <AppLayout />
+                  </LearningActivityProvider>
                 </RequireAuth>
               }
             >
@@ -57,6 +63,7 @@ export function AppRouter() {
               <Route path="dictionary" element={<DictionaryPage />} />
               <Route path="topics" element={<TopicsPage />} />
               <Route path="study" element={<StudyPage />} />
+              <Route path="progress" element={<ProgressPage />} />
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Routes>

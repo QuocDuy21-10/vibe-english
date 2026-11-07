@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { BookOpen, Brain, Layers, Search, SearchIcon, Trophy, X } from "lucide-react";
+import { BookOpen, Brain, Layers, RotateCcw, Search, SearchIcon, Trophy, X } from "lucide-react";
 import { motion } from "motion/react";
 
 import { TopicFilterSelect } from "@/components/features/TopicFilterSelect";
@@ -20,6 +20,8 @@ type StudyTopicPickerProps = {
   onSearchChange: (value: string) => void;
   onStartSrsReview: () => void;
   onStartQuickQuiz: () => void;
+  weakCount: number;
+  onStartWeakPractice: () => void;
   onSelectTopic: (topicId: string) => void;
 };
 
@@ -33,6 +35,8 @@ export function StudyTopicPicker({
   onSearchChange,
   onStartSrsReview,
   onStartQuickQuiz,
+  weakCount,
+  onStartWeakPractice,
   onSelectTopic
 }: StudyTopicPickerProps) {
   const [selectedTopicFilter, setSelectedTopicFilter] = useState<string>(DEFAULT_TOPIC_FILTER);
@@ -145,6 +149,25 @@ export function StudyTopicPicker({
                   </div>
                   <CardTitle className="text-lg sm:text-xl font-bold text-white">Kiểm tra nhanh</CardTitle>
                   <CardDescription className="text-amber-100 font-bold tracking-wider uppercase text-xs mt-1">10 từ ngẫu nhiên</CardDescription>
+                </CardHeader>
+              </Card>
+            </motion.button>
+
+            <motion.button
+              type="button"
+              whileHover={{ y: -4 }}
+              className="cursor-pointer group text-left w-full touch-manipulation"
+              onClick={onStartWeakPractice}
+            >
+              <Card className="h-full border-none shadow-lg shadow-slate-200/50 hover:shadow-emerald-950/10 transition-all overflow-hidden rounded-2xl sm:rounded-3xl bg-white border-b-8 border-slate-200">
+                <CardHeader className="p-5 sm:p-6 text-center">
+                  <div className="w-12 h-12 sm:w-14 sm:h-14 bg-amber-100 rounded-2xl flex items-center justify-center mx-auto mb-3 text-amber-600 group-hover:scale-105 transition-transform">
+                    <RotateCcw className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-slate-800">Luyện từ yếu</CardTitle>
+                  <CardDescription className="text-slate-500 font-bold tracking-wider uppercase text-xs mt-1">
+                    {weakCount > 0 ? `${weakCount} từ hay quên` : "Chưa có từ hay quên"}
+                  </CardDescription>
                 </CardHeader>
               </Card>
             </motion.button>

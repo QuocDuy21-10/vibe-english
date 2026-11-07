@@ -34,16 +34,16 @@ export async function getReviewEventsSince(
   }
 }
 
-export function subscribeReviewEventsToday(
+export function subscribeReviewEventsSince(
   userId: string,
-  startOfDay: Date,
+  since: Date,
   onNext: (events: ReviewEvent[]) => void,
   onError?: (error: unknown) => void
 ): () => void {
   const q = query(
     collection(db, "reviewEvents"),
     where("userId", "==", userId),
-    where("reviewedAt", ">=", Timestamp.fromDate(startOfDay)),
+    where("reviewedAt", ">=", Timestamp.fromDate(since)),
     orderBy("reviewedAt", "desc")
   );
 
@@ -52,7 +52,7 @@ export function subscribeReviewEventsToday(
     (snapshot) => {
       const events = snapshot.docs.map((docItem) => ({
         id: docItem.id,
-        ...docItem.data()
+        ...docItem.data({ serverTimestamps: "estimate" })
       })) as ReviewEvent[];
       onNext(events);
     },
