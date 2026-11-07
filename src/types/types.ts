@@ -159,3 +159,26 @@ export interface FirestoreErrorInfo {
     isAuthenticated: boolean;
   }
 }
+
+export interface WordUsageExample {
+  sentence: string;
+  translation: string;
+  answer: string;
+}
+
+export interface WordUsageCollocation {
+  phrase: string;
+  meaning: string;
+}
+
+export interface WordUsageContent {
+  examples: WordUsageExample[];
+  collocations: WordUsageCollocation[];
+}
+
+export interface WordUsage extends WordUsageContent {
+  userId: string;
+  vocabularyId: string;
+  word: string;
+  generatedAt: Timestamp | Date;
+}

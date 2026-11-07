@@ -130,3 +130,47 @@ export async function getBatchWordDetails(
 
   return results;
 }
+
+const wordUsageResponseSchema = z.array(
+  z.object({
+    word: z.string(),
+    examples: z.array(z.object({ sentence: z.string(), translation: z.string(), answer: z.string() })),
+    collocations: z.array(z.object({ phrase: z.string(), meaning: z.string() }))
+  })
+);
+
+export type WordUsageRequestItem = { word: string; partOfSpeech: string; definition: string };
+export type GeneratedWordUsage = z.infer<typeof wordUsageResponseSchema>[number];
+
+/** Calls the server for ≤10 words; results are in the same order as `items`. */
+export async function getWordUsages(items: WordUsageRequestItem[]): Promise<GeneratedWordUsage[]> {
+  const currentUser = auth.currentUser;
+  if (!currentUser) {
+    throw new Error("Bạn cần đăng nhập để sử dụng tính năng tra từ AI.");
+  }
+
+  const idToken = await currentUser.getIdToken();
+  const response = await fetch("/api/ai/word-usages", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${idToken}`
+    },
+    body: JSON.stringify({ items })
+  });
+
+  if (!response.ok) {
+    let errorMessage = "Không thể tạo ví dụ từ AI.";
+    try {
+      const errorJson = await response.json();
+      if (errorJson?.error) {
+        errorMessage = errorJson.error;
+      }
+    } catch {
+      // Fall back to default error message
+    }
+    throw new Error(errorMessage);
+  }
+
+  return wordUsageResponseSchema.parse(await response.json());
+}
