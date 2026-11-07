@@ -2,6 +2,8 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Loader2, Volume2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import type { WordUsageState } from "@/hooks/useWordUsages";
+import { pickClozeExample } from "@/lib/cloze";
 import { useAudioActions } from "@/routes/AudioProvider";
 import type { StudyMode, Vocabulary } from "@/types/types";
 
@@ -15,6 +17,9 @@ export type QuizMode = Exclude<StudyMode, "flashcard">;
 type GetQuizCardInput = {
   mode: QuizMode;
   vocabulary: Vocabulary;
+  usageState?: WordUsageState;
+  seed?: string;
+  onRetry?: () => void;
 };
 
 function MeaningPrompt({ definition }: { definition: string }) {
@@ -69,7 +74,44 @@ function ListeningReveal({ vocabulary }: { vocabulary: Vocabulary }) {
   );
 }
 
-export function getQuizCard({ mode, vocabulary }: GetQuizCardInput): QuizCard {
+function ContextPrompt({ before, after, definition }: { before: string; after: string; definition: string }) {
+  return (
+    <div className="space-y-3">
+      <p className="text-lg sm:text-2xl font-semibold text-slate-900 leading-relaxed break-words px-2">
+        {`${before}_____${after}`}
+      </p>
+      <p className="text-xs font-bold text-[#10b981] uppercase tracking-wide">Gợi ý nghĩa</p>
+      <p className="text-sm sm:text-base font-medium text-slate-600 break-words">{definition}</p>
+    </div>
+  );
+}
+
+function ContextReveal({ sentence, translation }: { sentence: string; translation: string }) {
+  return (
+    <div className="space-y-0.5">
+      <p className="text-sm font-bold text-slate-800 break-words">{sentence}</p>
+      <p className="text-xs text-slate-500 break-words">{translation}</p>
+    </div>
+  );
+}
+
+export function getQuizCard({ mode, vocabulary, usageState, seed, onRetry }: GetQuizCardInput): QuizCard {
+  if (mode === "context") {
+    if (!usageState || usageState.status === "loading") return { status: "loading" };
+    const picked =
+      usageState.status === "ready"
+        ? pickClozeExample(usageState.usage.examples, `${vocabulary.id}:${seed ?? ""}`)
+        : null;
+    if (!picked) return { status: "error", onRetry: onRetry ?? (() => undefined) };
+    return {
+      status: "ready",
+      label: "ĐIỀN TỪ THEO NGỮ CẢNH",
+      answer: picked.cloze.answer,
+      prompt: <ContextPrompt before={picked.cloze.before} after={picked.cloze.after} definition={vocabulary.definition} />,
+      afterAnswer: <ContextReveal sentence={picked.example.sentence} translation={picked.example.translation} />
+    };
+  }
+
   if (mode === "listening") {
     return {
       status: "ready",

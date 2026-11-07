@@ -46,3 +46,52 @@ describe("listening quiz card", () => {
     expect(screen.getByText("triển khai")).toBeTruthy();
   });
 });
+
+describe("context quiz card", () => {
+  const usage = {
+    userId: "u",
+    vocabularyId: "v1",
+    word: "deploy",
+    generatedAt: new Date(),
+    collocations: [],
+    examples: [{ sentence: "We deployed it yesterday.", translation: "Hôm qua chúng tôi đã triển khai.", answer: "deployed" }]
+  };
+
+  it("is loading until usage is ready", () => {
+    expect(getQuizCard({ mode: "context", vocabulary, usageState: { status: "loading" } }).status).toBe("loading");
+    expect(getQuizCard({ mode: "context", vocabulary }).status).toBe("loading");
+  });
+
+  it("is an error card when generation failed or no example is usable", () => {
+    const onRetry = vi.fn();
+    const failed = getQuizCard({ mode: "context", vocabulary, usageState: { status: "error" }, onRetry });
+    expect(failed.status).toBe("error");
+    const empty = getQuizCard({
+      mode: "context",
+      vocabulary,
+      usageState: { status: "ready", usage: { ...usage, examples: [] } },
+      onRetry
+    });
+    expect(empty.status).toBe("error");
+  });
+
+  it("blanks the inflected form and reveals the full sentence after answering", () => {
+    const card = getQuizCard({
+      mode: "context",
+      vocabulary,
+      usageState: { status: "ready", usage },
+      seed: "s"
+    });
+    if (card.status !== "ready") throw new Error("expected ready card");
+    expect(card.answer).toBe("deployed");
+
+    render(<>{card.prompt}</>);
+    expect(screen.getByText(/We\s*_{3,}\s*it yesterday\./)).toBeTruthy();
+    expect(screen.getByText("triển khai")).toBeTruthy();
+    cleanup();
+
+    render(<>{card.afterAnswer}</>);
+    expect(screen.getByText("We deployed it yesterday.")).toBeTruthy();
+    expect(screen.getByText("Hôm qua chúng tôi đã triển khai.")).toBeTruthy();
+  });
+});

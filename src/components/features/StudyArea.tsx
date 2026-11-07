@@ -10,6 +10,7 @@ import { StudyTopicPicker } from "@/components/features/study/StudyTopicPicker";
 import { Button } from "@/components/ui/button";
 import { DEFAULT_TOPIC_FILTER, QUICK_QUIZ_TOPIC, SRS_REVIEW_TOPIC, UNASSIGNED_TOPIC_FILTER } from "@/constants/vocab";
 import { useTopicVocabularyCounts } from "@/hooks/useVocabStats";
+import { useWordUsages } from "@/hooks/useWordUsages";
 import {
   calculateNextSchedule,
   normalizeSchedule,
@@ -62,6 +63,8 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   const [requeuedIds, setRequeuedIds] = useState<Set<string>>(new Set());
   const [pendingVocabId, setPendingVocabId] = useState<string | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+  // New seed per session so a word shows a different example sentence each time.
+  const [sessionSeed, setSessionSeed] = useState(() => String(Date.now()));
   const completionHandledRef = useRef(false);
 
   const playStudyEvent = (event: StudyAudioEvent) => {
@@ -82,6 +85,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   );
 
   const dueCount = useMemo(() => getDueCount(vocabulary), [vocabulary]);
+
+  const { states: usageStates, retry: retryUsage } = useWordUsages(
+    filtered,
+    view === "study" && studyMode === "context",
+    user?.uid ?? null
+  );
 
   const flashcardStats = useMemo(() => {
     const stats: Record<FlashcardRating, number> = { again: 0, hard: 0, good: 0, easy: 0 };
@@ -119,6 +128,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
           });
 
     setSelectedTopic(topicId);
+    setSessionSeed(String(Date.now()));
     setStudyMode(mode);
     setSessionVocab(items);
     setScore(0);
@@ -274,7 +284,16 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   }
 
   const current = filtered[safeCurrentIndex];
-  const quizCard = studyMode === "flashcard" ? null : getQuizCard({ mode: studyMode, vocabulary: current });
+  const quizCard =
+    studyMode === "flashcard"
+      ? null
+      : getQuizCard({
+          mode: studyMode,
+          vocabulary: current,
+          usageState: usageStates[current.id],
+          seed: sessionSeed,
+          onRetry: () => retryUsage(current)
+        });
   const handleFlashcardRating = async (rating: FlashcardRating) => {
     if (pendingVocabId === current.id) return;
     if (!user) {
