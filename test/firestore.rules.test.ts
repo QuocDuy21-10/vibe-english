@@ -930,4 +930,61 @@ describe("Firestore Security Rules Tests", () => {
       );
     });
   });
+  // 10. QuizAttempts security rules
+  describe("quizAttempts collection rules", () => {
+    const validAttempt = (userId: string) => ({
+      userId,
+      vocabularyId: "v1",
+      topicId: null,
+      result: "correct",
+      attemptedAt: serverTimestamp()
+    });
+
+    it("allows a user to create own valid attempt", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertSucceeds(setDoc(doc(aliceDb, "quizAttempts/q1"), validAttempt("alice")));
+    });
+
+    it("denies unauthenticated create", async () => {
+      const anonDb = testEnv.unauthenticatedContext().firestore();
+      await assertFails(setDoc(doc(anonDb, "quizAttempts/q1"), validAttempt("anon")));
+    });
+
+    it("denies creating an attempt for another user", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "quizAttempts/q1"), validAttempt("bob")));
+    });
+
+    it("denies an unknown result value", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "quizAttempts/q1"), { ...validAttempt("alice"), result: "skipped" }));
+    });
+
+    it("denies an extra key", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(setDoc(doc(aliceDb, "quizAttempts/q1"), { ...validAttempt("alice"), score: 1 }));
+    });
+
+    it("denies a client-supplied timestamp", async () => {
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(
+        setDoc(doc(aliceDb, "quizAttempts/q1"), { ...validAttempt("alice"), attemptedAt: Timestamp.now() })
+      );
+    });
+
+    it("lets owners read and blocks other users", async () => {
+      await seedDocument("quizAttempts/q_bob", { ...validAttempt("bob"), attemptedAt: Timestamp.now() });
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      const bobDb = testEnv.authenticatedContext("bob").firestore();
+      await assertFails(getDoc(doc(aliceDb, "quizAttempts/q_bob")));
+      await assertSucceeds(getDoc(doc(bobDb, "quizAttempts/q_bob")));
+    });
+
+    it("denies update and delete", async () => {
+      await seedDocument("quizAttempts/q_alice", { ...validAttempt("alice"), attemptedAt: Timestamp.now() });
+      const aliceDb = testEnv.authenticatedContext("alice").firestore();
+      await assertFails(updateDoc(doc(aliceDb, "quizAttempts/q_alice"), { result: "incorrect" }));
+      await assertFails(deleteDoc(doc(aliceDb, "quizAttempts/q_alice")));
+    });
+  });
 });

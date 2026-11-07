@@ -114,6 +114,16 @@ service cloud.firestore {
         && data.reviewedAt is timestamp;
     }
 
+    function isValidQuizAttempt(data) {
+      return data.keys().hasAll(['userId', 'vocabularyId', 'topicId', 'result', 'attemptedAt'])
+        && data.keys().size() == 5
+        && data.userId == request.auth.uid
+        && data.vocabularyId is string && data.vocabularyId.size() > 0 && data.vocabularyId.size() <= 128
+        && (data.topicId == null || data.topicId is string)
+        && data.result in ['correct', 'incorrect', 'revealed']
+        && data.attemptedAt is timestamp;
+    }
+
     function isValidNotificationDevice(data, userId) {
       return data.keys().hasAll(['userId', 'token', 'platform', 'createdAt', 'updatedAt'])
         && data.keys().size() == 5
@@ -173,6 +183,16 @@ service cloud.firestore {
 
       allow create: if isSignedIn() && isValidReviewEvent(incoming())
         && incoming().reviewedAt == request.time;
+
+      allow update, delete: if false;
+    }
+
+    match /quizAttempts/{attemptId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+
+      allow create: if isSignedIn() && isValidQuizAttempt(incoming())
+        && incoming().attemptedAt == request.time;
 
       allow update, delete: if false;
     }

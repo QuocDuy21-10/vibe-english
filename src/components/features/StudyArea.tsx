@@ -19,8 +19,9 @@ import { getStudySound, type StudyAudioEvent } from "@/lib/studyAudio";
 import { getDueCount, getDueVocabularies } from "@/lib/vocabularySelectors";
 import { useAuth } from "@/routes/AppDataProvider";
 import { useAudioActions } from "@/routes/AudioProvider";
+import { recordQuizAttempt } from "@/services/quizAttemptRepository";
 import { recordVocabularyReview } from "@/services/vocabularyRepository";
-import type { Topic, Vocabulary, StudySession } from "@/types/types";
+import type { QuizAttemptResult, Topic, Vocabulary, StudySession } from "@/types/types";
 
 type StudyAreaProps = {
   vocabulary: Vocabulary[];
@@ -201,6 +202,13 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     setFeedback(null);
   };
 
+  const saveQuizAttempt = (vocabularyItem: Vocabulary, result: QuizAttemptResult) => {
+    if (!user) return;
+    recordQuizAttempt({ userId: user.uid, vocabulary: vocabularyItem, result }).catch(() => {
+      toast.error("Không lưu được kết quả Quiz.");
+    });
+  };
+
   const checkAnswer = (answer: string) => {
     const currentVocabulary = filtered[safeCurrentIndex];
     const trimmedAnswer = answer.trim();
@@ -210,6 +218,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     if (!feedback && !attemptedWords.has(currentVocabulary.id)) {
       setAttemptedWords((previousWords) => new Set(previousWords).add(currentVocabulary.id));
       if (isCorrect) setScore((previousScore) => previousScore + 1);
+      saveQuizAttempt(currentVocabulary, isCorrect ? "correct" : "incorrect");
     }
 
     setFeedback(isCorrect ? "correct" : "incorrect");
@@ -219,6 +228,16 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     } else {
       toast.error("Chưa đúng rồi, hãy thử lại nhé!");
     }
+  };
+
+  const revealAnswer = () => {
+    const currentVocabulary = filtered[safeCurrentIndex];
+    if (currentVocabulary && !attemptedWords.has(currentVocabulary.id)) {
+      // Revealing before any check finalizes the word, so a later "check" with the shown answer cannot score.
+      setAttemptedWords((previousWords) => new Set(previousWords).add(currentVocabulary.id));
+      saveQuizAttempt(currentVocabulary, "revealed");
+    }
+    setFeedback("correct");
   };
 
   if (view === "summary") {
@@ -372,7 +391,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
           if (feedback) setFeedback(null);
         }}
         onCheckAnswer={checkAnswer}
-        onRevealAnswer={() => setFeedback("correct")}
+        onRevealAnswer={revealAnswer}
       />
       <StudyExitConfirmDialog
         isOpen={showExitConfirm}
