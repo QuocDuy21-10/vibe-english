@@ -2,6 +2,7 @@ import { useMemo, useRef, useState } from "react";
 import { Brain, ChevronLeft } from "lucide-react";
 import { toast } from "sonner";
 
+import { getQuizCard } from "@/components/features/study/quizCards";
 import { StudyExitConfirmDialog } from "@/components/features/study/StudyExitConfirmDialog";
 import { StudySessionView } from "@/components/features/study/StudySessionView";
 import { StudySummary } from "@/components/features/study/StudySummary";
@@ -20,7 +21,7 @@ import { getDueCount, getDueVocabularies } from "@/lib/vocabularySelectors";
 import { useAuth } from "@/routes/AppDataProvider";
 import { useAudioActions } from "@/routes/AudioProvider";
 import { recordVocabularyReview } from "@/services/vocabularyRepository";
-import type { Topic, Vocabulary, StudySession } from "@/types/types";
+import type { Topic, Vocabulary, StudyMode, StudySession } from "@/types/types";
 
 type StudyAreaProps = {
   vocabulary: Vocabulary[];
@@ -28,7 +29,6 @@ type StudyAreaProps = {
 };
 
 type StudyView = "topics" | "study" | "summary";
-type StudyMode = "flashcard" | "quiz";
 type QuizFeedback = "correct" | "incorrect" | null;
 
 type FlashcardAssessment = {
@@ -201,12 +201,12 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
     setFeedback(null);
   };
 
-  const checkAnswer = (answer: string) => {
+  const checkAnswer = (answer: string, expected: string) => {
     const currentVocabulary = filtered[safeCurrentIndex];
     const trimmedAnswer = answer.trim();
     if (!currentVocabulary || !trimmedAnswer) return;
 
-    const isCorrect = trimmedAnswer.toLowerCase() === currentVocabulary.word.trim().toLowerCase();
+    const isCorrect = trimmedAnswer.toLowerCase() === expected.trim().toLowerCase();
     if (!feedback && !attemptedWords.has(currentVocabulary.id)) {
       setAttemptedWords((previousWords) => new Set(previousWords).add(currentVocabulary.id));
       if (isCorrect) setScore((previousScore) => previousScore + 1);
@@ -274,6 +274,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
   }
 
   const current = filtered[safeCurrentIndex];
+  const quizCard = studyMode === "flashcard" ? null : getQuizCard({ mode: studyMode, vocabulary: current });
   const handleFlashcardRating = async (rating: FlashcardRating) => {
     if (pendingVocabId === current.id) return;
     if (!user) {
@@ -354,6 +355,7 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
         currentIndex={safeCurrentIndex}
         itemCount={filtered.length}
         studyMode={studyMode}
+        quizCard={quizCard}
         title={title}
         subtitle={subtitle}
         isFlipped={isFlipped}
@@ -371,7 +373,9 @@ export function StudyArea({ vocabulary, topics }: StudyAreaProps) {
         onAnswerChange={() => {
           if (feedback) setFeedback(null);
         }}
-        onCheckAnswer={checkAnswer}
+        onCheckAnswer={(answer) => {
+          if (quizCard?.status === "ready") checkAnswer(answer, quizCard.answer);
+        }}
         onRevealAnswer={() => setFeedback("correct")}
       />
       <StudyExitConfirmDialog

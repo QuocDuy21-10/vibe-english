@@ -132,6 +132,8 @@ export interface ReviewEvent {
   srsVersion: number;
 }
 
+export type StudyMode = "flashcard" | "quiz" | "listening" | "context";
+
 export type StudySession = {
   initialCount: number;
   completedCount: number;

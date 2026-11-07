@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "motion/react";
 import { useForm } from "react-hook-form";
@@ -6,7 +6,6 @@ import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import type { Vocabulary } from "@/types/types";
 
 const answerSchema = z.object({
   userAnswer: z.string().trim().min(1, "Vui lòng nhập câu trả lời.")
@@ -15,8 +14,11 @@ const answerSchema = z.object({
 type AnswerFormValues = z.infer<typeof answerSchema>;
 
 type QuizPanelProps = {
-  vocabulary: Vocabulary;
-  currentIndex: number;
+  itemKey: string;
+  label: string;
+  answer: string;
+  prompt: ReactNode;
+  afterAnswer?: ReactNode;
   feedback: "correct" | "incorrect" | null;
   onAnswerChange: () => void;
   onCheckAnswer: (answer: string) => void;
@@ -25,8 +27,11 @@ type QuizPanelProps = {
 };
 
 export function QuizPanel({
-  vocabulary,
-  currentIndex,
+  itemKey,
+  label,
+  answer,
+  prompt,
+  afterAnswer,
   feedback,
   onAnswerChange,
   onCheckAnswer,
@@ -52,17 +57,14 @@ export function QuizPanel({
 
   return (
     <motion.div
-      key={`quiz-${vocabulary.id}-${currentIndex}`}
+      key={`quiz-${itemKey}`}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="w-full bg-white rounded-2xl sm:rounded-3xl border border-slate-200/80 p-5 sm:p-8 flex flex-col items-center justify-between shadow-lg shadow-emerald-950/5 min-h-[380px] sm:min-h-[420px]"
     >
-      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">ĐIỀN TỪ VÀO CHỖ TRỐNG</span>
+      <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{label}</span>
 
-      <div className="text-center mb-4 sm:mb-6 max-w-full">
-        <p className="text-xs font-bold text-[#10b981] mb-1.5 uppercase tracking-wide">NGHĨA TIẾNG VIỆT</p>
-        <h3 className="text-xl sm:text-3xl font-bold text-slate-900 leading-snug break-words px-2">{vocabulary.definition}</h3>
-      </div>
+      <div className="text-center mb-4 sm:mb-6 max-w-full w-full">{prompt}</div>
 
       <form
         onSubmit={(event) => {
@@ -83,7 +85,7 @@ export function QuizPanel({
             <input
               type="text"
               autoFocus
-              maxLength={vocabulary.word.length}
+              maxLength={answer.length}
               className="absolute inset-0 opacity-0 cursor-default w-full h-full z-10"
               value={userAnswer}
               {...userAnswerRegistration}
@@ -91,7 +93,7 @@ export function QuizPanel({
               onCompositionEnd={(event) => {
                 setIsComposing(false);
                 const value = event.currentTarget.value;
-                const limit = vocabulary.word.length;
+                const limit = answer.length;
                 if (value.length > limit) {
                   const truncated = value.slice(0, limit);
                   event.currentTarget.value = truncated;
@@ -99,7 +101,7 @@ export function QuizPanel({
                 }
               }}
               onChange={(event) => {
-                const limit = vocabulary.word.length;
+                const limit = answer.length;
                 if (!isComposing && event.target.value.length > limit) {
                   event.target.value = event.target.value.slice(0, limit);
                 }
@@ -113,11 +115,11 @@ export function QuizPanel({
             />
 
             <div className="flex gap-1 sm:gap-1.5 flex-wrap justify-center max-w-full" aria-hidden="true">
-              {Array.from({ length: vocabulary.word.length }).map((_, index) => {
+              {Array.from({ length: answer.length }).map((_, index) => {
                 const character = userAnswer[index] || "";
                 const isActive = index === userAnswer.length;
                 const isFilled = index < userAnswer.length;
-                const isSpace = vocabulary.word[index] === " ";
+                const isSpace = answer[index] === " ";
 
                 if (isSpace) return <div key={index} className="w-3 sm:w-4 h-10 sm:h-12" />;
 
@@ -160,7 +162,7 @@ export function QuizPanel({
           </div>
 
           <span className="text-xs font-bold uppercase tracking-wider mt-2 text-slate-400">
-            {Math.min(userAnswer.trim().length, vocabulary.word.length)}/{vocabulary.word.length} CHỮ CÁI
+            {Math.min(userAnswer.trim().length, answer.length)}/{answer.length} CHỮ CÁI
           </span>
 
           {errors.userAnswer && <p className="text-xs text-rose-500 font-medium text-center mt-1">{errors.userAnswer.message}</p>}
@@ -170,8 +172,13 @@ export function QuizPanel({
               animate={{ opacity: 1, y: 0 }}
               className="text-center text-xs font-semibold text-rose-500 mt-1"
             >
-              Gợi ý: Từ này bắt đầu bằng chữ <span className="font-bold text-rose-700">"{vocabulary.word[0].toUpperCase()}"</span>
+              Gợi ý: Từ này bắt đầu bằng chữ <span className="font-bold text-rose-700">"{answer[0].toUpperCase()}"</span>
             </motion.p>
+          )}
+          {feedback === "correct" && afterAnswer && (
+            <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} className="w-full mt-3 text-center">
+              {afterAnswer}
+            </motion.div>
           )}
         </div>
 
@@ -198,7 +205,7 @@ export function QuizPanel({
             variant="ghost"
             className="w-full h-9 text-slate-400 hover:text-[#10b981] font-bold text-xs uppercase tracking-widest hover:bg-transparent cursor-pointer border-none"
             onClick={() => {
-              setValue("userAnswer", vocabulary.word, { shouldDirty: true, shouldValidate: true });
+              setValue("userAnswer", answer, { shouldDirty: true, shouldValidate: true });
               onRevealAnswer();
             }}
           >
