@@ -1,9 +1,10 @@
 import type { KeyboardEvent } from "react";
 import { BookOpen, Brain, Volume2 } from "lucide-react";
-import { motion } from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { FlashcardRating } from "@/lib/srs";
 import { useAudioActions } from "@/routes/AudioProvider";
 import type { Vocabulary } from "@/types/types";
@@ -26,14 +27,16 @@ export function FlashcardPanel({
   onRate
 }: FlashcardPanelProps) {
   const { speak } = useAudioActions();
+  const reduceMotion = useReducedMotion();
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.target !== event.currentTarget || (event.key !== "Enter" && event.key !== " ")) return;
     event.preventDefault();
     onFlip();
   };
 
+  // Phones: the card shrinks with the dynamic viewport so the rating buttons stay above the bottom navigation.
   return (
-    <div className="relative min-h-[380px] sm:min-h-[420px] h-[380px] sm:h-[420px] perspective-1000 w-full">
+    <div className="relative h-[clamp(320px,calc(100dvh-22rem),380px)] sm:h-[clamp(370px,calc(100dvh-6rem),420px)] perspective-1000 w-full">
       <motion.div
         key={`${vocabulary.id}-${currentIndex}`}
         initial={{ opacity: 0, scale: 0.95, y: 15 }}
@@ -45,7 +48,7 @@ export function FlashcardPanel({
         }}
         transition={{
           opacity: { duration: 0.3 },
-          rotateY: { duration: 0.6, type: "spring", stiffness: 260, damping: 25 },
+          rotateY: reduceMotion ? { duration: 0 } : { duration: 0.6, type: "spring", stiffness: 260, damping: 25 },
           y: { duration: 0.4, type: "spring" }
         }}
         className="w-full h-full cursor-pointer relative rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#10b981] touch-manipulation select-none"
@@ -57,7 +60,7 @@ export function FlashcardPanel({
         aria-label={isFlipped ? "Ẩn nghĩa tiếng Việt" : "Hiện nghĩa tiếng Việt"}
       >
         {/* Front of Card */}
-        <div className="absolute inset-0 backface-hidden w-full h-full rounded-3xl bg-white border border-slate-200/80 p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-lg shadow-emerald-950/5 overflow-hidden">
+        <div className="absolute inset-0 backface-hidden w-full h-full rounded-3xl bg-white border border-slate-200/80 p-6 sm:p-8 flex flex-col items-center justify-center-safe text-center shadow-lg shadow-emerald-950/5 overflow-x-hidden overflow-y-auto">
           <div className="absolute top-6 left-6 opacity-[0.03] pointer-events-none">
             <BookOpen className="w-32 h-32 text-slate-800" />
           </div>
@@ -70,7 +73,13 @@ export function FlashcardPanel({
           </Badge>
 
           <div className="flex items-center gap-2 sm:gap-3 mb-2 flex-wrap justify-center max-w-full">
-            <h2 className="text-3xl sm:text-5xl font-black text-slate-900 tracking-tight break-words max-w-full">
+            <h2
+              className={cn(
+                "font-black text-slate-900 tracking-tight break-words max-w-full",
+                // Very long words (e.g. medical terms) would otherwise wrap into 4+ lines on phones.
+                vocabulary.word.length > 14 ? "text-2xl sm:text-4xl" : "text-3xl sm:text-5xl"
+              )}
+            >
               {vocabulary.word}
             </h2>
             <Button
