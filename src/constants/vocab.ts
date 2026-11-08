@@ -30,6 +30,16 @@ export const PART_OF_SPEECH_OPTIONS = [
 
 export type PartOfSpeech = (typeof PART_OF_SPEECH_OPTIONS)[number];
 
+export const PART_OF_SPEECH_LABELS: Record<PartOfSpeech, string> = {
+  noun: "Noun (Danh từ)",
+  verb: "Verb (Động từ)",
+  adjective: "Adjective (Tính từ)",
+  adverb: "Adverb (Trạng từ)",
+  prep: "Prep (Giới từ)",
+  conj: "Conj (Liên từ)",
+  other: "Other (Khác)"
+};
+
 export const VOCAB_IMPORT_COLUMNS = [
   "word",
   "definition",

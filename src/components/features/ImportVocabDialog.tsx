@@ -407,17 +407,17 @@ export function ImportVocabDialog({
       {/* Main Body */}
       <div className="p-4 sm:p-6 space-y-4 flex-1 min-h-0 overflow-y-auto flex flex-col bg-white">
         <Tabs value={activeTab} onValueChange={handleTabChange} className="shrink-0 flex flex-col">
-          <TabsList className="grid grid-cols-2 bg-slate-100 p-1 rounded-2xl shrink-0 h-11 mb-3">
+          <TabsList className="grid grid-cols-2 bg-slate-100 p-1 rounded-2xl shrink-0 h-auto min-h-11 mb-3">
             <TabsTrigger
               value="excel"
-              className="rounded-xl font-bold text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5"
+              className="rounded-xl font-bold text-xs sm:text-sm py-2 min-h-9 whitespace-normal leading-tight text-center flex items-center justify-center gap-1.5"
             >
               <FileSpreadsheet className="w-4 h-4 text-[#10b981] shrink-0" />
               File mẫu Excel (.xlsx)
             </TabsTrigger>
             <TabsTrigger
               value="paste"
-              className="rounded-xl font-bold text-xs sm:text-sm py-2 flex items-center justify-center gap-1.5"
+              className="rounded-xl font-bold text-xs sm:text-sm py-2 min-h-9 whitespace-normal leading-tight text-center flex items-center justify-center gap-1.5"
             >
               <FileText className="w-4 h-4 text-[#10b981] shrink-0" />
               Dán văn bản nhanh
@@ -815,7 +815,7 @@ export function ImportVocabDialog({
       </div>
 
       {/* Footer */}
-      <DialogFooter className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0">
+      <DialogFooter className="p-3 sm:p-4 bg-slate-50 border-t border-slate-100 flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 -mx-0 -mb-0">
         <Button
           type="button"
           variant="ghost"
@@ -826,7 +826,7 @@ export function ImportVocabDialog({
           Đóng
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex w-full items-center gap-2 sm:w-auto">
           {activeTab === "excel" && selectedFile && (
             <Button
               type="button"
@@ -844,7 +844,7 @@ export function ImportVocabDialog({
             type="button"
             onClick={handleImportSubmit}
             disabled={isSubmitting || validRowsToSubmit.length === 0}
-            className="bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-xl px-6 font-semibold shadow-md shadow-[#10b981]/20 h-11 min-h-[44px] cursor-pointer"
+            className="flex-1 sm:flex-none bg-[#10b981] hover:bg-[#10b981]/90 text-white rounded-xl px-6 font-semibold shadow-md shadow-[#10b981]/20 h-11 min-h-[44px] cursor-pointer"
           >
             {isSubmitting ? (
               <>

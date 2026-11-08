@@ -69,7 +69,7 @@ export function PaginationControls({
                 key={`page-${pageItem}`}
                 variant={currentPage === pageItem ? "default" : "outline"}
                 size="icon"
-                className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full border-slate-200 transition-all font-semibold text-xs min-w-[36px] ${
+                className={`w-11 h-11 rounded-full border-slate-200 transition-all font-semibold text-xs min-w-[44px] ${
                   currentPage === pageItem
                     ? "bg-[#10b981] hover:bg-[#10b981]/90 text-white border-[#10b981] shadow-xs"
                     : "hover:bg-[#ECFDF5] hover:text-[#10b981] text-slate-700"
@@ -103,7 +103,7 @@ export function PaginationControls({
       <div className="flex items-center gap-2">
         <span className="text-xs text-slate-500">{pageSizeLabel}</span>
         <Select value={String(pageSize)} onValueChange={(value) => onPageSizeChange(Number(value))}>
-          <SelectTrigger className="w-20 rounded-full border-slate-200 bg-white h-10 shadow-xs text-xs text-slate-700 font-medium">
+          <SelectTrigger className="w-20 rounded-full border-slate-200 bg-white h-11 shadow-xs text-xs text-slate-700 font-medium">
             <SelectValue placeholder={String(pageSize)} />
           </SelectTrigger>
           <SelectContent>
@@ -133,7 +133,7 @@ function PaginationButton({ label, disabled, onClick, children }: PaginationButt
       size="icon"
       onClick={onClick}
       disabled={disabled}
-      className="w-9 h-9 sm:w-10 sm:h-10 rounded-full border-slate-200 hover:bg-[#ECFDF5] hover:text-[#10b981] transition-colors min-w-[36px]"
+      className="w-11 h-11 rounded-full border-slate-200 hover:bg-[#ECFDF5] hover:text-[#10b981] transition-colors min-w-[44px]"
       aria-label={label}
       title={label}
     >

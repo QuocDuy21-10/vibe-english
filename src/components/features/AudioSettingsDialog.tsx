@@ -35,6 +35,11 @@ function pronunciationNoticeText(notice: PronunciationNotice, accent: EnglishAcc
   return "Voice và accent phụ thuộc vào các giọng được cài trên thiết bị.";
 }
 
+const ACCENT_LABELS: Record<EnglishAccent, string> = {
+  "en-US": "Anh–Mỹ (US)",
+  "en-GB": "Anh–Anh (UK)"
+};
+
 export function AudioSettingsDialog() {
   const {
     settings,
@@ -162,6 +167,7 @@ export function AudioSettingsDialog() {
               <div className="space-y-1.5">
                 <label id="audio-accent-label" htmlFor="audio-accent" className="text-xs font-semibold text-slate-600">Accent</label>
                 <Select
+                  items={ACCENT_LABELS}
                   value={settings.accent}
                   onValueChange={(value) => value && updateSettings({ accent: value as EnglishAccent })}
                 >
@@ -169,8 +175,9 @@ export function AudioSettingsDialog() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem className="min-h-11" value="en-US">Anh–Mỹ (US)</SelectItem>
-                    <SelectItem className="min-h-11" value="en-GB">Anh–Anh (UK)</SelectItem>
+                    {Object.entries(ACCENT_LABELS).map(([value, label]) => (
+                      <SelectItem className="min-h-11" key={value} value={value}>{label}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -178,6 +185,7 @@ export function AudioSettingsDialog() {
               <div className="space-y-1.5">
                 <label id="audio-voice-label" htmlFor="audio-voice" className="text-xs font-semibold text-slate-600">Voice</label>
                 <Select
+                  items={[{ value: "auto", label: "Tự động (khuyên dùng)" }, ...exactVoices.map((voice) => ({ value: voice.voiceURI, label: voice.name }))]}
                   value={settings.voiceURI ?? "auto"}
                   disabled={voiceState !== "ready" || exactVoices.length < 2}
                   onValueChange={(value) => updateSettings({ voiceURI: !value || value === "auto" ? null : value })}

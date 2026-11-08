@@ -38,7 +38,7 @@ export const TopicCard = memo(function TopicCard({
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
+                className="text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] w-11 h-11 min-w-[44px] rounded-full cursor-pointer border-none"
                 aria-label={`Chỉnh sửa chủ đề ${topic.name}`}
               />
             }
@@ -51,7 +51,7 @@ export const TopicCard = memo(function TopicCard({
         <Button
           variant="ghost"
           size="icon"
-          className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-9 h-9 min-w-[36px] rounded-full cursor-pointer border-none"
+          className="text-slate-400 hover:text-destructive hover:bg-rose-50 w-11 h-11 min-w-[44px] rounded-full cursor-pointer border-none"
           aria-label={`Xóa chủ đề ${topic.name}`}
           onClick={() => onDelete(topic)}
         >

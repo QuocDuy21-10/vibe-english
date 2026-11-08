@@ -58,15 +58,17 @@ export function StudySessionView({
   return (
     <div className="max-w-2xl mx-auto space-y-6 pb-12 w-full flex flex-col flex-grow">
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center justify-between gap-2 sm:flex-wrap sm:gap-4">
           <Button
             variant="ghost"
             size="sm"
             onClick={onReturnToTopics}
-            className="text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] p-2 rounded-full h-auto flex items-center group font-semibold text-sm border-none"
+            aria-label="Danh sách chủ đề"
+            className="text-[#10b981] hover:bg-[#ECFDF5] hover:text-[#10b981] p-2 rounded-full h-11 min-w-11 shrink-0 flex items-center justify-center group font-semibold text-sm border-none"
           >
-            <ArrowLeft className="w-4 h-4 mr-1 group-hover:-translate-x-1 transition-transform" />
-            Danh sách chủ đề
+            <ArrowLeft className="w-4 h-4 sm:mr-1 group-hover:-translate-x-1 transition-transform" />
+            {/* Icon-only on phones keeps the back link and mode tabs on one row, leaving room for the card. */}
+            <span className="hidden sm:inline">Danh sách chủ đề</span>
           </Button>
 
           <div className="bg-white border border-slate-200/60 p-1 rounded-full flex gap-1 shadow-sm overflow-x-auto max-w-full">
@@ -77,7 +79,7 @@ export function StudySessionView({
                 size="sm"
                 aria-pressed={studyMode === mode}
                 className={cn(
-                  "rounded-full px-3 sm:px-4 py-1.5 h-8 text-xs font-bold transition-all border-none cursor-pointer shrink-0",
+                  "rounded-full px-2.5 sm:px-4 py-1.5 h-11 sm:h-9 text-xs font-bold transition-all border-none cursor-pointer shrink-0",
                   studyMode === mode
                     ? "bg-[#10b981] text-white hover:bg-[#10b981]/90 hover:text-white shadow-sm"
                     : "text-slate-500 hover:bg-[#ECFDF5]"
@@ -109,11 +111,11 @@ export function StudySessionView({
         </div>
       </div>
 
-      <div className="flex-grow flex items-center justify-center relative w-full mt-4 min-h-[420px]">
+      <div className="flex-grow flex items-center justify-center relative w-full md:mt-4 md:min-h-[420px]">
         <Button
           variant="outline"
           size="icon"
-          className="hidden md:flex absolute -left-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#10b981] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
+          className="hidden lg:flex absolute -left-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#10b981] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
           onClick={onPrevious}
           disabled={currentIndex === 0 || isPending}
           aria-label="Câu trước"
@@ -153,7 +155,7 @@ export function StudySessionView({
         <Button
           variant="outline"
           size="icon"
-          className="hidden md:flex absolute -right-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#10b981] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
+          className="hidden lg:flex absolute -right-16 top-1/2 -translate-y-1/2 w-12 h-12 items-center justify-center bg-white rounded-full border border-slate-200 text-[#10b981] hover:bg-[#ECFDF5] active:scale-95 transition-all shadow-[0px_4px_20px_rgba(15,23,42,0.08)] disabled:opacity-30 shrink-0"
           onClick={onNext}
           disabled={isPending}
           aria-label={isLastItem ? "Hoàn thành" : "Câu tiếp theo"}
@@ -162,7 +164,7 @@ export function StudySessionView({
         </Button>
       </div>
 
-      <div className="flex md:hidden items-center gap-3 mt-6 w-full">
+      <div className="flex lg:hidden items-center gap-3 mt-6 w-full">
         <Button
           variant="outline"
           className="flex-1 h-12 rounded-full border border-slate-200 bg-white text-slate-700 font-semibold text-sm hover:bg-[#ECFDF5] hover:text-[#10b981] active:scale-[0.98] transition-all shadow-sm disabled:opacity-40 flex items-center justify-center gap-1.5"

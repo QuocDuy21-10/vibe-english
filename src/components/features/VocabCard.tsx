@@ -139,7 +139,7 @@ export const VocabCard = memo(function VocabCard({
                   size="icon"
                   onPointerEnter={preloadWordUsageDialog}
                   onFocus={preloadWordUsageDialog}
-                  className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
+                  className="w-11 h-11 min-w-[44px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
                   aria-label={`Xem ví dụ của ${vocabulary.word}`}
                 />
               }
@@ -184,7 +184,7 @@ export const VocabCard = memo(function VocabCard({
                   size="icon"
                   onPointerEnter={preloadEditVocabDialog}
                   onFocus={preloadEditVocabDialog}
-                  className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
+                  className="w-11 h-11 min-w-[44px] rounded-full text-slate-400 hover:text-[#10b981] hover:bg-[#ECFDF5] border-none cursor-pointer"
                   aria-label={`Chỉnh sửa từ ${vocabulary.word}`}
                 />
               }
@@ -219,7 +219,7 @@ export const VocabCard = memo(function VocabCard({
           <Button
             variant="ghost"
             size="icon"
-            className="w-9 h-9 min-w-[36px] rounded-full text-slate-400 hover:text-destructive hover:bg-rose-50 border-none cursor-pointer"
+            className="w-11 h-11 min-w-[44px] rounded-full text-slate-400 hover:text-destructive hover:bg-rose-50 border-none cursor-pointer"
             onClick={() => setShowDeleteConfirm(true)}
             aria-label={`Xóa từ ${vocabulary.word}`}
           >

@@ -54,7 +54,7 @@ export function WordUsageDialog({ vocabulary }: WordUsageDialogProps) {
   return (
     <DialogContent className="sm:max-w-lg rounded-3xl border-none shadow-2xl max-h-[85dvh] flex flex-col">
       <DialogHeader>
-        <DialogTitle>Ví dụ &amp; collocations: {vocabulary.word}</DialogTitle>
+        <DialogTitle className="pr-10 break-words">Ví dụ &amp; collocations: {vocabulary.word}</DialogTitle>
         <DialogDescription>{vocabulary.definition}</DialogDescription>
       </DialogHeader>
 
@@ -69,7 +69,7 @@ export function WordUsageDialog({ vocabulary }: WordUsageDialogProps) {
         {state.status === "error" && (
           <div className="py-8 text-center space-y-3">
             <p className="text-sm text-slate-500">Không tạo được ví dụ cho từ này.</p>
-            <Button variant="outline" className="rounded-full" onClick={() => void load(false)}>
+            <Button variant="outline" className="rounded-full h-11 px-5" onClick={() => void load(false)}>
               Thử lại
             </Button>
           </div>

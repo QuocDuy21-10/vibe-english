@@ -11,6 +11,7 @@ import {
   DialogFooter 
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { PART_OF_SPEECH_LABELS, PART_OF_SPEECH_OPTIONS } from "@/constants/vocab";
 import { Button } from "@/components/ui/button";
 import { 
   Select, 
@@ -216,18 +217,14 @@ export function AddVocabDialog({
                 control={control}
                 name="partOfSpeech"
                 render={({ field }) => (
-                  <Select value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
+                  <Select items={PART_OF_SPEECH_LABELS} value={field.value ?? ""} onValueChange={(value) => field.onChange(value ?? "")}>
                     <SelectTrigger className="w-full rounded-xl h-11 border-slate-200 text-sm">
                       <SelectValue placeholder="Chọn loại từ" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="noun">Noun (Danh từ)</SelectItem>
-                      <SelectItem value="verb">Verb (Động từ)</SelectItem>
-                      <SelectItem value="adjective">Adjective (Tính từ)</SelectItem>
-                      <SelectItem value="adverb">Adverb (Trạng từ)</SelectItem>
-                      <SelectItem value="prep">Prep (Giới từ)</SelectItem>
-                      <SelectItem value="conj">Conj (Liên từ)</SelectItem>
-                      <SelectItem value="other">Other (Khác)</SelectItem>
+                      {PART_OF_SPEECH_OPTIONS.map((value) => (
+                        <SelectItem key={value} value={value}>{PART_OF_SPEECH_LABELS[value]}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 )}
@@ -322,14 +319,14 @@ export function AddVocabDialog({
           </div>
         )}
 
-        <DialogFooter className="pt-3 flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-2.5 shrink-0 border-t border-slate-100 bg-transparent p-0 -mx-0 -mb-0">
+        <DialogFooter className="sticky -bottom-5 sm:-bottom-6 z-10 flex flex-row justify-between items-center gap-2.5 shrink-0 border-t border-slate-100 bg-white px-0 pt-3 pb-5 sm:pb-6 -mx-0 -mb-5 sm:-mb-6">
           <Button type="button" variant="ghost" onClick={onClose} className="rounded-xl text-slate-500 h-11">
             Bỏ qua
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-[#10b981] hover:bg-[#10b981]/90 text-white h-11 sm:h-12 px-6 rounded-xl shadow-md shadow-[#10b981]/20 font-semibold text-sm border-none transition-all cursor-pointer min-h-[44px]"
+            className="flex-1 sm:flex-none bg-[#10b981] hover:bg-[#10b981]/90 text-white h-11 sm:h-12 px-6 rounded-xl shadow-md shadow-[#10b981]/20 font-semibold text-sm border-none transition-all cursor-pointer min-h-[44px]"
           >
             {isSubmitting ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : "Lưu vào từ điển"}
           </Button>

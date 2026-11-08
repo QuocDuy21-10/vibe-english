@@ -140,7 +140,7 @@ export function ConfirmDialog({
             variant="ghost"
             disabled={loading}
             onClick={() => handleOpenChange(false)}
-            className="rounded-xl font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-none h-10 px-4 cursor-pointer"
+            className="rounded-xl font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 border-none h-11 px-4 cursor-pointer"
           >
             {cancelText}
           </Button>
@@ -149,7 +149,7 @@ export function ConfirmDialog({
             disabled={loading}
             onClick={handleConfirm}
             className={cn(
-              "rounded-xl font-semibold h-10 px-5 gap-2 cursor-pointer transition-colors",
+              "rounded-xl font-semibold h-11 px-5 gap-2 cursor-pointer transition-colors",
               confirmBtnStyles
             )}
           >
