@@ -89,18 +89,28 @@ export function AppLayout() {
 
             <AudioSettingsDialog />
 
-            <img
-              src={user.photoURL || ""}
-              alt={user.displayName || "User avatar"}
-              className="w-9 h-9 rounded-full border border-slate-200 shadow-sm object-cover shrink-0"
-              referrerPolicy="no-referrer"
-            />
+            {user.photoURL ? (
+              <img
+                src={user.photoURL}
+                alt={user.displayName || "User avatar"}
+                className="w-9 h-9 rounded-full border border-slate-200 shadow-sm object-cover shrink-0"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <span
+                role="img"
+                aria-label={user.displayName || user.email || "User avatar"}
+                className="flex w-9 h-9 shrink-0 items-center justify-center rounded-full border border-slate-200 bg-[#ECFDF5] text-sm font-bold uppercase text-[#10b981] shadow-sm"
+              >
+                {(user.displayName || user.email || "?").charAt(0)}
+              </span>
+            )}
 
             <Button
               variant="ghost"
               size="icon"
               onClick={logout}
-              className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full w-10 h-10 min-w-[40px] p-0"
+              className="text-slate-500 hover:text-rose-600 hover:bg-rose-50 rounded-full w-11 h-11 min-w-[44px] p-0"
               title="Đăng xuất"
               aria-label="Đăng xuất"
             >

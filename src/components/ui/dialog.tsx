@@ -63,7 +63,7 @@ function DialogContent({
             render={
               <Button
                 variant="ghost"
-                className="absolute top-3 right-3 w-8 h-8 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="absolute top-2 right-2 w-11 h-11 rounded-full text-slate-400 hover:text-slate-700 hover:bg-slate-100"
                 size="icon"
                 aria-label="Đóng hộp thoại"
               />

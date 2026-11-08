@@ -68,6 +68,29 @@ function DialogLoading({ title }: { title: string }) {
   );
 }
 
+const STATUS_FILTER_LABELS: Record<VocabularyStatusFilter, string> = {
+  "all": "Tất cả trạng thái",
+  "due": "Cần ôn tập ngay",
+  "new": "Từ mới (Level 0)",
+  "learning": "Đang học (Level 1-3)",
+  "mastered": "Đã thuộc (Level 4)"
+};
+
+const SEARCH_MODE_LABELS: Record<VocabularySearchMode, string> = {
+  "contains": "Có chứa",
+  "exact": "Chính xác"
+};
+
+const SORT_OPTION_LABELS: Record<VocabularySortOption, string> = {
+  "newest": "Mới nhất trước",
+  "oldest": "Cũ nhất trước",
+  "alpha-asc": "Từ A → Z",
+  "alpha-desc": "Từ Z → A",
+  "next-review": "Next review gần nhất",
+  "level-desc": "Level cao → thấp",
+  "level-asc": "Level thấp → cao"
+};
+
 export function DictionaryPage() {
   const { user } = useAuth();
   const { vocabularies, topics } = useVocabularyData();
@@ -272,6 +295,7 @@ export function DictionaryPage() {
             {/* Status Filter */}
             <div className="w-full">
               <Select
+                items={STATUS_FILTER_LABELS}
                 value={statusFilter}
                 onValueChange={(val) => {
                   setStatusFilter(val as VocabularyStatusFilter);
@@ -282,11 +306,9 @@ export function DictionaryPage() {
                   <SelectValue placeholder="Trạng thái" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Tất cả trạng thái</SelectItem>
-                  <SelectItem value="due">Cần ôn tập ngay</SelectItem>
-                  <SelectItem value="new">Từ mới (Level 0)</SelectItem>
-                  <SelectItem value="learning">Đang học (Level 1-3)</SelectItem>
-                  <SelectItem value="mastered">Đã thuộc (Level 4)</SelectItem>
+                  {Object.entries(STATUS_FILTER_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -294,6 +316,7 @@ export function DictionaryPage() {
             {/* Search Match Mode */}
             <div className="w-full">
               <Select
+                items={SEARCH_MODE_LABELS}
                 value={searchMode}
                 onValueChange={(value) => {
                   setSearchMode(value as VocabularySearchMode);
@@ -307,8 +330,9 @@ export function DictionaryPage() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="contains">Có chứa</SelectItem>
-                  <SelectItem value="exact">Chính xác</SelectItem>
+                  {Object.entries(SEARCH_MODE_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -333,6 +357,7 @@ export function DictionaryPage() {
             {/* Sort Option */}
             <div className="w-full sm:col-span-2 lg:col-span-1">
               <Select
+                items={SORT_OPTION_LABELS}
                 value={sortOption}
                 onValueChange={(val) => {
                   setSortOption(val as VocabularySortOption);
@@ -343,13 +368,9 @@ export function DictionaryPage() {
                   <SelectValue placeholder="Sắp xếp" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="newest">Mới nhất trước</SelectItem>
-                  <SelectItem value="oldest">Cũ nhất trước</SelectItem>
-                  <SelectItem value="alpha-asc">Từ A → Z</SelectItem>
-                  <SelectItem value="alpha-desc">Từ Z → A</SelectItem>
-                  <SelectItem value="next-review">Next review gần nhất</SelectItem>
-                  <SelectItem value="level-desc">Level cao → thấp</SelectItem>
-                  <SelectItem value="level-asc">Level thấp → cao</SelectItem>
+                  {Object.entries(SORT_OPTION_LABELS).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>{label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
